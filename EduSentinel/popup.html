@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>EduSentinel AI</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="ai-dot"></div>
+        <h1>EduSentinel AI</h1>
+    </div>
+
+    <!-- AI Toggle -->
+    <div class="card">
+        <div class="row">
+            <span>AI Engine</span>
+            <label class="switch">
+                <input type="checkbox" id="aiToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Risk Section -->
+    <div class="card">
+        <h3>Real-Time Threat Analysis</h3>
+
+        <div class="risk-meter">
+            <svg width="120" height="120">
+                <circle cx="60" cy="60" r="50"></circle>
+                <circle cx="60" cy="60" r="50" id="progress"></circle>
+            </svg>
+            <div class="risk-text" id="riskValue">--%</div>
+        </div>
+
+        <p id="threatLevel">Threat: --</p>
+        <p id="inferenceTime">Inference: -- ms</p>
+
+        <button id="toggleDetails" class="details-btn">
+            View Explanation
+        </button>
+
+        <div id="explanationBox" class="hidden"></div>
+    </div>
+
+    <!-- White Browsing -->
+    <div class="card">
+        <h3>White Browsing AI</h3>
+
+        <div class="white-toggle-wrapper">
+            <span>Focus</span>
+
+            <label class="mode-switch">
+                <input type="checkbox" id="whiteModeToggle">
+                <span class="mode-slider"></span>
+            </label>
+
+            <span>
+                Enforcement 
+                <span id="emojiLock" style="cursor:pointer;">🔒</span>
+            </span>
+        </div>
+
+        <p class="mode-status" id="modeStatus"></p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <small>Edge AI | O(1) Redirect Guard | Privacy First</small>
+    </div>
+
+</div>
+
+<!-- Emoji PIN Modal (UI Only) -->
+<div id="emojiPinModal" class="pin-modal hidden">
+  <div class="pin-card">
+    <h3>Enter 4-Digit PIN</h3>
+
+    <input type="password" maxlength="4" id="emojiPinInput" placeholder="Enter PIN" class="pin-input">
+
+    <div class="pin-actions">
+      <button id="emojiCancel">Cancel</button>
+      <button id="emojiSubmit">Submit</button>
+    </div>
+  </div>
+</div>
+
+<script src="popup.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "EduSentinel AI",
+  "version": "1.0.0",
+  "description": "AI-powered real-time phishing detector using Local ML + Google Safe Browsing.",
+
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs",
+    "webNavigation"
+  ],
+
+  "host_permissions": [
+    "https://safebrowsing.googleapis.com/*",
+    "<all_urls>"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "action": {
+    "default_popup": "popup.html"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "warning.html",
+        "warning.js",
+        "brand-ai.js",
+        "redirect-guard.js",
+        "brand-vocab.json",
+        "brand-model.json",
+        "trusted-domains.json"   
+      ],
+      
+      "matches": ["<all_urls>"]
+    }
+  ],
+
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
