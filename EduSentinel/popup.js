@@ -284,7 +284,31 @@ function initEmojiPinModal() {
     if (e.target === modal) closeModal();
   });
 }
+// ─────────────────────────────────────────────────────────────
+// PASSWORD PROTECTION TOGGLE
+// ─────────────────────────────────────────────────────────────
+function initPasswordProtectionToggle() {
+  const toggle = document.getElementById("passwordProtectionToggle");
+  const status = document.getElementById("passwordProtectionStatus");
+  if (!toggle || !status) return;
 
+  // Restore saved state — default ON
+  chrome.storage.local.get("passwordProtectionEnabled", ({ passwordProtectionEnabled }) => {
+    const enabled      = passwordProtectionEnabled !== false;
+    toggle.checked     = enabled;
+    status.textContent = enabled
+      ? "Password Protection: Enabled"
+      : "Password Protection: Disabled";
+  });
+
+  toggle.addEventListener("change", () => {
+    const enabled = toggle.checked;
+    chrome.storage.local.set({ passwordProtectionEnabled: enabled });
+    status.textContent = enabled
+      ? "Password Protection: Enabled"
+      : "Password Protection: Disabled";
+  });
+}
 
 // ─────────────────────────────────────────────────────────────
 // ENTRY POINT
@@ -295,6 +319,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initExplanationToggle();
   initWhiteBrowsingMode();
   initEmojiPinModal();
+  initPasswordProtectionToggle();
 
   // Load analysis result for the currently active tab
   const tabId = await loadCurrentTabResult();
