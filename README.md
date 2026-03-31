@@ -1,4 +1,4 @@
-# EduSentinel AI
+# EduSentinel AI-Digital Asset Integrity & Content Intelligence System
 
 AI-Powered Digital Asset Protection and Focus Enforcement System
 ---
