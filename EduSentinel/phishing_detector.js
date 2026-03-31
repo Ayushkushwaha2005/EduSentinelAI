@@ -10,7 +10,7 @@ const MODEL = {
   features : ["url_length", "num_dots", "num_digits", "has_https", "num_special_chars", "entropy"],
 };
 
-// ── ✅ ADD: SCALER VALUES (from Colab) ───────────────────────
+// ──  ADD: SCALER VALUES (from Colab) ───────────────────────
 const SCALER_MEAN = [35.36695434593609, 2.257142857142857, 1.886172310693611, 0.7805339383786764, 0.5169956954133887, 3.960896156463825];
 
 const SCALER_SCALE = [41.2142589388822, 0.922676146549369, 11.893076454886907, 0.41388489875517164, 3.4950174855590648, 0.3153848483627673];
@@ -30,7 +30,7 @@ function shannonEntropy(str) {
 // ── Feature extraction ──────────────────────────────────────
 function extractFeatures(url) {
 
-  // ✅ REMOVE QUERY PARAMS (MAIN FIX)
+  //  REMOVE QUERY PARAMS (MAIN FIX)
   url = url.split('?')[0];
 
   const urlLength   = url.length;
@@ -43,7 +43,7 @@ function extractFeatures(url) {
   return [urlLength, numDots, numDigits, hasHttps, numSpecial, entropy];
 }
 
-// ── ✅ ADD: Scaling function ────────────────────────────────
+// ──  ADD: Scaling function ────────────────────────────────
 function applyScaling(features) {
   return features.map((val, i) => (val - SCALER_MEAN[i]) / SCALER_SCALE[i]);
 }
@@ -57,7 +57,7 @@ function sigmoid(x) {
 function predict(url) {
   let features = extractFeatures(url);
 
-  // ✅ MAIN FIX
+  //  MAIN FIX
   features = applyScaling(features);
 
   const rawScore  = features.reduce(

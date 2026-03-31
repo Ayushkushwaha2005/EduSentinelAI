@@ -14,7 +14,7 @@ async function loadBrandModel(baseUrl) {
   if (_ready) return;
   if (_loading) return _loading;
 
-  // ✅ FIXED: Always use chrome.runtime.getURL in extension context
+  //  FIXED: Always use chrome.runtime.getURL in extension context
   const base = baseUrl
     || (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getURL
         ? chrome.runtime.getURL("")
@@ -138,11 +138,11 @@ function _softmax(scores) {
 }
 
 // ============================================================
-// ✅ Global export — must run before redirect-guard.js executes
+//  Global export — must run before redirect-guard.js executes
 // ============================================================
 window.predictBrand   = predictBrand;
 window.loadBrandModel = loadBrandModel;
 
-// ✅ FIX: Eager-load the model immediately so it is ready by the
+//  FIX: Eager-load the model immediately so it is ready by the
 //    time redirect-guard.js calls predictBrand().
 loadBrandModel();

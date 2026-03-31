@@ -224,66 +224,6 @@ function initWhiteBrowsingMode() {
 // Protects Enforcement mode from accidental toggling.
 // PIN is stored (hashed-ish via simple comparison) in storage.
 // ─────────────────────────────────────────────────────────────
-function initEmojiPinModal() {
-  const lockBtn    = document.getElementById("emojiLock");
-  const modal      = document.getElementById("emojiPinModal");
-  const pinInput   = document.getElementById("emojiPinInput");
-  const cancelBtn  = document.getElementById("emojiCancel");
-  const submitBtn  = document.getElementById("emojiSubmit");
-  const modeStatus = document.getElementById("modeStatus");
-
-  if (!lockBtn || !modal || !pinInput || !cancelBtn || !submitBtn) return;
-
-  // Default PIN (4 digits). User can change via storage directly for now.
-  const DEFAULT_PIN = "1234";
-
-  function openModal() {
-    modal.classList.remove("hidden");
-    pinInput.value = "";
-    pinInput.focus();
-  }
-
-  function closeModal() {
-    modal.classList.add("hidden");
-    pinInput.value = "";
-  }
-
-  lockBtn.addEventListener("click", openModal);
-  cancelBtn.addEventListener("click", closeModal);
-
-  submitBtn.addEventListener("click", () => {
-    chrome.storage.local.get("sentinelPIN", ({ sentinelPIN }) => {
-      const correctPIN = sentinelPIN || DEFAULT_PIN;
-
-      if (pinInput.value === correctPIN) {
-        // Correct PIN — toggle enforcement off
-        chrome.storage.local.set({ whiteMode: false });
-        const whiteModeToggle = document.getElementById("whiteModeToggle");
-        if (whiteModeToggle) whiteModeToggle.checked = false;
-        if (modeStatus) modeStatus.textContent = "👁️ Focus mode — monitoring only.";
-        closeModal();
-      } else {
-        pinInput.style.borderColor = "#ef4444";
-        pinInput.value             = "";
-        pinInput.placeholder       = "Wrong PIN — try again";
-        setTimeout(() => {
-          pinInput.style.borderColor = "";
-          pinInput.placeholder       = "Enter PIN";
-        }, 1500);
-      }
-    });
-  });
-
-  // Allow Enter key to submit PIN
-  pinInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") submitBtn.click();
-  });
-
-  // Close modal on backdrop click
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) closeModal();
-  });
-}
 // ─────────────────────────────────────────────────────────────
 // PASSWORD PROTECTION TOGGLE
 // ─────────────────────────────────────────────────────────────
@@ -318,7 +258,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initAIToggle();
   initExplanationToggle();
   initWhiteBrowsingMode();
-  initEmojiPinModal();
+  
   initPasswordProtectionToggle();
 
   // Load analysis result for the currently active tab

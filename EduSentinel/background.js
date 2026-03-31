@@ -52,7 +52,7 @@ async function saveToFirebase(domain) {
 }
 
 // ============================================================
-// ✅ TRUSTED DOMAIN CACHE
+//  TRUSTED DOMAIN CACHE
 // ============================================================
 let trustedDomains = new Set();
 
@@ -68,7 +68,7 @@ let trustedDomains = new Set();
 })();
 
 // ============================================================
-// ✅ TRUST CHECK HELPER
+//  TRUST CHECK HELPER
 // ============================================================
 function isTrustedUrl(url) {
   try {
@@ -83,7 +83,7 @@ function isTrustedUrl(url) {
 }
 
 // ============================================================
-// 🔒 BLOCK FUNCTION
+//  BLOCK FUNCTION
 // ============================================================
 function blockDangerousTab(tabId, url, reason) {
   const warningPage = chrome.runtime.getURL("warning.html")
@@ -94,7 +94,7 @@ function blockDangerousTab(tabId, url, reason) {
 }
 
 // ============================================================
-// 🌐 webNavigation Listener
+//  webNavigation Listener
 // ============================================================
 chrome.webNavigation.onCommitted.addListener(({ tabId, url, frameId }) => {
   if (frameId !== 0) return;
@@ -112,7 +112,7 @@ chrome.webNavigation.onCommitted.addListener(({ tabId, url, frameId }) => {
 });
 
 // ============================================================
-// 🔥 ADDITIONAL TRIGGER
+//  ADDITIONAL TRIGGER
 // ============================================================
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status !== "complete") return;
@@ -160,13 +160,13 @@ async function analyzeUrl(url, tabId) {
 
   const domain = new URL(url).hostname.replace(/^www\./, "");
 
-  // 🔥 CLOUD CHECK
+  //  CLOUD CHECK
   if (await checkFirebase(url)) {
     blockDangerousTab(tabId, url, "Blocked by cloud intelligence");
     return;
   }
 
-  // ✅ TRUSTED DOMAIN
+  //  TRUSTED DOMAIN
   if (isTrustedUrl(url)) {
     const result = {
       verdict: "SAFE",

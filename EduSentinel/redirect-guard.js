@@ -41,7 +41,7 @@ async function initRedirectGuard() {
     let brand = null;
     let officialUrl = null;
 
-    // ✅ 1. Try AI
+    //  1. Try AI
     if (typeof window.predictBrand === "function") {
       try {
         const result = await window.predictBrand(blockedUrl);
@@ -56,7 +56,7 @@ async function initRedirectGuard() {
       }
     }
 
-    // ✅ 2. Fallback (IMPORTANT FIX)
+    //  2. Fallback (IMPORTANT FIX)
     if (!brand) {
       const lower = blockedUrl.toLowerCase();
       for (const key in OFFICIAL_SITES) {
@@ -69,13 +69,13 @@ async function initRedirectGuard() {
       }
     }
 
-    // ✅ 3. FORCE DEFAULT (FINAL SAFETY)
+    //  3. FORCE DEFAULT (FINAL SAFETY)
     if (!brand) {
       brand = "website";
       officialUrl = blockedUrl;
     }
 
-    // ✅ 4. ALWAYS CREATE BUTTON (NO RETURN BLOCK)
+    //  4. ALWAYS CREATE BUTTON (NO RETURN BLOCK)
     const btn = document.createElement("button");
     btn.id = "btn-official-redirect";
     btn.className = "btn";
@@ -85,7 +85,7 @@ async function initRedirectGuard() {
       window.location.href = officialUrl;
     };
 
-    // ✅ 5. WAIT FOR DOM (FIX)
+    //  5. WAIT FOR DOM (FIX)
     let actions = null;
     let tries = 0;
 
