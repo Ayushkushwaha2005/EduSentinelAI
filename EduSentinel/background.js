@@ -301,20 +301,20 @@ function buildVerdict(aiResult, safeBrowsingResult, inferenceMs) {
 
   else if (probability > 0.95) {
     verdict = "DANGEROUS";
-    reasons.push(" This link looks like a phishing attempt — it may be pretending to be a trusted website.");
-    reasons.push("Avoid entering any passwords or personal details here.");
+    reasons.push(" This link seems highly suspicious and may not be what it claims to be.");
+    reasons.push("For your safety, avoid sharing any personal or login information.");
   }
 
   else if (isPhishing || probability > 0.5) {
     verdict = "UNVERIFIED";
-    reasons.push(` This link looks suspicious (${Math.round(probability * 100)}% risk).`);
+    reasons.push(` This link looks unusual  (${Math.round(probability * 100)}% risk).`);
 
     if (url.length > 75) {
-      reasons.push("The link is unusually long — fake websites often use this trick.");
+      reasons.push("his link looks a bit unusual and not like a typical trusted website.");
     }
 
     if ((url.match(/\./g) || []).length > 3) {
-      reasons.push("The web address has too many parts — it may be hiding its real identity.");
+      reasons.push("The web address is difficult to understand, so it's better to be careful.");
     }
 
     if ((url.match(/\d/g) || []).length > 5) {
@@ -322,7 +322,7 @@ function buildVerdict(aiResult, safeBrowsingResult, inferenceMs) {
     }
 
     if (url.includes("@")) {
-      reasons.push("This link contains '@' — it can hide where the link actually goes.");
+      reasons.push("This link includes unusual patterns that can be misleading..");
     }
 
     if (!url.startsWith("https")) {
@@ -334,14 +334,14 @@ function buildVerdict(aiResult, safeBrowsingResult, inferenceMs) {
     }
 
     if (reasons.length === 1) {
-      reasons.push("Something about this link doesn't look right. Be careful.");
+      reasons.push("Overall, this link doesn't feel completely reliable.");
     }
   }
 
   else {
     verdict = "SAFE";
     reasons.push(" This website looks safe to visit.");
-    reasons.push("No signs of phishing or harmful behavior were found.");
+    reasons.push("No major security risks were detected. You can continue safely.");
   }
 
   return {
