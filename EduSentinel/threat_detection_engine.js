@@ -1,5 +1,5 @@
 // ============================================================
-// EduSentinel AI — Phishing URL Detector (Chrome Extension)
+// EduSentinel AI — threat_detection_engine (Chrome Extension)
 // ============================================================
 
 // ── Model weights ────────────────────────────────────────────
