@@ -5,7 +5,7 @@
 importScripts("phishing_detector.js");
 
 // ── Config ──────────────────────────────────────────────────
-const API_KEY = "AIzaSyCPMSB2hJXMM7hKipr2kuK8YdoXONdXlxM";
+const API_KEY = "YOUR_API_KEY";
 
 const SAFE_BROWSING_URL =
   `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${API_KEY}`;

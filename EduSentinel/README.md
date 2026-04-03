@@ -74,6 +74,7 @@ The system follows a hybrid decision model:
 
 This combination ensures both speed (local AI) and reliability (cloud + API).
 
+## Note: Insert your own Google Safe Browsing API key to run the project.
 ---
 
 ## Tech Stack
