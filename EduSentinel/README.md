@@ -75,6 +75,7 @@ The system follows a hybrid decision model:
 This combination ensures both speed (local AI) and reliability (cloud + API).
 
 ## Note: Insert your own Google Safe Browsing API key to run the project.
+
 ---
 
 ## Tech Stack
@@ -133,7 +134,8 @@ The system follows a multi-layered detection approach to ensure both speed and r
 - Evaluates URL structure, keywords, and suspicious patterns.
 
 **Example:**
-- URL: http://amaz0n-login-secure.com  
+
+- URL: http://amaz0n-login-secure.com
 - Result: This link seems highly suspicious and may not be what it claims to be.
 
 ---
@@ -144,7 +146,8 @@ The system follows a multi-layered detection approach to ensure both speed and r
 - Acts as a trusted external validation layer.
 
 **Example:**
-- URL: http://testsafebrowsing.appspot.com/s/phishing.html  
+
+- URL: http://testsafebrowsing.appspot.com/s/malware.html
 - Result: Google has flagged this website as harmful — do not proceed.
 
 ---
@@ -155,7 +158,8 @@ The system follows a multi-layered detection approach to ensure both speed and r
 - Helps in faster detection for repeated or known threats.
 
 **Example:**
-- URL: http://testphishing.com  
+
+- URL: http://testphishing.com
 - Result: Blocked by cloud intelligence
 
 ---
@@ -169,7 +173,8 @@ The system follows a multi-layered detection approach to ensure both speed and r
 - Displays motivational messages on blocked pages.
 
 **Example:**
-- Opening Instagram/YouTube (non-educational)  
+
+- Opening Instagram/YouTube (non-educational)
 - Result: Blocked with a focus message.
 
 ---
@@ -180,7 +185,8 @@ The system follows a multi-layered detection approach to ensure both speed and r
 - Prevents weak or easily guessable passwords.
 
 **Example:**
-- Password: 123456  
+
+- Password: 123456
 - Result: Marked as weak and user is warned.
 
 ---
@@ -191,7 +197,8 @@ The system follows a multi-layered detection approach to ensure both speed and r
 - Allows only essential cookies for safe browsing.
 
 **Example:**
-- Website requesting tracking cookies  
+
+- Website requesting tracking cookies
 - Result: Only necessary cookies allowed, others blocked.
 
 ---
@@ -204,10 +211,10 @@ Team Name: [NUX LEANDER]
 
 Team Members:
 
-* [Ayush Kushwaha]
-* [Natasha Pande]
-* [Vishal]
-* [Aishika]
+- [Ayush Kushwaha]
+- [Natasha Pande]
+- [Vishal]
+- [Aishika]
 
 Team members contributed through discussions, feedback, and presentation support during the hackathon.
 
