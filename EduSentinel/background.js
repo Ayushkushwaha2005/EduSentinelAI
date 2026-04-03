@@ -2,10 +2,10 @@
 // EduSentinel AI — background.js (FINAL FIXED + CLOUD)
 // ============================================================
 
-importScripts("phishing_detector.js");
+importScripts("threat_detection_engine.js");
 
 // ── Config ──────────────────────────────────────────────────
-const API_KEY = "YOUR_API_KEY";
+const API_KEY = "YOUR_API_KEY_HERE"; // 🔥 REPLACE WITH YOUR ACTUAL API KEY
 
 const SAFE_BROWSING_URL =
   `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${API_KEY}`;

@@ -123,6 +123,79 @@ This combination ensures both speed (local AI) and reliability (cloud + API).
 
 ---
 
+## Detection Layers with Examples
+
+The system follows a multi-layered detection approach to ensure both speed and reliability.
+
+### 1. Core AI (Local Detection)
+
+- Performs real-time analysis in the browser using heuristic and pattern-based logic.
+- Evaluates URL structure, keywords, and suspicious patterns.
+
+**Example:**
+- URL: http://amaz0n-login-secure.com  
+- Result: This link seems highly suspicious and may not be what it claims to be.
+
+---
+
+### 2. Google Safe Browsing API (Secondary Validation)
+
+- Checks URLs against Google's known threat database.
+- Acts as a trusted external validation layer.
+
+**Example:**
+- URL: http://testsafebrowsing.appspot.com/s/phishing.html  
+- Result: Google has flagged this website as harmful — do not proceed.
+
+---
+
+### 3. Cloud Intelligence (Firebase Database)
+
+- Stores previously detected malicious URLs.
+- Helps in faster detection for repeated or known threats.
+
+**Example:**
+- URL: http://testphishing.com  
+- Result: Blocked by cloud intelligence
+
+---
+
+## Enforcement & Protection Modules
+
+### White Browsing / Enforcement Mode
+
+- Restricts access to non-educational or distracting websites.
+- Prioritizes academic and verified platforms.
+- Displays motivational messages on blocked pages.
+
+**Example:**
+- Opening Instagram/YouTube (non-educational)  
+- Result: Blocked with a focus message.
+
+---
+
+### Password Protection Engine
+
+- Analyzes password strength locally.
+- Prevents weak or easily guessable passwords.
+
+**Example:**
+- Password: 123456  
+- Result: Marked as weak and user is warned.
+
+---
+
+### Cookie Security Manager
+
+- Detects and blocks unnecessary or tracking cookies.
+- Allows only essential cookies for safe browsing.
+
+**Example:**
+- Website requesting tracking cookies  
+- Result: Only necessary cookies allowed, others blocked.
+
+---
+
 ## Hackathon Context
 
 This project was developed as part of a hackathon under a team setup.
