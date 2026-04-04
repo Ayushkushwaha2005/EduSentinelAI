@@ -1,0 +1,1264 @@
+import { useState, useEffect, useRef } from "react";
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis,
+  Tooltip, ResponsiveContainer, LineChart, Line
+} from "recharts";
+
+const COLORS = {
+  bg: "#0b0f1a",
+  surface: "#111827",
+  card: "#131c2e",
+  border: "#1e293b",
+  purple: "#7c3aed",
+  purpleGlow: "#7c3aed33",
+  blue: "#3b82f6",
+  blueGlow: "#3b82f633",
+  red: "#ef4444",
+  redGlow: "#ef444433",
+  textPrimary: "#f1f5f9",
+  textSecondary: "#94a3b8",
+  textMuted: "#475569",
+};
+
+const LIGHT = {
+  bg: "#f1f5f9",
+  surface: "#ffffff",
+  card: "#f8fafc",
+  border: "#e2e8f0",
+  textPrimary: "#0f172a",
+  textSecondary: "#475569",
+  textMuted: "#94a3b8",
+};
+
+const threatData = [
+  { t: "00", v: 28, a: 8 }, { t: "01", v: 18, a: 5 }, { t: "02", v: 32, a: 12 },
+  { t: "03", v: 22, a: 6 }, { t: "04", v: 45, a: 15 }, { t: "05", v: 38, a: 10 },
+  { t: "06", v: 55, a: 18 }, { t: "07", v: 65, a: 22 }, { t: "08", v: 72, a: 25 },
+  { t: "09", v: 60, a: 20 }, { t: "10", v: 48, a: 14 }, { t: "11", v: 80, a: 30 },
+  { t: "12", v: 75, a: 28 }, { t: "13", v: 68, a: 24 }, { t: "14", v: 85, a: 32 },
+  { t: "15", v: 78, a: 27 }, { t: "16", v: 90, a: 35 }, { t: "17", v: 70, a: 22 },
+  { t: "18", v: 55, a: 18 }, { t: "19", v: 62, a: 20 }, { t: "20", v: 45, a: 14 },
+  { t: "21", v: 50, a: 16 }, { t: "22", v: 38, a: 12 }, { t: "23", v: 30, a: 9 },
+];
+
+const alertVolumeData = [
+  { h: "00", v: 12 }, { h: "02", v: 18 }, { h: "04", v: 8 }, { h: "06", v: 22 },
+  { h: "08", v: 35 }, { h: "10", v: 48 }, { h: "12", v: 55 }, { h: "14", v: 70 },
+  { h: "16", v: 85 }, { h: "18", v: 62 }, { h: "20", v: 45 }, { h: "22", v: 30 },
+];
+
+const alertLog = [
+  { id: "EVT-9921", time: "23:41:07", ip: "192.168.4.221", type: "SQL Injection", severity: "CRITICAL", status: "BLOCKED" },
+  { id: "EVT-9920", time: "23:40:52", ip: "10.0.0.87", type: "Port Scan", severity: "HIGH", status: "BLOCKED" },
+  { id: "EVT-9919", time: "23:40:31", ip: "172.16.0.44", type: "Brute Force", severity: "HIGH", status: "BLOCKED" },
+  { id: "EVT-9918", time: "23:40:15", ip: "192.168.1.105", type: "XSS Attempt", severity: "MEDIUM", status: "FLAGGED" },
+  { id: "EVT-9917", time: "23:39:58", ip: "10.0.1.33", type: "DDoS Probe", severity: "HIGH", status: "BLOCKED" },
+  { id: "EVT-9916", time: "23:39:44", ip: "172.16.2.88", type: "Recon Scan", severity: "LOW", status: "MONITORED" },
+  { id: "EVT-9915", time: "23:39:22", ip: "192.168.0.12", type: "Auth Bypass", severity: "CRITICAL", status: "BLOCKED" },
+];
+
+const NAV_ITEMS = [
+  { id: "dashboard", icon: GridIcon, label: "Dashboard" },
+  { id: "threat-intel", icon: ShieldIcon, label: "Threat Intel" },
+  { id: "firewall", icon: FirewallIcon, label: "Firewall Rules" },
+  { id: "alerts", icon: BellIcon, label: "Alerts" },
+  { id: "reports", icon: ReportIcon, label: "Reports" },
+  { id: "settings", icon: SettingsIcon, label: "Settings" },
+];
+
+function GridIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+      <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+    </svg>
+  );
+}
+function ShieldIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+  );
+}
+function FirewallIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+    </svg>
+  );
+}
+function BellIcon({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+  );
+}
+function ReportIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+    </svg>
+  );
+}
+function SettingsIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  );
+}
+function UserIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+  );
+}
+function LogoutIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+      <polyline points="16 17 21 12 16 7"/>
+      <line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+  );
+}
+function SunIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="5"/>
+      <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+      <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    </svg>
+  );
+}
+function MoonIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  );
+}
+
+function GaugeChart({ value }) {
+  const r = 80;
+  const cx = 110;
+  const cy = 100;
+  const startAngle = -210;
+  const endAngle = 30;
+  const range = endAngle - startAngle;
+  const filledAngle = startAngle + (range * value) / 100;
+
+  const toXY = (angle, radius) => {
+    const rad = (angle * Math.PI) / 180;
+    return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
+  };
+
+  const arcPath = (start, end, r, large = false) => {
+    const s = toXY(start, r);
+    const e = toXY(end, r);
+    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large ? 1 : 0} 1 ${e.x} ${e.y}`;
+  };
+
+  return (
+    <svg viewBox="0 0 220 140" style={{ width: "100%", maxWidth: 220, display: "block", margin: "0 auto" }}>
+      <defs>
+        <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#3b82f6" />
+          <stop offset="100%" stopColor="#7c3aed" />
+        </linearGradient>
+      </defs>
+      <path d={arcPath(startAngle, endAngle, r, true)} fill="none" stroke="#1e293b" strokeWidth="12" strokeLinecap="round" />
+      <path d={arcPath(startAngle, filledAngle, r, value > 50)} fill="none" stroke="url(#gaugeGrad)" strokeWidth="12" strokeLinecap="round" />
+      <text x={cx} y={cy + 8} textAnchor="middle" fontSize="28" fontWeight="700" fill="#f1f5f9">{value}%</text>
+      <text x={cx} y={cy + 26} textAnchor="middle" fontSize="11" fill="#64748b" fontFamily="monospace">SYSTEM HEALTH</text>
+    </svg>
+  );
+}
+
+function SeverityBadge({ level }) {
+  const map = {
+    CRITICAL: { bg: "#ef444422", color: "#ef4444", border: "#ef444444" },
+    HIGH: { bg: "#f9731622", color: "#f97316", border: "#f9731644" },
+    MEDIUM: { bg: "#eab30822", color: "#eab308", border: "#eab30844" },
+    LOW: { bg: "#22c55e22", color: "#22c55e", border: "#22c55e44" },
+  };
+  const style = map[level] || map.LOW;
+  return (
+    <span style={{
+      background: style.bg, color: style.color, border: `1px solid ${style.border}`,
+      padding: "2px 8px", borderRadius: 4, fontSize: 11, fontFamily: "monospace", fontWeight: 700,
+    }}>{level}</span>
+  );
+}
+
+function StatusBadge({ status }) {
+  const map = {
+    BLOCKED: { bg: "#ef444422", color: "#ef4444", border: "#ef444444" },
+    FLAGGED: { bg: "#7c3aed22", color: "#a78bfa", border: "#7c3aed44" },
+    MONITORED: { bg: "#3b82f622", color: "#60a5fa", border: "#3b82f644" },
+  };
+  const style = map[status] || map.MONITORED;
+  return (
+    <span style={{
+      background: style.bg, color: style.color, border: `1px solid ${style.border}`,
+      padding: "2px 8px", borderRadius: 4, fontSize: 11, fontFamily: "monospace", fontWeight: 700,
+    }}>{status}</span>
+  );
+}
+
+const BAR_HEIGHTS = Array.from({ length: 18 }, () => Math.random() > 0.4 ? Math.floor(20 + Math.random() * 80) : 15);
+
+function StatCard({ icon, label, sub, value, delta, deltaUp, c, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setPressed(false); }}
+      onMouseDown={() => setPressed(true)}
+      onMouseUp={() => setPressed(false)}
+      style={{
+        background: "linear-gradient(135deg, #111827 0%, #0f172a 100%)",
+        border: `1px solid ${hovered ? c + "88" : "#1e293b"}`,
+        borderRadius: 12, padding: "20px 24px",
+        display: "flex", flexDirection: "column", gap: 12,
+        position: "relative", overflow: "hidden",
+        cursor: onClick ? "pointer" : "default",
+        transition: "border-color 0.25s, box-shadow 0.25s, transform 0.18s",
+        boxShadow: pressed
+          ? `0 0 40px ${c}44, 0 0 12px ${c}22`
+          : hovered
+            ? `0 0 28px ${c}33, 0 0 8px ${c}11`
+            : "none",
+        transform: pressed ? "scale(0.98)" : hovered ? "scale(1.02) translateY(-2px)" : "scale(1)",
+      }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${c}00, ${c}, ${c}00)`, opacity: hovered ? 1 : 0.6, transition: "opacity 0.25s" }} />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 8,
+          background: hovered ? `${c}33` : `${c}22`,
+          border: `1px solid ${hovered ? c + "66" : c + "44"}`,
+          display: "flex", alignItems: "center", justifyContent: "center", color: c,
+          transition: "background 0.25s, border-color 0.25s",
+        }}>{icon}</div>
+        <span style={{
+          fontSize: 12, fontFamily: "monospace",
+          color: deltaUp ? "#22c55e" : "#ef4444",
+          background: deltaUp ? "#22c55e15" : "#ef444415",
+          border: `1px solid ${deltaUp ? "#22c55e33" : "#ef444433"}`,
+          padding: "2px 8px", borderRadius: 20,
+        }}>{delta}</span>
+      </div>
+      <div>
+        <div style={{ fontSize: 28, fontWeight: 700, color: "#f1f5f9", letterSpacing: "-0.5px" }}>
+          {value.toLocaleString()}
+        </div>
+        <div style={{ fontSize: 12, color: "#64748b", fontFamily: "monospace", letterSpacing: 1, marginTop: 2 }}>{label}</div>
+        <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{sub}</div>
+      </div>
+      <div style={{ display: "flex", gap: 2 }}>
+        {BAR_HEIGHTS.map((h, i) => (
+          <div key={i} style={{
+            flex: 1, height: 28,
+            background: `${c}${h.toString(16).padStart(2, "0")}`,
+            borderRadius: 2, transition: "opacity 0.25s",
+            opacity: hovered ? 1 : 0.7,
+          }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MiniProgressBar({ label, value, color }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 12, color: "#64748b", fontFamily: "monospace" }}>{label}</span>
+        <span style={{ fontSize: 12, color, fontFamily: "monospace", fontWeight: 700 }}>{value}%</span>
+      </div>
+      <div style={{ height: 4, background: "#1e293b", borderRadius: 2 }}>
+        <div style={{ width: `${value}%`, height: "100%", background: `linear-gradient(90deg, ${color}88, ${color})`, borderRadius: 2 }} />
+      </div>
+    </div>
+  );
+}
+
+function SectionCard({ dark, children, style = {} }) {
+  const border = dark ? COLORS.border : LIGHT.border;
+  return (
+    <div style={{
+      background: dark ? "#111827" : "#fff",
+      border: `1px solid ${border}`, borderRadius: 12, padding: "20px 24px",
+      ...style,
+    }}>{children}</div>
+  );
+}
+
+function Toggle({ label, desc, checked, onChange, dark }) {
+  const text = dark ? COLORS.textPrimary : LIGHT.textPrimary;
+  const muted = dark ? COLORS.textMuted : LIGHT.textMuted;
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0", borderBottom: `1px solid ${dark ? "#1e293b" : "#e2e8f0"}` }}>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: text }}>{label}</div>
+        <div style={{ fontSize: 11, color: muted, marginTop: 2 }}>{desc}</div>
+      </div>
+      <div
+        onClick={onChange}
+        style={{
+          width: 42, height: 24, borderRadius: 12, cursor: "pointer", flexShrink: 0,
+          background: checked ? `linear-gradient(90deg, ${COLORS.purple}, ${COLORS.blue})` : (dark ? "#1e293b" : "#cbd5e1"),
+          position: "relative",
+          transition: "background 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s",
+          boxShadow: checked ? `0 0 14px ${COLORS.purple}66, 0 0 4px ${COLORS.blue}44` : "none",
+        }}
+      >
+        <div style={{
+          position: "absolute", top: 4, left: checked ? 22 : 4,
+          width: 16, height: 16, borderRadius: "50%",
+          background: checked ? "#fff" : (dark ? "#475569" : "#94a3b8"),
+          transition: "left 0.3s cubic-bezier(0.4,0,0.2,1), background 0.2s",
+          boxShadow: checked ? "0 1px 6px rgba(0,0,0,0.4)" : "0 1px 3px rgba(0,0,0,0.2)",
+        }} />
+      </div>
+    </div>
+  );
+}
+
+function ThreatIntelPage({ dark, navigate }) {
+  const text = dark ? COLORS.textPrimary : LIGHT.textPrimary;
+  const muted = dark ? COLORS.textMuted : LIGHT.textMuted;
+  const sub = dark ? COLORS.textSecondary : LIGHT.textSecondary;
+  const border = dark ? COLORS.border : LIGHT.border;
+
+  const iocData = [
+    { ioc: "185.220.101.47", type: "IP Address", threat: "C2 Server", risk: "CRITICAL", seen: "2m ago" },
+    { ioc: "malware-dist.ru", type: "Domain", threat: "Malware Host", risk: "HIGH", seen: "14m ago" },
+    { ioc: "d41d8cd98f00b204", type: "File Hash", threat: "Ransomware", risk: "HIGH", seen: "1h ago" },
+    { ioc: "phish-login.xyz", type: "Domain", threat: "Phishing", risk: "MEDIUM", seen: "3h ago" },
+    { ioc: "10.0.0.254", type: "IP Address", threat: "Lateral Move", risk: "MEDIUM", seen: "6h ago" },
+  ];
+
+  const intelStats = [
+    { label: "IOCs Tracked", value: "4,821", color: COLORS.purple },
+    { label: "New Today", value: "137", color: COLORS.blue },
+    { label: "Critical Feeds", value: "12", color: COLORS.red },
+    { label: "Mitigated", value: "98.2%", color: "#22c55e" },
+  ];
+
+  const feedData = [
+    { h: "06", v: 22 }, { h: "08", v: 45 }, { h: "10", v: 60 }, { h: "12", v: 38 },
+    { h: "14", v: 72 }, { h: "16", v: 55 }, { h: "18", v: 80 }, { h: "20", v: 48 },
+  ];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div>
+          <div style={{ fontSize: 10, color: COLORS.purple, letterSpacing: 2, fontFamily: "monospace" }}>EDUSENTINEL AI</div>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: text, margin: "4px 0 0" }}>Threat Intelligence</h2>
+        </div>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 6,
+          background: "#22c55e15", border: "1px solid #22c55e33",
+          padding: "4px 12px", borderRadius: 20, fontSize: 11, color: "#22c55e", fontFamily: "monospace",
+        }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px #22c55e" }} />
+          FEED ACTIVE
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+        {intelStats.map(s => (
+          <SectionCard key={s.label} dark={dark} style={{ position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${s.color}00, ${s.color}, ${s.color}00)` }} />
+            <div style={{ fontSize: 26, fontWeight: 700, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: muted, fontFamily: "monospace", marginTop: 4, letterSpacing: 1 }}>{s.label.toUpperCase()}</div>
+          </SectionCard>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16 }}>
+        <SectionCard dark={dark}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: COLORS.purple, boxShadow: `0 0 8px ${COLORS.purple}` }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: text, letterSpacing: 1 }}>IOC FEED — LIVE</span>
+          </div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <thead>
+                <tr>
+                  {["INDICATOR", "TYPE", "THREAT", "RISK", "LAST SEEN"].map(h => (
+                    <th key={h} style={{ padding: "8px 10px", textAlign: "left", color: muted, fontSize: 10, letterSpacing: 0.8, borderBottom: `1px solid ${border}` }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {iocData.map(row => (
+                  <tr key={row.ioc} style={{ borderBottom: `1px solid ${dark ? "#0f172a" : "#f1f5f9"}` }}>
+                    <td style={{ padding: "10px 10px", color: COLORS.blue, fontFamily: "monospace", fontSize: 11 }}>{row.ioc}</td>
+                    <td style={{ padding: "10px 10px", color: sub }}>{row.type}</td>
+                    <td style={{ padding: "10px 10px", color: text }}>{row.threat}</td>
+                    <td style={{ padding: "10px 10px" }}><SeverityBadge level={row.risk} /></td>
+                    <td style={{ padding: "10px 10px", color: muted, fontFamily: "monospace" }}>{row.seen}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </SectionCard>
+
+        <SectionCard dark={dark}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: text, letterSpacing: 1, marginBottom: 16 }}>THREAT FEED VOLUME</div>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={feedData} margin={{ top: 0, right: 0, bottom: 0, left: -30 }}>
+              <defs>
+                <linearGradient id="intelBar" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={COLORS.purple} />
+                  <stop offset="100%" stopColor={COLORS.blue} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="h" tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: "#111827", border: "1px solid #1e293b", borderRadius: 8, fontSize: 12, color: "#f1f5f9" }} />
+              <Bar dataKey="v" fill="url(#intelBar)" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+          <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+            {[
+              { label: "AlienVault OTX", status: "Active", color: "#22c55e" },
+              { label: "Abuse.ch", status: "Active", color: "#22c55e" },
+              { label: "Shodan Intel", status: "Syncing", color: COLORS.blue },
+            ].map(f => (
+              <div key={f.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 11, color: sub }}>{f.label}</span>
+                <span style={{ fontSize: 10, color: f.color, background: `${f.color}15`, border: `1px solid ${f.color}33`, padding: "1px 8px", borderRadius: 10, fontFamily: "monospace" }}>{f.status}</span>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      </div>
+    </div>
+  );
+}
+
+function SettingsPage({ dark }) {
+  const text = dark ? COLORS.textPrimary : LIGHT.textPrimary;
+  const muted = dark ? COLORS.textMuted : LIGHT.textMuted;
+  const sub = dark ? COLORS.textSecondary : LIGHT.textSecondary;
+  const border = dark ? COLORS.border : LIGHT.border;
+
+  const [toggles, setToggles] = useState({
+    notifAlerts: true, notifEmail: false, notifSlack: true,
+    cookies: false, analytics: true, autoBlock: true,
+    twoFA: true, sessionTimeout: false, auditLog: true,
+  });
+
+  const toggle = (k) => setToggles(t => ({ ...t, [k]: !t[k] }));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div>
+        <div style={{ fontSize: 10, color: COLORS.purple, letterSpacing: 2, fontFamily: "monospace" }}>EDUSENTINEL AI</div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: text, margin: "4px 0 0" }}>Settings</h2>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <SectionCard dark={dark}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: text, letterSpacing: 1, marginBottom: 4 }}>NOTIFICATIONS</div>
+          <div style={{ fontSize: 11, color: muted, marginBottom: 16 }}>Control how and when you receive alerts</div>
+          <Toggle dark={dark} label="Alert Notifications" desc="Push alerts for critical threats" checked={toggles.notifAlerts} onChange={() => toggle("notifAlerts")} />
+          <Toggle dark={dark} label="Email Digest" desc="Daily summary of security events" checked={toggles.notifEmail} onChange={() => toggle("notifEmail")} />
+          <Toggle dark={dark} label="Slack Integration" desc="Send alerts to connected Slack workspace" checked={toggles.notifSlack} onChange={() => toggle("notifSlack")} />
+        </SectionCard>
+
+        <SectionCard dark={dark}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: text, letterSpacing: 1, marginBottom: 4 }}>SECURITY</div>
+          <div style={{ fontSize: 11, color: muted, marginBottom: 16 }}>Authentication and access control settings</div>
+          <Toggle dark={dark} label="Two-Factor Auth" desc="Require 2FA for all admin logins" checked={toggles.twoFA} onChange={() => toggle("twoFA")} />
+          <Toggle dark={dark} label="Session Timeout" desc="Auto-logout after 30 minutes of inactivity" checked={toggles.sessionTimeout} onChange={() => toggle("sessionTimeout")} />
+          <Toggle dark={dark} label="Audit Log" desc="Record all admin actions to audit trail" checked={toggles.auditLog} onChange={() => toggle("auditLog")} />
+        </SectionCard>
+
+        <SectionCard dark={dark}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: text, letterSpacing: 1, marginBottom: 4 }}>PRIVACY & DATA</div>
+          <div style={{ fontSize: 11, color: muted, marginBottom: 16 }}>Data collection and retention preferences</div>
+          <Toggle dark={dark} label="Analytics Tracking" desc="Help improve EduSentinel with usage data" checked={toggles.analytics} onChange={() => toggle("analytics")} />
+          <Toggle dark={dark} label="Cookie Consent" desc="Allow session cookies for enhanced features" checked={toggles.cookies} onChange={() => toggle("cookies")} />
+          <Toggle dark={dark} label="Auto-Block IPs" desc="Automatically block flagged IP addresses" checked={toggles.autoBlock} onChange={() => toggle("autoBlock")} />
+        </SectionCard>
+
+        <SectionCard dark={dark}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: text, letterSpacing: 1, marginBottom: 16 }}>SYSTEM INFO</div>
+          {[
+            { label: "Version", value: "v2.4.1" },
+            { label: "Last Updated", value: "Apr 4, 2026" },
+            { label: "License", value: "Enterprise" },
+            { label: "Data Region", value: "IN-SOUTH-1" },
+            { label: "Uptime", value: "99.97%" },
+            { label: "SOC Tier", value: "Level 3" },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: `1px solid ${dark ? "#1e293b" : "#e2e8f0"}` }}>
+              <span style={{ fontSize: 12, color: muted }}>{label}</span>
+              <span style={{ fontSize: 12, color: text, fontFamily: "monospace" }}>{value}</span>
+            </div>
+          ))}
+        </SectionCard>
+      </div>
+    </div>
+  );
+}
+
+function GenericPage({ title, dark, items }) {
+  const text = dark ? COLORS.textPrimary : LIGHT.textPrimary;
+  const muted = dark ? COLORS.textMuted : LIGHT.textMuted;
+  const sub = dark ? COLORS.textSecondary : LIGHT.textSecondary;
+  const border = dark ? COLORS.border : LIGHT.border;
+  const [modal, setModal] = useState(null);
+  const [pressedId, setPressedId] = useState(null);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div>
+        <div style={{ fontSize: 10, color: COLORS.purple, letterSpacing: 2, fontFamily: "monospace" }}>EDUSENTINEL AI</div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: text, margin: "4px 0 0" }}>{title}</h2>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+        {items.map(item => {
+          const isPressed = pressedId === item.title;
+          return (
+            <div
+              key={item.title}
+              onClick={() => setModal(item)}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = `${item.color || COLORS.purple}88`;
+                e.currentTarget.style.boxShadow = `0 0 28px ${item.color || COLORS.purple}33, 0 8px 24px rgba(0,0,0,0.3)`;
+                e.currentTarget.style.transform = "scale(1.025) translateY(-3px)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = border;
+                e.currentTarget.style.boxShadow = "none";
+                e.currentTarget.style.transform = "scale(1)";
+                setPressedId(null);
+              }}
+              onMouseDown={e => {
+                setPressedId(item.title);
+                e.currentTarget.style.transform = "scale(0.98)";
+                e.currentTarget.style.boxShadow = `0 0 44px ${item.color || COLORS.purple}55`;
+              }}
+              onMouseUp={e => {
+                setPressedId(null);
+                e.currentTarget.style.transform = "scale(1.025) translateY(-3px)";
+              }}
+              style={{
+                background: dark ? "#111827" : "#fff",
+                border: `1px solid ${border}`,
+                borderRadius: 12, padding: "20px 24px",
+                cursor: "pointer",
+                transition: "border-color 0.25s, box-shadow 0.25s, transform 0.18s",
+              }}
+            >
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: item.color || COLORS.purple, marginBottom: 12, boxShadow: `0 0 10px ${item.color || COLORS.purple}` }} />
+              <div style={{ fontSize: 13, fontWeight: 700, color: text }}>{item.title}</div>
+              <div style={{ fontSize: 11, color: muted, marginTop: 6, lineHeight: 1.6 }}>{item.desc}</div>
+              <div style={{ marginTop: 14, fontSize: 11, color: item.color || COLORS.purple, fontFamily: "monospace" }}>{item.stat}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {modal && (
+        <div
+          onClick={() => setModal(null)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 200,
+            background: "rgba(0,0,0,0.65)",
+            backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            animation: "fadeIn 0.15s ease",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: dark ? "#111827" : "#fff",
+              border: `1px solid ${modal.color || COLORS.purple}55`,
+              borderRadius: 16, padding: "28px 32px", width: 480, maxWidth: "90vw",
+              boxShadow: `0 0 60px ${modal.color || COLORS.purple}22`,
+              animation: "slideUp 0.2s ease",
+            }}
+          >
+            <style>{`@keyframes slideUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }`}</style>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: modal.color || COLORS.purple, boxShadow: `0 0 8px ${modal.color || COLORS.purple}` }} />
+                  <span style={{ fontSize: 10, color: modal.color || COLORS.purple, letterSpacing: 2, fontFamily: "monospace" }}>DETAIL VIEW</span>
+                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: text, margin: 0 }}>{modal.title}</h3>
+              </div>
+              <button onClick={() => setModal(null)} style={{
+                background: dark ? "#1e293b" : "#f1f5f9", border: "none", borderRadius: 6,
+                width: 28, height: 28, cursor: "pointer", color: sub, fontSize: 16,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>×</button>
+            </div>
+            <p style={{ fontSize: 13, color: sub, lineHeight: 1.7, marginBottom: 20 }}>{modal.desc}</p>
+            <div style={{ background: dark ? "#0b0f1a" : "#f8fafc", borderRadius: 8, padding: "12px 16px", marginBottom: 16, border: `1px solid ${border}` }}>
+              <div style={{ fontSize: 10, color: muted, letterSpacing: 1.5, fontFamily: "monospace", marginBottom: 8 }}>STATUS</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 13, color: text, fontFamily: "monospace" }}>{modal.stat}</span>
+                <span style={{ fontSize: 10, color: modal.color || COLORS.purple, background: `${modal.color || COLORS.purple}15`, border: `1px solid ${modal.color || COLORS.purple}33`, padding: "3px 10px", borderRadius: 10, fontFamily: "monospace" }}>ACTIVE</span>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {["Last Updated", "Last Updated", "Scope", "Priority"].map((k, i) => {
+                const vals = ["2m ago", "Auto", "Global", "High"];
+                return (
+                  <div key={i} style={{ background: dark ? "#0b0f1a" : "#f8fafc", borderRadius: 8, padding: "10px 14px", border: `1px solid ${border}` }}>
+                    <div style={{ fontSize: 10, color: muted, fontFamily: "monospace" }}>{k.toUpperCase()}</div>
+                    <div style={{ fontSize: 13, color: text, marginTop: 4, fontFamily: "monospace" }}>{vals[i]}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProfilePage({ dark }) {
+  const text = dark ? COLORS.textPrimary : LIGHT.textPrimary;
+  const muted = dark ? COLORS.textMuted : LIGHT.textMuted;
+  const sub = dark ? COLORS.textSecondary : LIGHT.textSecondary;
+  const border = dark ? COLORS.border : LIGHT.border;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 640 }}>
+      <div>
+        <div style={{ fontSize: 10, color: COLORS.purple, letterSpacing: 2, fontFamily: "monospace" }}>EDUSENTINEL AI</div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: text, margin: "4px 0 0" }}>My Profile</h2>
+      </div>
+      <SectionCard dark={dark}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 24 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: "50%",
+            background: "linear-gradient(135deg, #7c3aed, #3b82f6)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 22, fontWeight: 700, color: "#fff",
+            boxShadow: `0 0 24px ${COLORS.purple}44`,
+          }}>AK</div>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: text }}>AYU</div>
+            <div style={{ fontSize: 12, color: COLORS.purple, fontFamily: "monospace", marginTop: 2 }}>SOC Analyst L3</div>
+            <div style={{ fontSize: 11, color: muted, marginTop: 4 }}>admin@edusentinel.ai</div>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          {[
+            { label: "Role", value: "SOC Analyst L3" },
+            { label: "Department", value: "Cyber Operations" },
+            { label: "Access Level", value: "Administrator" },
+            { label: "Region", value: "IN-SOUTH-1" },
+            { label: "Last Login", value: "Today, 03:45 AM" },
+            { label: "Sessions", value: "1 active" },
+          ].map(({ label, value }) => (
+            <div key={label} style={{ background: dark ? "#0b0f1a" : "#f8fafc", borderRadius: 8, padding: "12px 16px", border: `1px solid ${border}` }}>
+              <div style={{ fontSize: 10, color: muted, fontFamily: "monospace", letterSpacing: 1 }}>{label.toUpperCase()}</div>
+              <div style={{ fontSize: 13, color: text, marginTop: 4, fontFamily: "monospace" }}>{value}</div>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+      <SectionCard dark={dark}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: text, letterSpacing: 1, marginBottom: 16 }}>ACTIVITY LOG</div>
+        {[
+          { action: "Login", detail: "Authenticated via 2FA", time: "04:01:33" },
+          { action: "View", detail: "Opened Threat Intel feed", time: "03:58:21" },
+          { action: "Block", detail: "Manually blocked 185.220.101.47", time: "03:41:07" },
+          { action: "Export", detail: "Downloaded compliance report", time: "02:15:44" },
+        ].map((e, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: i < 3 ? `1px solid ${border}` : "none" }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: COLORS.purple, flexShrink: 0, boxShadow: `0 0 6px ${COLORS.purple}` }} />
+            <div style={{ flex: 1 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: text }}>{e.action}</span>
+              <span style={{ fontSize: 12, color: sub, marginLeft: 8 }}>{e.detail}</span>
+            </div>
+            <span style={{ fontSize: 11, color: muted, fontFamily: "monospace" }}>{e.time}</span>
+          </div>
+        ))}
+      </SectionCard>
+    </div>
+  );
+}
+
+export default function EduSentinelDashboard() {
+  const [dark, setDark] = useState(true);
+  const [activePage, setActivePage] = useState("dashboard");
+  const [showProfile, setShowProfile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [time, setTime] = useState(new Date());
+  const [liveData, setLiveData] = useState(threatData);
+  const [liveStats, setLiveStats] = useState({ threats: 47, anomalies: 12 });
+  const profileRef = useRef(null);
+  const sidebarRef = useRef(null);
+
+  useEffect(() => {
+    const t = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setLiveData(prev => {
+        const last = prev[prev.length - 1];
+        const newV = Math.max(5, Math.min(100, last.v + (Math.random() - 0.45) * 14));
+        const newA = Math.max(2, Math.min(40, last.a + (Math.random() - 0.45) * 6));
+        const newPoint = { t: last.t, v: Math.round(newV), a: Math.round(newA) };
+        return [...prev.slice(1), newPoint];
+      });
+      setLiveStats(prev => ({
+        threats: Math.max(30, Math.min(120, prev.threats + Math.round((Math.random() - 0.4) * 5))),
+        anomalies: Math.max(5, Math.min(40, prev.anomalies + Math.round((Math.random() - 0.4) * 3))),
+      }));
+    }, 2000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) setShowProfile(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const bg = dark ? COLORS.bg : LIGHT.bg;
+  const surface = dark ? COLORS.surface : LIGHT.surface;
+  const card = dark ? COLORS.card : LIGHT.card;
+  const border = dark ? COLORS.border : LIGHT.border;
+  const text = dark ? COLORS.textPrimary : LIGHT.textPrimary;
+  const muted = dark ? COLORS.textMuted : LIGHT.textMuted;
+  const sub = dark ? COLORS.textSecondary : LIGHT.textSecondary;
+
+  const navItem = (item) => {
+    const active = activePage === item.id;
+    return (
+      <button key={item.id} onClick={() => { setActivePage(item.id); setSidebarOpen(false); }} style={{
+        display: "flex", alignItems: "center", gap: 10,
+        padding: "10px 14px", borderRadius: 8, border: "none", cursor: "pointer", width: "100%",
+        background: active ? `${COLORS.purple}22` : "transparent",
+        color: active ? "#a78bfa" : sub,
+        borderLeft: active ? `2px solid ${COLORS.purple}` : "2px solid transparent",
+        fontSize: 13, fontFamily: "inherit", transition: "all 0.15s",
+      }}>
+        <item.icon />
+        <span>{item.label}</span>
+      </button>
+    );
+  };
+
+  const chartTooltip = {
+    contentStyle: {
+      background: "#111827", border: "1px solid #1e293b",
+      borderRadius: 8, fontSize: 12, color: "#f1f5f9",
+    },
+  };
+
+  return (
+    <div style={{
+      display: "flex", height: "100vh", background: bg, color: text,
+      fontFamily: "'IBM Plex Mono', 'Courier New', monospace", overflow: "hidden",
+    }}>
+      <style>{`
+        @keyframes fadeIn { from { opacity:0; transform:translateY(-4px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes blink { 0%,100% { opacity:1; box-shadow:0 0 8px #7c3aed,0 0 16px #7c3aed55 } 50% { opacity:0.3; box-shadow:0 0 4px #7c3aed33 } }
+        @keyframes pulse { 0%,100% { transform:scale(1) } 50% { transform:scale(1.15) } }
+        @keyframes ripple { 0% { transform:scale(0); opacity:0.6 } 100% { transform:scale(2.5); opacity:0 } }
+      `}</style>
+      {/* BACKDROP */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 40,
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(2px)",
+            animation: "fadeIn 0.2s ease",
+          }}
+        />
+      )}
+
+      {/* SIDEBAR — fixed overlay drawer */}
+      <aside ref={sidebarRef} style={{
+        position: "fixed", top: 0, left: 0, bottom: 0,
+        width: 220, zIndex: 50,
+        background: dark ? "#0d1424" : "#fff",
+        borderRight: `1px solid ${border}`,
+        display: "flex", flexDirection: "column", padding: "20px 12px", gap: 4,
+        transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+        transition: "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
+        boxShadow: sidebarOpen ? "4px 0 32px rgba(0,0,0,0.5)" : "none",
+      }}>
+        {/* Logo */}
+        <div style={{ padding: "0 4px 20px", borderBottom: `1px solid ${border}`, marginBottom: 8 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: "linear-gradient(135deg, #7c3aed, #3b82f6)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            marginBottom: 10, fontSize: 18,
+          }}>🛡️</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: text, letterSpacing: 0.5 }}>
+            EDU<span style={{ color: COLORS.purple }}>SENTINEL</span>
+          </div>
+          <div style={{ fontSize: 10, color: muted, letterSpacing: 1.5 }}>CYBER COMMAND</div>
+        </div>
+
+        <div style={{ fontSize: 10, color: muted, letterSpacing: 1.5, padding: "0 14px 6px" }}>NAVIGATION</div>
+        {NAV_ITEMS.map(navItem)}
+
+        <div style={{ marginTop: "auto", padding: "12px 14px", borderRadius: 8, background: dark ? "#0b0f1a" : LIGHT.bg, border: `1px solid ${border}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{
+              width: 8, height: 8, borderRadius: "50%", background: "#22c55e",
+              boxShadow: "0 0 8px #22c55e",
+            }} />
+            <span style={{ fontSize: 11, color: "#22c55e", letterSpacing: 1 }}>ALL NOMINAL</span>
+          </div>
+          <div style={{ fontSize: 10, color: muted, marginTop: 4 }}>Last scan: 2m ago</div>
+        </div>
+      </aside>
+
+      {/* MAIN */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        {/* HEADER */}
+        <header style={{
+          height: 64, flexShrink: 0,
+          background: dark ? "#0d1424" : "#fff",
+          borderBottom: `1px solid ${border}`,
+          display: "flex", alignItems: "center", padding: "0 24px", gap: 16,
+        }}>
+          <button
+            onClick={() => setSidebarOpen(o => !o)}
+            aria-label="Toggle navigation"
+            style={{
+              width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+              background: sidebarOpen ? `${COLORS.purple}22` : (dark ? "#1e293b" : LIGHT.bg),
+              border: `1px solid ${sidebarOpen ? COLORS.purple + "55" : border}`,
+              display: "flex", flexDirection: "column", alignItems: "center",
+              justifyContent: "center", gap: 5, cursor: "pointer",
+              padding: 0, transition: "all 0.2s",
+            }}
+          >
+            <span style={{
+              display: "block", width: 16, height: 1.5, borderRadius: 1,
+              background: sidebarOpen ? "#a78bfa" : sub,
+              transform: sidebarOpen ? "translateY(3.25px) rotate(45deg)" : "none",
+              transition: "transform 0.22s ease, background 0.2s",
+            }} />
+            <span style={{
+              display: "block", width: 16, height: 1.5, borderRadius: 1,
+              background: sidebarOpen ? "#a78bfa" : sub,
+              opacity: sidebarOpen ? 0 : 1,
+              transition: "opacity 0.15s ease",
+            }} />
+            <span style={{
+              display: "block", width: 16, height: 1.5, borderRadius: 1,
+              background: sidebarOpen ? "#a78bfa" : sub,
+              transform: sidebarOpen ? "translateY(-3.25px) rotate(-45deg)" : "none",
+              transition: "transform 0.22s ease, background 0.2s",
+            }} />
+          </button>
+
+          <div style={{ flex: 1, fontSize: 12, color: muted }}>
+            <span style={{ color: sub }}>/ </span>
+            {NAV_ITEMS.find(n => n.id === activePage)?.label}
+          </div>
+
+          {/* Status pill */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6,
+            background: "#22c55e15", border: "1px solid #22c55e33",
+            padding: "4px 12px", borderRadius: 20,
+          }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 6px #22c55e" }} />
+            <span style={{ fontSize: 11, color: "#22c55e", letterSpacing: 1, fontFamily: "monospace" }}>ALL SYSTEMS NOMINAL</span>
+          </div>
+
+          {/* Time */}
+          <div style={{ textAlign: "right", lineHeight: 1.4 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: text, fontFamily: "monospace" }}>
+              {time.toLocaleTimeString("en-US", { hour12: false })}
+            </div>
+            <div style={{ fontSize: 10, color: muted }}>
+              {time.toLocaleDateString("en-US", { month: "numeric", day: "numeric", year: "numeric" })}
+            </div>
+          </div>
+
+          {/* Dark mode toggle */}
+          <button onClick={() => setDark(d => !d)} style={{
+            width: 36, height: 36, borderRadius: 8,
+            background: dark ? "#1e293b" : LIGHT.bg, border: `1px solid ${border}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            cursor: "pointer", color: sub, transition: "all 0.2s",
+          }}>
+            {dark ? <SunIcon /> : <MoonIcon />}
+          </button>
+
+          {/* Notification */}
+          <div style={{ position: "relative" }}>
+            <button style={{
+              width: 36, height: 36, borderRadius: 8,
+              background: dark ? "#1e293b" : LIGHT.bg, border: `1px solid ${border}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer", color: sub,
+            }}>
+              <BellIcon size={18} />
+            </button>
+            <span style={{
+              position: "absolute", top: -4, right: -4, width: 16, height: 16,
+              background: COLORS.red, borderRadius: "50%", fontSize: 9,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#fff", fontWeight: 700,
+            }}>3</span>
+          </div>
+
+          {/* Profile */}
+          <div ref={profileRef} style={{ position: "relative" }}>
+            <button onClick={() => setShowProfile(p => !p)} style={{
+              display: "flex", alignItems: "center", gap: 8,
+              background: dark ? "#1e293b" : LIGHT.bg, border: `1px solid ${border}`,
+              padding: "4px 12px 4px 4px", borderRadius: 24, cursor: "pointer",
+            }}>
+              <div style={{
+                width: 30, height: 30, borderRadius: "50%",
+                background: "linear-gradient(135deg, #7c3aed, #3b82f6)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 11, fontWeight: 700, color: "#fff",
+              }}>AK</div>
+              <div style={{ textAlign: "left", lineHeight: 1.3 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: text }}>AYU</div>
+                <div style={{ fontSize: 10, color: muted }}>SOC Analyst L3</div>
+              </div>
+            </button>
+
+            {/* Profile dropdown */}
+            {showProfile && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 8px)", right: 0,
+                width: 200, zIndex: 100,
+                background: dark ? "#111827" : "#fff",
+                border: `1px solid ${border}`, borderRadius: 12,
+                boxShadow: `0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px ${COLORS.purple}22`,
+                overflow: "hidden",
+                animation: "fadeIn 0.15s ease",
+              }}>
+                <div style={{ padding: "14px 16px", borderBottom: `1px solid ${border}`, background: dark ? "#0d1424" : "#f8fafc" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: "50%",
+                      background: "linear-gradient(135deg, #7c3aed, #3b82f6)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0,
+                      boxShadow: `0 0 12px ${COLORS.purple}44`,
+                    }}>AK</div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: text }}>AYU</div>
+                      <div style={{ fontSize: 10, color: muted }}>SOC Analyst L3</div>
+                    </div>
+                  </div>
+                </div>
+                {[
+                  { icon: <UserIcon />, label: "Profile", page: "profile-view" },
+                  { icon: <SettingsIcon />, label: "Settings", page: "settings" },
+                ].map(item => (
+                  <button key={item.label} onClick={() => { setActivePage(item.page); setShowProfile(false); }} style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    width: "100%", padding: "10px 16px", border: "none",
+                    background: "transparent", color: sub, cursor: "pointer",
+                    fontSize: 13, fontFamily: "inherit", textAlign: "left",
+                    transition: "background 0.15s, color 0.15s",
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.background = dark ? "#1e293b" : LIGHT.bg; e.currentTarget.style.color = text; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = sub; }}
+                  >
+                    {item.icon} {item.label}
+                  </button>
+                ))}
+                <div style={{ borderTop: `1px solid ${border}` }}>
+                  <button style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    width: "100%", padding: "10px 16px", border: "none",
+                    background: "transparent", color: "#ef4444", cursor: "pointer",
+                    fontSize: 13, fontFamily: "inherit", textAlign: "left",
+                    transition: "background 0.15s",
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#ef444415"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                  >
+                    <LogoutIcon /> Logout
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </header>
+
+        {/* CONTENT */}
+        <main style={{ flex: 1, overflow: "auto", padding: 24 }}>
+          {activePage === "profile-view" ? (
+            <ProfilePage dark={dark} />
+          ) : activePage === "threat-intel" ? (
+            <ThreatIntelPage dark={dark} navigate={setActivePage} />
+          ) : activePage === "settings" || activePage === "profile" ? (
+            <SettingsPage dark={dark} />
+          ) : activePage === "firewall" ? (
+            <GenericPage title="Firewall Rules" dark={dark} items={[
+              { title: "Inbound Rules", desc: "94 active rules filtering ingress traffic from external networks and untrusted zones.", stat: "94 rules active", color: COLORS.blue },
+              { title: "Outbound Rules", desc: "81 policies controlling egress traffic and preventing data exfiltration attempts.", stat: "81 rules active", color: COLORS.purple },
+              { title: "Deep Packet Inspect", desc: "Layer-7 inspection engine scanning payload content against known threat signatures.", stat: "86% coverage", color: "#a78bfa" },
+              { title: "GeoIP Blocking", desc: "Automatic blocking of traffic originating from high-risk geographic regions.", stat: "32 countries blocked", color: COLORS.red },
+              { title: "Rate Limiting", desc: "Per-IP connection throttling to mitigate brute force and DDoS traffic patterns.", stat: "Threshold: 500 req/s", color: COLORS.blue },
+              { title: "Rule Scheduler", desc: "Time-based rule activation for maintenance windows and business-hour policies.", stat: "3 schedules pending", color: COLORS.purple },
+            ]} />
+          ) : activePage === "alerts" ? (
+            <GenericPage title="Alerts" dark={dark} items={[
+              { title: "Critical Alerts", desc: "7 unresolved critical severity events requiring immediate SOC analyst review.", stat: "7 unresolved", color: COLORS.red },
+              { title: "High Priority", desc: "14 high-severity alerts flagged in the past 24 hours across monitored endpoints.", stat: "14 in 24h", color: "#f97316" },
+              { title: "Alert Rules", desc: "Manage detection rules, thresholds, and automated response playbooks.", stat: "128 rules configured", color: COLORS.purple },
+              { title: "Suppression List", desc: "Known-safe IPs and domains excluded from alert generation and blocking.", stat: "42 entries", color: COLORS.blue },
+              { title: "Escalation Policy", desc: "Define SLA timers and auto-escalation paths for unacknowledged alerts.", stat: "SLA: 15min critical", color: "#a78bfa" },
+              { title: "Alert History", desc: "Full searchable archive of all alerts with resolution notes and analyst comments.", stat: "12,540 archived", color: COLORS.blue },
+            ]} />
+          ) : activePage === "reports" ? (
+            <GenericPage title="Reports" dark={dark} items={[
+              { title: "Executive Summary", desc: "High-level security posture report formatted for leadership and board review.", stat: "Last run: today", color: COLORS.purple },
+              { title: "Incident Report", desc: "Detailed forensic timeline for documented security incidents and breach attempts.", stat: "3 incidents this week", color: COLORS.red },
+              { title: "Compliance Report", desc: "ISO 27001 and SOC 2 compliance checklist with automated evidence collection.", stat: "92% compliant", color: "#22c55e" },
+              { title: "Traffic Analysis", desc: "Network traffic patterns, bandwidth usage, and anomaly detection summary.", stat: "24h window", color: COLORS.blue },
+              { title: "Vulnerability Scan", desc: "Asset vulnerability assessment with CVSS scores and remediation priority queue.", stat: "Last scan: 6h ago", color: "#f97316" },
+              { title: "Scheduled Reports", desc: "Configure automated report generation and delivery to stakeholder email lists.", stat: "4 schedules active", color: COLORS.purple },
+            ]} />
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+              {/* Stat Cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+                <StatCard icon={<ShieldIcon />} label="FIREWALL EVENTS" sub="last 24h" value={14892} delta="+2.4%" deltaUp c={COLORS.purple} onClick={() => setActivePage("firewall")} />
+                <StatCard icon={<FirewallIcon />} label="MALWARE DETECTED" sub="quarantined" value={43} delta="+1" deltaUp={false} c={COLORS.red} onClick={() => setActivePage("threat-intel")} />
+                <StatCard icon={<UserIcon />} label="ACTIVE SESSIONS" sub="live users" value={291} delta="-3.1%" deltaUp={false} c={COLORS.blue} onClick={() => setActivePage("alerts")} />
+                <StatCard icon={<BellIcon />} label="BLOCKED IPs" sub="auto-blocked" value={1204} delta="+0.8%" deltaUp c="#a78bfa" onClick={() => setActivePage("reports")} />
+              </div>
+
+              {/* Charts Row */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 16 }}>
+                {/* Live Threat Analysis */}
+                <div style={{
+                  background: dark ? "#111827" : "#fff",
+                  border: `1px solid ${border}`, borderRadius: 12, padding: "20px 24px",
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: COLORS.purple, animation: "blink 1.6s ease-in-out infinite" }} />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: text, letterSpacing: 1 }}>LIVE THREAT ANALYSIS</span>
+                        <span style={{ fontSize: 9, color: "#22c55e", background: "#22c55e15", border: "1px solid #22c55e33", padding: "1px 7px", borderRadius: 10, fontFamily: "monospace", letterSpacing: 1 }}>LIVE</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: muted, marginTop: 4 }}>Real-time intrusion detection feed</div>
+                    </div>
+                    <div style={{ display: "flex", gap: 16 }}>
+                      {[{ c: COLORS.blue, l: "Traffic" }, { c: COLORS.purple, l: "Anomalies" }].map(x => (
+                        <div key={x.l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <div style={{ width: 20, height: 2, background: x.c, borderRadius: 1 }} />
+                          <span style={{ fontSize: 11, color: muted }}>{x.l}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
+                    {[
+                      { label: "INCOMING THREATS", value: liveStats.threats, color: COLORS.blue },
+                      { label: "ANOMALIES", value: liveStats.anomalies, color: COLORS.purple },
+                      { label: "BLOCKED", value: Math.round(liveStats.threats * 0.82), color: "#22c55e" },
+                    ].map(s => (
+                      <div key={s.label} style={{ background: dark ? "#0b0f1a" : "#f8fafc", borderRadius: 8, padding: "8px 14px", border: `1px solid ${s.color}22`, flex: 1 }}>
+                        <div style={{ fontSize: 9, color: muted, letterSpacing: 1.5, fontFamily: "monospace" }}>{s.label}</div>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: s.color, marginTop: 2, transition: "color 0.5s" }}>{s.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <AreaChart data={liveData} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+                      <defs>
+                        <linearGradient id="gBlue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={COLORS.blue} stopOpacity={0.35} />
+                          <stop offset="95%" stopColor={COLORS.blue} stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="gPurple" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={COLORS.purple} stopOpacity={0.3} />
+                          <stop offset="95%" stopColor={COLORS.purple} stopOpacity={0} />
+                        </linearGradient>
+                        <filter id="blueGlow">
+                          <feGaussianBlur stdDeviation="2" result="blur"/>
+                          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                      </defs>
+                      <XAxis dataKey="t" tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <Tooltip {...chartTooltip} />
+                      <Area isAnimationActive={true} animationDuration={800} animationEasing="ease-out" type="monotone" dataKey="v" stroke={COLORS.blue} strokeWidth={2.5} fill="url(#gBlue)" dot={false} />
+                      <Area isAnimationActive={true} animationDuration={800} animationEasing="ease-out" type="monotone" dataKey="a" stroke={COLORS.purple} strokeWidth={2} fill="url(#gPurple)" dot={false} strokeDasharray="5 3" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Firewall Integrity */}
+                <div style={{
+                  background: dark ? "#111827" : "#fff",
+                  border: `1px solid ${border}`, borderRadius: 12, padding: "20px 24px",
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: text, letterSpacing: 1.5, marginBottom: 16 }}>FIREWALL INTEGRITY</div>
+                  <GaugeChart value={86} />
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
+                    <MiniProgressBar label="Inbound Rules" value={94} color={COLORS.blue} />
+                    <MiniProgressBar label="Outbound Rules" value={81} color={COLORS.purple} />
+                    <MiniProgressBar label="Deep Inspect" value={86} color="#a78bfa" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Row */}
+              <div style={{ display: "grid", gridTemplateColumns: "380px 1fr", gap: 16 }}>
+                {/* Alert Volume */}
+                <div style={{
+                  background: dark ? "#111827" : "#fff",
+                  border: `1px solid ${border}`, borderRadius: 12, padding: "20px 24px",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: COLORS.red, boxShadow: `0 0 8px ${COLORS.red}` }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: text, letterSpacing: 1 }}>ALERT VOLUME (24H)</span>
+                  </div>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <BarChart data={alertVolumeData} margin={{ top: 0, right: 5, bottom: 0, left: -30 }}>
+                      <defs>
+                        <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={COLORS.purple} />
+                          <stop offset="100%" stopColor={COLORS.blue} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="h" tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: "#475569", fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <Tooltip {...chartTooltip} />
+                      <Bar dataKey="v" fill="url(#barGrad)" radius={[3, 3, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Security Alert Log */}
+                <div style={{
+                  background: dark ? "#111827" : "#fff",
+                  border: `1px solid ${border}`, borderRadius: 12, padding: "20px 24px",
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: COLORS.red, boxShadow: `0 0 8px ${COLORS.red}` }} />
+                      <span style={{ fontSize: 12, fontWeight: 700, color: text, letterSpacing: 1 }}>SECURITY ALERT LOG</span>
+                    </div>
+                    <div style={{
+                      fontSize: 10, color: "#22c55e", background: "#22c55e15",
+                      border: "1px solid #22c55e33", padding: "3px 10px", borderRadius: 20, letterSpacing: 1,
+                    }}>LIVE · 7 EVENTS</div>
+                  </div>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                      <thead>
+                        <tr>
+                          {["EVENT ID", "TIME", "SOURCE IP", "TYPE", "SEVERITY", "STATUS"].map(h => (
+                            <th key={h} style={{
+                              padding: "8px 10px", textAlign: "left",
+                              color: muted, fontWeight: 600, letterSpacing: 0.8, fontSize: 10,
+                              borderBottom: `1px solid ${border}`,
+                            }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {alertLog.map((row, i) => (
+                          <tr key={row.id} style={{ borderBottom: `1px solid ${dark ? "#0f172a" : "#f1f5f9"}` }}>
+                            <td style={{ padding: "10px 10px", color: COLORS.purple, fontFamily: "monospace" }}>{row.id}</td>
+                            <td style={{ padding: "10px 10px", color: sub, fontFamily: "monospace" }}>{row.time}</td>
+                            <td style={{ padding: "10px 10px", color: COLORS.blue, fontFamily: "monospace" }}>{row.ip}</td>
+                            <td style={{ padding: "10px 10px", color: text }}>{row.type}</td>
+                            <td style={{ padding: "10px 10px" }}><SeverityBadge level={row.severity} /></td>
+                            <td style={{ padding: "10px 10px" }}><StatusBadge status={row.status} /></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile App Coming Soon — DASHBOARD ONLY */}
+              <div style={{
+                border: `1px solid ${COLORS.purple}44`, borderRadius: 12, padding: "22px 28px",
+                display: "flex", alignItems: "center", gap: 24,
+                background: dark
+                  ? "linear-gradient(135deg, #111827 0%, #1a1040 100%)"
+                  : "linear-gradient(135deg, #f8fafc 0%, #ede9fe 100%)",
+              }}>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+                  background: "linear-gradient(135deg, #7c3aed, #3b82f6)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                    <line x1="12" y1="18" x2="12.01" y2="18"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: dark ? COLORS.textPrimary : LIGHT.textPrimary }}>Mobile App Coming Soon</div>
+                  <div style={{ fontSize: 12, color: dark ? COLORS.textMuted : LIGHT.textMuted, marginTop: 4 }}>
+                    EduSentinel mobile is in development. Monitor threats on the go with full SOC capabilities.
+                  </div>
+                </div>
+                <div style={{
+                  marginLeft: "auto", padding: "8px 20px", borderRadius: 8,
+                  background: `${COLORS.purple}22`, border: `1px solid ${COLORS.purple}55`,
+                  fontSize: 12, color: "#a78bfa", cursor: "pointer", whiteSpace: "nowrap",
+                  transition: "background 0.15s",
+                }}
+                  onMouseEnter={e => e.currentTarget.style.background = `${COLORS.purple}44`}
+                  onMouseLeave={e => e.currentTarget.style.background = `${COLORS.purple}22`}
+                >Notify Me</div>
+              </div>
+
+              {/* Footer */}
+              <div style={{ textAlign: "center", paddingBottom: 8 }}>
+                <span style={{ fontSize: 11, color: dark ? COLORS.textMuted : LIGHT.textMuted, fontFamily: "monospace", letterSpacing: 0.5 }}>
+                  — Dev by Ayush &nbsp;·&nbsp; EduSentinel AI v2.4.1 &nbsp;·&nbsp; 2026
+                </span>
+              </div>
+
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
