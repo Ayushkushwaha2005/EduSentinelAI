@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Terminal, Cpu, Quote, ArrowRight, UserCheck, Heart, Shield } from 'lucide-react';
-import Logo from './Logo';
+import { Terminal, Quote, Shield } from 'lucide-react';
 
 interface PhilosophyNode {
   key: string;
@@ -16,17 +15,6 @@ interface PhilosophyNode {
 export default function Founder() {
   const [activePhil, setActivePhil] = useState<string>('build');
   const [terminalLine, setTerminalLine] = useState<string>('Select an index to see the raw logs...');
-  const [founderPhoto, setFounderPhoto] = useState<string | null>(null);
-
-  useEffect(() => {
-    const updatePhoto = () => {
-      const stored = localStorage.getItem('edusentinel_founder_image');
-      setFounderPhoto(stored);
-    };
-    updatePhoto();
-    window.addEventListener('founder-image-updated', updatePhoto);
-    return () => window.removeEventListener('founder-image-updated', updatePhoto);
-  }, []);
 
   const philosophies: PhilosophyNode[] = [
     {
@@ -34,14 +22,14 @@ export default function Founder() {
       num: '01',
       title: 'Learning by Building',
       essence: 'Tutorial hell leads to passive conformity. True cognitive mastery comes from compiling compilers, breaking databases, and solving raw real-world friction indices.',
-      narrative: 'I do not believe in academic isolation. Every software utility under the EduSentinel umbrella was designed because a core infrastructure failed in front of us. When you build, your code is tested by real-world friction. This forces you to understand why every system parameter exists, and what happens when they fail.'
+      narrative: "I do not believe in academic isolation. Every software utility under the EduSentinel umbrella was designed because a core infrastructure failed in front of us. When you build, your code is tested by real-world friction. This forces you to understand why every system parameter exists, and what happens when they fail."
     },
     {
       key: 'privacy',
       num: '02',
       title: 'Privacy-First Architecture',
-      essence: 'Sovereignty over one’s data is a fundamental human parameter, not an expensive premium checkbox.',
-      narrative: 'Computing systems should serve the user’s cognitive development, not the adtech industry. EduSentinel AI assumes your local hardware host is the only truly safe boundary. By executing model files, databases, and verification layers locally, we turn your computer back into a fortress for personal thought.'
+      essence: "Sovereignty over one's data is a fundamental human parameter, not an expensive premium checkbox.",
+      narrative: "Computing systems should serve the user's cognitive development, not the adtech industry. EduSentinel AI assumes your local hardware host is the only truly safe boundary. By executing model files, databases, and verification layers locally, we turn your computer back into a fortress for personal thought."
     },
     {
       key: 'longterm',
@@ -99,16 +87,11 @@ export default function Founder() {
                 {/* Elegant, high-end minimal abstract typographic avatar representation */}
                 <div className="my-auto flex flex-col items-center text-center">
                   <div className="relative w-24 h-24 rounded-full border border-cyan-500/30 flex items-center justify-center bg-cyan-950/20 shadow-[0_0_20px_rgba(6,182,212,0.15)] mb-6 overflow-hidden">
-                    {founderPhoto ? (
-                      <img 
-                        src={founderPhoto} 
-                        alt="Ayush Kushwaha" 
-                        className="w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <Logo iconOnly={true} glow={false} />
-                    )}
+                    <img
+                      src="/founder.jpg"
+                      alt="Ayush Kushwaha"
+                      className="w-full h-full object-cover object-top"
+                    />
                     <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-slate-950 border border-teal-500 flex items-center justify-center z-10">
                       <Shield className="w-3 h-3 text-teal-400" />
                     </div>
