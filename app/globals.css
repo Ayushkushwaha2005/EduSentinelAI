@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+/* 
+  EduSentinel AI Premium Brand Colors & Theme Variables
+*/
+:root {
+  --brand-midnight: #020617;
+  --brand-cyan: #00f0ff;
+  --brand-teal: #14b8a6;
+  --brand-glow-cyan: rgba(0, 240, 255, 0.15);
+  --brand-glow-teal: rgba(20, 184, 166, 0.15);
+}
+
+/* Premium Utilities & Animations */
+@layer utilities {
+  .text-glow-cyan {
+    text-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+  }
+  .text-glow-teal {
+    text-shadow: 0 0 15px rgba(20, 184, 166, 0.4);
+  }
+  .bg-grid-pattern {
+    background-size: 40px 40px;
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  }
+  .bg-grid-pattern-light {
+    background-size: 40px 40px;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+  }
+}
+
+/* Custom transitions and glow keyframes */
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1) translate(-50%, -50%);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.1) translate(-48%, -52%);
+    opacity: 0.55;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 12s infinite alternate ease-in-out;
+}
+
+/* Custom glass styling */
+.glass-panel-dark {
+  background: rgba(3, 7, 18, 0.65);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glass-panel-light {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.glass-pill-dark {
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-pill-light {
+  background: rgba(248, 250, 252, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Custom scrollbar to keep it Apple-like */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

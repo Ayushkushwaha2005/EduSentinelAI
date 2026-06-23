@@ -1,0 +1,6 @@
+{
+  "name": "EduSentinel AI",
+  "description": "The unified ecosystem for every application, extension, platform and technology built under the EduSentinel brand.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
