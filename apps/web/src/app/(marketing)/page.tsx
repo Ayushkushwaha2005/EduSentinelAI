@@ -113,7 +113,7 @@ export default function Home() {
             Build something you’re proud of
           </h2>
           <Button href="/contact" size="lg" className="mt-10">
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-0.5">
               Try <LogoMark size={26} /> EduSentinel
             </span>
           </Button>

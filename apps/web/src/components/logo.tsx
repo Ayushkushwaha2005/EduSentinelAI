@@ -21,7 +21,7 @@ export function LogoMark({ size = 58 }: { size?: number }) {
 
 export function LogoWordmark() {
   return (
-    <span className="flex items-center gap-1">
+    <span className="flex items-center gap-0.5">
       {/* Mark sized to match the cap-height presence of the wordmark */}
       <LogoMark />
       <span className="text-[28px] font-extrabold tracking-[-0.02em] text-text-primary">
