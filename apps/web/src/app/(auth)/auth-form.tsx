@@ -31,7 +31,7 @@ export function AuthForm({
       className="w-full max-w-sm"
     >
       <div className="flex flex-col items-center text-center">
-        <LogoMark size={44} />
+        <LogoMark size={64} />
         <h1 className="mt-6 text-3xl font-medium tracking-[-0.02em]">
           {isLogin ? "Welcome back" : "Create your account"}
         </h1>

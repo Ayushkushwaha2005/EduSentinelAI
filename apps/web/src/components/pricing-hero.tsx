@@ -41,14 +41,14 @@ export function PricingHero() {
         className="absolute -top-2 left-2 hidden md:block lg:left-16"
         {...float(0)}
       >
-        <LogoMark size={72} />
+        <LogoMark size={96} />
       </motion.div>
       <motion.div
         aria-hidden="true"
         className="absolute right-2 top-10 hidden md:block lg:right-16"
         {...float(1.4)}
       >
-        <LogoMark size={56} />
+        <LogoMark size={72} />
       </motion.div>
 
       <motion.p

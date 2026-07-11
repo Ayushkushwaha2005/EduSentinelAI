@@ -1,18 +1,94 @@
 "use client";
 
 import { useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { EASE } from "./motion";
 import { Button, ArrowIcon } from "./button";
-import { LogoMark } from "./logo";
 
-const tabs = [
-  "Security tooling",
-  "AI products",
-  "Cloud utilities",
-  "Learning hub",
-  "Research",
+/*
+ * Hero showcase: each tab is a complete product story — real product
+ * image, heading, description, and supporting points all switch together.
+ * Images live in public/showcase/, sourced from the official
+ * "EduSentinel AI pics" asset folder.
+ */
+const showcases = [
+  {
+    tab: "Security Tooling",
+    image: "/showcase/security-tooling.png",
+    heading: "Privacy-first security that protects every click.",
+    description:
+      "EduSentinel continuously helps users identify suspicious websites, spoofed domains and digital threats before they become real risks. Intelligent protection is delivered without compromising personal privacy.",
+    points: [
+      "Explainable threat detection",
+      "Trusted website verification",
+      "Smart redirect protection",
+      "Privacy-aware browsing",
+      "Real-time risk insights",
+    ],
+    note: null,
+  },
+  {
+    tab: "AI Products",
+    image: "/showcase/ai-products.png",
+    heading: "AI built around people, not their data.",
+    description:
+      "Discover a growing collection of privacy-first AI experiences including intelligent assistants, productivity tools and the upcoming Sentinel Agent — designed to help users work smarter while keeping sensitive information under their control.",
+    points: [
+      "Sentinel Agent",
+      "AI productivity",
+      "Secure automation",
+      "Local-first intelligence",
+      "Explainable decisions",
+    ],
+    note: "Sentinel Agent — an upcoming privacy-first personal AI companion designed to assist users with productivity, knowledge management, secure workflows and everyday digital tasks while ensuring that personal data remains under the user's control.",
+  },
+  {
+    tab: "Cloud Utilities",
+    image: "/showcase/cloud-utilities.png",
+    heading: "Modern cloud utilities with security at the core.",
+    description:
+      "Manage files, deployments, collaboration and digital infrastructure through secure cloud experiences designed for students, professionals and organizations that value trust and reliability.",
+    points: [
+      "Secure workspace",
+      "Cloud deployment",
+      "Smart collaboration",
+      "Protected storage",
+      "Infrastructure management",
+    ],
+    note: null,
+  },
+  {
+    tab: "Learning Hub",
+    image: "/showcase/learning-hub.png",
+    heading: "Learn emerging technology through practical experience.",
+    description:
+      "A dedicated learning ecosystem that helps students and professionals master Cyber Security, Artificial Intelligence, Cloud Computing and modern development through structured learning paths and hands-on projects.",
+    points: [
+      "Cyber Security",
+      "Artificial Intelligence",
+      "Cloud Computing",
+      "Hands-on learning",
+      "Career preparation",
+    ],
+    note: null,
+  },
+  {
+    tab: "Research",
+    image: "/showcase/research.png",
+    heading: "Research that turns ideas into real-world innovation.",
+    description:
+      "EduSentinel Research explores intelligent privacy technologies, explainable AI, secure digital systems and next-generation solutions that help build a safer digital future for everyone.",
+    points: [
+      "Privacy Engineering",
+      "AI Research",
+      "Security Innovation",
+      "Human-centered technology",
+      "Future-ready solutions",
+    ],
+    note: null,
+  },
 ];
 
 const areas = [
@@ -24,53 +100,54 @@ const areas = [
   "Research",
 ];
 
-/** Decorative product panel — abstract light UI, no fake data. */
-function PreviewPanel() {
+function ShowcasePanel({ index }: { index: number }) {
   const reduce = useReducedMotion();
-  const bars = [38, 62, 48, 74, 58, 86, 66, 52, 78, 92];
+  const s = showcases[index];
   return (
     <div className="rounded-xl border border-border-subtle bg-surface-raised p-3 shadow-[0_24px_60px_-24px_rgba(18,19,23,0.18)]">
-      <div className="rounded-lg border border-border-subtle/70 bg-surface-base/60 p-5 md:p-7">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 rounded-control border border-border-subtle bg-surface-raised px-3 py-1.5 text-xs font-medium text-text-secondary">
-            <LogoMark size={14} /> Platform
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={s.tab}
+          initial={reduce ? false : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduce ? undefined : { opacity: 0, y: -10 }}
+          transition={{ duration: 0.35, ease: EASE }}
+        >
+          <div className="relative aspect-video overflow-hidden rounded-lg border border-border-subtle/70 bg-ink">
+            <Image
+              src={s.image}
+              alt={`${s.tab} — EduSentinel AI product preview`}
+              fill
+              sizes="(max-width: 768px) 100vw, 55vw"
+              className="object-cover object-top"
+              priority={index === 0}
+            />
           </div>
-          <div className="flex -space-x-1.5">
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                className="h-6 w-6 rounded-full border-2 border-surface-raised bg-surface-overlay"
-              />
-            ))}
+          <div className="px-4 pb-4 pt-5 md:px-5">
+            <h2 className="text-lg font-semibold tracking-tight md:text-xl">
+              {s.heading}
+            </h2>
+            <p className="mt-2.5 text-[15px] leading-relaxed text-text-secondary">
+              {s.description}
+            </p>
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {s.points.map((p) => (
+                <li
+                  key={p}
+                  className="rounded-full border border-border-subtle bg-surface-base px-3 py-1.5 text-[13px] font-medium text-text-secondary"
+                >
+                  {p}
+                </li>
+              ))}
+            </ul>
+            {s.note && (
+              <p className="mt-4 border-t border-border-subtle pt-4 text-[13px] leading-relaxed text-text-muted">
+                {s.note}
+              </p>
+            )}
           </div>
-        </div>
-        <div className="mt-6 grid gap-4 md:grid-cols-[1fr_1.8fr]">
-          <div className="hidden space-y-3 md:block">
-            {[100, 72, 86, 58, 80, 64].map((w, i) => (
-              <motion.div
-                key={i}
-                className="h-2.5 rounded-full bg-surface-overlay"
-                style={{ width: `${w}%` }}
-                initial={reduce ? false : { opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.7 + i * 0.07, duration: 0.45, ease: EASE }}
-              />
-            ))}
-          </div>
-          <div className="flex h-48 items-end gap-2.5 rounded-lg border border-border-subtle/70 bg-surface-raised p-5 md:h-56">
-            {bars.map((h, i) => (
-              <motion.div
-                key={i}
-                className="flex-1 origin-bottom rounded-t-[3px] bg-gradient-to-t from-brand-teal to-brand-cyan"
-                style={{ height: `${h}%`, opacity: 0.85 }}
-                initial={reduce ? false : { scaleY: 0 }}
-                animate={{ scaleY: 1 }}
-                transition={{ delay: 0.8 + i * 0.05, duration: 0.6, ease: EASE }}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }
@@ -119,30 +196,28 @@ export function Hero() {
             </motion.div>
           </div>
 
-          {/* right column — panel bleeds off the right edge on desktop */}
-          <motion.div
-            {...enter(0.35)}
-            className="relative md:-mr-16 lg:-mr-28"
-          >
-            <PreviewPanel />
+          {/* right column — showcase panel bleeds off the right edge on desktop */}
+          <motion.div {...enter(0.35)} className="relative md:-mr-16 lg:-mr-28">
+            <ShowcasePanel index={tab} />
           </motion.div>
         </div>
 
-        {/* tab strip under the panel, reference-style */}
+        {/* tab strip under the panel — drives the whole showcase */}
         <motion.div
           {...enter(0.55)}
           className="mt-12 flex justify-start gap-8 overflow-x-auto pb-1 md:justify-end"
         >
-          {tabs.map((t, i) => (
+          {showcases.map((s, i) => (
             <button
-              key={t}
+              key={s.tab}
               type="button"
               onClick={() => setTab(i)}
+              aria-pressed={tab === i}
               className={`relative shrink-0 pb-2 text-[15px] transition-colors ${
                 tab === i ? "text-text-primary" : "text-text-muted hover:text-text-secondary"
               }`}
             >
-              {t}
+              {s.tab}
               {tab === i && (
                 <motion.span
                   layoutId="hero-tab"
