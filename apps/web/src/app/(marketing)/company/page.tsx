@@ -52,6 +52,11 @@ export default function CompanyPage() {
                     </li>
                   ))}
                 </ul>
+                {m.motto && (
+                  <p className="mt-4 text-sm font-medium italic text-brand-teal">
+                    “{m.motto}”
+                  </p>
+                )}
               </div>
             </div>
           </Item>

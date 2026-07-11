@@ -13,21 +13,18 @@ export type TeamMember = {
   roles: string[];
   photo: string | null;
   statement: string;
+  motto?: string;
 };
 
 export const TEAM: TeamMember[] = [
   {
     name: "Ayush Kushwaha",
     position: "Founder",
-    roles: [
-      "Backend Developer",
-      "Cloud Computing",
-      "AI/ML Developer",
-      "Cyber Security Expert",
-    ],
+    roles: ["Frontend", "Backend", "AI/ML", "App Development"],
     photo: "/team/ayush-kushwaha.jpg",
     statement:
       "Protection without surveillance isn't a slogan — it's an engineering constraint we apply to every release.",
+    motto: "Build Until Success Finds You.",
   },
   {
     name: "Ayush Maurya",
@@ -56,7 +53,7 @@ export const TEAM: TeamMember[] = [
   {
     name: "Vedansh",
     position: "Core Team",
-    roles: ["Backend Developer"],
+    roles: ["Backend", "AI/ML", "Database Handling", "App Development"],
     photo: null,
     statement:
       "Reliable systems are quiet systems — the backend should earn trust by never demanding attention.",
@@ -64,7 +61,7 @@ export const TEAM: TeamMember[] = [
   {
     name: "Aishika",
     position: "Collaborative Partner",
-    roles: ["Marketing Manager"],
+    roles: ["Content", "UI/UX", "Testing"],
     photo: null,
     statement:
       "We grow by being worth recommending — clarity and honesty are the whole marketing strategy.",
