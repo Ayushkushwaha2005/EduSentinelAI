@@ -13,7 +13,16 @@ EduSentinel AI Platform — privacy-first technology ecosystem. npm-workspaces m
 ## Commands (run at repo root)
 
 - `npm run dev` / `build` / `lint` / `typecheck` — all proxy to `apps/web`
+- In `apps/web`: `npm run db:push` (sync SQLite dev DB), `npm run db:seed` (founder bootstrap from env)
 - CI (`.github/workflows/ci.yml`) runs lint + typecheck + build on PRs and `main`
+
+## Auth architecture (Phase 2)
+
+- Auth.js v5 credentials + argon2id (`src/lib/auth.ts`), JWT sessions (8h), role carried in token.
+- Route groups: `(marketing)` has Nav/Footer; `(auth)` is bare (login/signup); `/app` is the authenticated shell.
+- `src/middleware.ts` is only a cookie-presence UX gate — real enforcement is `auth()` in `app/app/layout.tsx` and per-page role checks (`isAdminRole`). Keep it that way: argon2 is Node-only and must not enter the Edge bundle.
+- Roles are strings (SQLite has no enums) validated by `src/lib/roles.ts`. Audit via `src/lib/audit.ts` on all security-relevant actions.
+- Prisma is pinned to v6 (v7 moved datasource URLs out of schema files — do not upgrade casually).
 
 ## Rules
 

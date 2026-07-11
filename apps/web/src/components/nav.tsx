@@ -65,10 +65,10 @@ export function Nav() {
 
         <div className="hidden shrink-0 items-center gap-6 md:flex">
           <Link
-            href="/contact"
+            href="/login"
             className="text-[15px] text-text-primary/80 transition-colors hover:text-text-primary"
           >
-            Talk to us
+            Sign in
           </Link>
           <Link
             href="/contact"

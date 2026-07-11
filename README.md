@@ -18,6 +18,20 @@ npm run typecheck    # tsc --noEmit
 npm run build        # production build
 ```
 
+First-time setup for the app/auth area (Phase 2):
+
+```bash
+cd apps/web
+cp .env.example .env         # then fill in AUTH_SECRET (see file comments)
+npx prisma db push           # creates the local SQLite dev database
+npm run db:seed              # optional: bootstrap founder account from env vars
+```
+
+Auth: Auth.js v5 (credentials + argon2id), 8h JWT sessions, roles
+USER/EMPLOYEE/ADMIN/FOUNDER, audit log on security-relevant actions.
+Dev database is SQLite; production switches the Prisma datasource to
+managed Postgres per the approved architecture.
+
 CI (`.github/workflows/ci.yml`) runs lint, typecheck, and build on every PR and push to `main`.
 
 ## Design rules
