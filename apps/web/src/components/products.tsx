@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SplitHeading } from "./section";
-import { Stagger, Item, HoverCard } from "./motion";
+import { Stagger, Item, HoverCard, Reveal } from "./motion";
+import { TeamPhoto } from "./team-photo";
 import type { ReactNode } from "react";
 
 /*
@@ -12,6 +13,7 @@ type Product = {
   name: string;
   badges: { label: string; tone: "free" | "paid" | "soon" }[];
   description: string;
+  tags: string[];
   features: string[];
   cta: string;
   icon: ReactNode;
@@ -21,12 +23,17 @@ const products: Product[] = [
   {
     name: "EduSentinel AI Extension",
     badges: [{ label: "Free", tone: "free" }],
-    description: "AI-powered browser protection.",
+    description:
+      "Developed a Chrome browser extension and supporting backend platform focused on digital scam detection, fake internship alerts, student safety, phishing awareness and social engineering protection.",
+    tags: ["Cybersecurity", "AI Prototyping", "Scam Detection", "Chrome Extension"],
     features: [
-      "Phishing detection",
-      "Scam prevention",
       "Website verification",
-      "Privacy-first browsing",
+      "Scam detection",
+      "Fake internship alerts",
+      "Phishing protection",
+      "Safe browsing",
+      "Student safety",
+      "Privacy-first architecture",
     ],
     cta: "Get notified",
     icon: <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z" />,
@@ -34,12 +41,17 @@ const products: Product[] = [
   {
     name: "EduSentinel AI App",
     badges: [{ label: "Free", tone: "free" }],
-    description: "Privacy-first security platform.",
+    description:
+      "An AI-driven, privacy-first mobile defense ecosystem designed to protect mobile users from SMS scams, phishing attempts, malicious download links and device security risks using localized TensorFlow Lite models and encrypted on-device storage.",
+    tags: ["Android", "Kotlin", "TensorFlow Lite", "Mobile Security"],
     features: [
-      "Threat monitoring",
-      "Cloud security utilities",
-      "Educational protection",
-      "Digital safety dashboard",
+      "SMS scam detection",
+      "Phishing protection",
+      "Safe download verification",
+      "Device security monitoring",
+      "Offline AI analysis",
+      "Privacy-first architecture",
+      "Secure encrypted storage",
     ],
     cta: "Get notified",
     icon: <path d="M8 2h8a2 2 0 012 2v16a2 2 0 01-2 2H8a2 2 0 01-2-2V4a2 2 0 012-2zm2 17h4" />,
@@ -47,7 +59,9 @@ const products: Product[] = [
   {
     name: "EduSentinel Shaadi AI",
     badges: [{ label: "Free", tone: "free" }],
-    description: "AI-powered wedding planning.",
+    description:
+      "An AI-powered wedding planning platform that simplifies venue discovery, guest management, budget planning and event organization with intelligent recommendations.",
+    tags: ["AI Planning", "Event Management", "Budget Optimization", "Smart Assistant"],
     features: [
       "Budget optimization",
       "Guest management",
@@ -60,7 +74,9 @@ const products: Product[] = [
   {
     name: "Carbon Footprint AI",
     badges: [{ label: "Free", tone: "free" }],
-    description: "Carbon footprint tracking for a greener digital life.",
+    description:
+      "A sustainability platform that helps users monitor carbon emissions, understand environmental impact and build greener digital habits through AI-powered analytics.",
+    tags: ["Sustainability", "AI Analytics", "Environmental Intelligence", "Carbon Tracking"],
     features: [
       "Environmental insights",
       "Sustainability reports",
@@ -75,7 +91,9 @@ const products: Product[] = [
       { label: "Coming Soon", tone: "soon" },
       { label: "Paid", tone: "paid" },
     ],
-    description: "Private local AI assistant.",
+    description:
+      "A privacy-first intelligent AI assistant designed for local execution, offline productivity, secure automation and personalized workflows without compromising user privacy.",
+    tags: ["Local AI", "Offline Intelligence", "AI Assistant", "Privacy-first Computing"],
     features: [
       "Offline intelligence",
       "Privacy-first automation",
@@ -84,6 +102,57 @@ const products: Product[] = [
     ],
     cta: "Join the waitlist",
     icon: <path d="M12 3v3m0 12v3M3 12h3m12 0h3M6.5 6.5l2 2m7 7l2 2m0-11l-2 2m-7 7l-2 2M12 9a3 3 0 110 6 3 3 0 010-6z" />,
+  },
+];
+
+/* Product contributors — shown once beneath the grid; identical across products. */
+const contributors: {
+  name: string;
+  position: string;
+  photo: string | null;
+  links: { label: string; href: string }[];
+}[] = [
+  {
+    name: "Ayush Kushwaha",
+    position: "Founder",
+    photo: "/team/ayush-kushwaha.jpg",
+    links: [
+      { label: "Portfolio", href: "https://www.ayushkushwaha.me/" },
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/ayush-kushwaha-b881132b8/" },
+      { label: "GitHub", href: "https://github.com/Ayushkushwaha2005" },
+    ],
+  },
+  {
+    name: "Ayush Maurya",
+    position: "Co-Founder",
+    photo: null,
+    links: [
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/contactayush111/" },
+    ],
+  },
+  {
+    name: "Jujhar Singh",
+    position: "Core Team",
+    photo: "/team/jujhar-singh.jpeg",
+    links: [
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/jujhar-singh-23137a341/" },
+    ],
+  },
+  {
+    name: "Vedansh Devnani",
+    position: "Core Team",
+    photo: null,
+    links: [
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/vedansh-devnani-7269b6322/" },
+    ],
+  },
+  {
+    name: "Aishika",
+    position: "Collaborative Partner",
+    photo: null,
+    links: [
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/aishika-0a185725b/" },
+    ],
   },
 ];
 
@@ -123,7 +192,17 @@ export function ProductsSection() {
                   </span>
                 </div>
                 <h3 className="mt-5 text-lg font-semibold tracking-tight">{p.name}</h3>
-                <p className="mt-1.5 text-[15px] text-text-secondary">{p.description}</p>
+                <p className="mt-1.5 text-[14px] leading-relaxed text-text-secondary">{p.description}</p>
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {p.tags.map((t) => (
+                    <span
+                      key={t}
+                      className="rounded-full border border-border-subtle bg-surface-base px-2.5 py-1 text-[12px] font-medium text-text-muted"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
                 <ul className="mt-4 flex-1 space-y-2">
                   {p.features.map((f) => (
                     <li key={f} className="flex items-start gap-2.5 text-[14px] text-text-secondary">
@@ -148,6 +227,47 @@ export function ProductsSection() {
           </Item>
         ))}
       </Stagger>
+
+      {/* contributors — credited once for the whole product line */}
+      <Reveal className="mt-16">
+        <div className="rounded-card border border-border-subtle bg-surface-raised/50 p-8 md:p-10">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
+            Contributors
+          </h3>
+          <div className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+            {contributors.map((c) => (
+              <div key={c.name} className="flex items-center gap-4">
+                <TeamPhoto
+                  name={c.name}
+                  photo={c.photo}
+                  sizes="56px"
+                  compact
+                  className="h-14 w-14 shrink-0 rounded-xl"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-[15px] font-semibold tracking-tight">
+                    {c.name}
+                  </p>
+                  <p className="text-[13px] text-text-muted">{c.position}</p>
+                  <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                    {c.links.map((l) => (
+                      <a
+                        key={l.label}
+                        href={l.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[13px] font-medium text-brand-teal underline-offset-4 hover:underline"
+                      >
+                        {l.label}
+                      </a>
+                    ))}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Reveal>
     </section>
   );
 }
