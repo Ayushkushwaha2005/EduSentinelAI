@@ -2,7 +2,6 @@ import { Hero } from "@/components/hero";
 import { SplitHeading } from "@/components/section";
 import { Stagger, Item, Reveal } from "@/components/motion";
 import { CardRail } from "@/components/card-rail";
-import { ProductsSection } from "@/components/products";
 import { TEAM } from "@/lib/team";
 import { Button } from "@/components/button";
 import { LogoMark } from "@/components/logo";
@@ -67,8 +66,22 @@ export default function Home() {
         </Stagger>
       </section>
 
-      {/* products grid */}
-      <ProductsSection />
+      {/* products preview — full showcase lives at /products */}
+      <section className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32">
+        <Reveal className="flex flex-col items-center text-center">
+          <h2 className="max-w-2xl text-balance text-4xl font-medium tracking-[-0.03em] md:text-6xl">
+            Products built for digital trust.
+          </h2>
+          <p className="mt-5 max-w-xl text-balance text-[17px] leading-relaxed text-text-secondary">
+            Browser protection, mobile security, AI planning tools, and the
+            upcoming SentinelAI Agent — every one privacy-first, every one on
+            a single account.
+          </p>
+          <Button href="/products" size="lg" className="mt-9">
+            View Products
+          </Button>
+        </Reveal>
+      </section>
 
       {/* big split heading + hairline-divided showcase */}
       <section className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32">

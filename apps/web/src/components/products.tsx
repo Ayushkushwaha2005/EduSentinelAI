@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { SplitHeading } from "./section";
-import { Stagger, Item, HoverCard, Reveal } from "./motion";
-import { TeamPhoto } from "./team-photo";
+import { Stagger, Item, HoverCard } from "./motion";
 import type { ReactNode } from "react";
 
 /*
@@ -105,57 +104,6 @@ const products: Product[] = [
   },
 ];
 
-/* Product contributors — shown once beneath the grid; identical across products. */
-const contributors: {
-  name: string;
-  position: string;
-  photo: string | null;
-  links: { label: string; href: string }[];
-}[] = [
-  {
-    name: "Ayush Kushwaha",
-    position: "Founder",
-    photo: "/team/ayush-kushwaha.jpg",
-    links: [
-      { label: "Portfolio", href: "https://www.ayushkushwaha.me/" },
-      { label: "LinkedIn", href: "https://www.linkedin.com/in/ayush-kushwaha-b881132b8/" },
-      { label: "GitHub", href: "https://github.com/Ayushkushwaha2005" },
-    ],
-  },
-  {
-    name: "Ayush Maurya",
-    position: "Co-Founder",
-    photo: null,
-    links: [
-      { label: "LinkedIn", href: "https://www.linkedin.com/in/contactayush111/" },
-    ],
-  },
-  {
-    name: "Jujhar Singh",
-    position: "Core Team",
-    photo: "/team/jujhar-singh.jpeg",
-    links: [
-      { label: "LinkedIn", href: "https://www.linkedin.com/in/jujhar-singh-23137a341/" },
-    ],
-  },
-  {
-    name: "Vedansh Devnani",
-    position: "Core Team",
-    photo: null,
-    links: [
-      { label: "LinkedIn", href: "https://www.linkedin.com/in/vedansh-devnani-7269b6322/" },
-    ],
-  },
-  {
-    name: "Aishika",
-    position: "Collaborative Partner",
-    photo: null,
-    links: [
-      { label: "LinkedIn", href: "https://www.linkedin.com/in/aishika-0a185725b/" },
-    ],
-  },
-];
-
 const badgeTones = {
   free: "bg-surface-overlay text-text-secondary",
   paid: "bg-ink text-surface-raised",
@@ -227,47 +175,6 @@ export function ProductsSection() {
           </Item>
         ))}
       </Stagger>
-
-      {/* contributors — credited once for the whole product line */}
-      <Reveal className="mt-16">
-        <div className="rounded-card border border-border-subtle bg-surface-raised/50 p-8 md:p-10">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-text-muted">
-            Contributors
-          </h3>
-          <div className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-            {contributors.map((c) => (
-              <div key={c.name} className="flex items-center gap-4">
-                <TeamPhoto
-                  name={c.name}
-                  photo={c.photo}
-                  sizes="56px"
-                  compact
-                  className="h-14 w-14 shrink-0 rounded-xl"
-                />
-                <div className="min-w-0">
-                  <p className="truncate text-[15px] font-semibold tracking-tight">
-                    {c.name}
-                  </p>
-                  <p className="text-[13px] text-text-muted">{c.position}</p>
-                  <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
-                    {c.links.map((l) => (
-                      <a
-                        key={l.label}
-                        href={l.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[13px] font-medium text-brand-teal underline-offset-4 hover:underline"
-                      >
-                        {l.label}
-                      </a>
-                    ))}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </Reveal>
     </section>
   );
 }
