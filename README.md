@@ -2,6 +2,8 @@
 
 Privacy-first technology ecosystem — cybersecurity, AI/ML, cloud, developer tools, and education.
 
+Planning documents: [ROADMAP.md](./ROADMAP.md) (master phase plan, security-integrated) · [SECURITY-ROADMAP.md](./SECURITY-ROADMAP.md) (security architecture review, Founder Trust Model, launch checklist) · [SECURITY-NOTES.md](./SECURITY-NOTES.md) (accepted risks).
+
 ## Monorepo layout
 
 - `apps/web` — Next.js 15 (App Router, TypeScript, Tailwind v4) — marketing site & app shell
