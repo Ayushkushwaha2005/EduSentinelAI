@@ -113,7 +113,7 @@ export default function Home() {
             Build something you’re proud of
           </h2>
           <Button href="/contact" size="lg" className="mt-10">
-            Try <LogoMark size={18} /> EduSentinel
+            Try <LogoMark size={26} /> EduSentinel
           </Button>
         </Reveal>
       </section>

@@ -24,7 +24,7 @@ export function TeamPhoto({
         className={`flex items-center justify-center bg-surface-overlay ${className}`}
       >
         <div className="flex flex-col items-center gap-2 text-text-muted">
-          <LogoMark size={28} />
+          <LogoMark size={40} />
           <span className="text-xs">Photo coming soon</span>
         </div>
       </div>
