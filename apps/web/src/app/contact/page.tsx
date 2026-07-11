@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Reveal } from "@/components/reveal";
+import { Reveal, Stagger, Item, HoverCard } from "@/components/motion";
+import { Eyebrow } from "@/components/section";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -22,31 +23,38 @@ const channels = [
 
 export default function ContactPage() {
   return (
-    <main className="mx-auto max-w-6xl px-6 py-20">
-      <Reveal>
-        <h1 className="text-4xl font-bold tracking-tight">Contact</h1>
-        <p className="mt-4 max-w-2xl text-lg text-text-secondary">
-          A small team that reads everything. Email is the fastest way to
-          reach us — an in-platform contact form arrives with our next
-          release.
+    <main className="mx-auto max-w-6xl px-6 pb-28 pt-36 md:pt-44">
+      <Reveal className="flex flex-col items-start">
+        <Eyebrow>Contact</Eyebrow>
+        <h1 className="mt-6 max-w-2xl text-balance text-5xl font-semibold tracking-[-0.04em] md:text-6xl">
+          A small team that reads everything
+        </h1>
+        <p className="mt-6 max-w-xl text-lg leading-relaxed text-text-secondary">
+          Email is the fastest way to reach us — an in-platform contact form
+          arrives with our next release.
         </p>
       </Reveal>
-      <div className="mt-14 grid gap-6 md:grid-cols-2">
-        {channels.map((c, i) => (
-          <Reveal key={c.title} delay={i * 0.08}>
-            <div className="h-full rounded-card border border-border-subtle bg-surface-raised p-8">
-              <h2 className="text-xl font-semibold">{c.title}</h2>
-              <p className="mt-3 text-text-secondary">{c.body}</p>
-              <a
-                href={`mailto:${c.email}`}
-                className="mt-6 inline-block font-semibold text-brand-glow underline-offset-4 hover:underline"
-              >
-                {c.email}
-              </a>
-            </div>
-          </Reveal>
+      <Stagger className="mt-16 grid gap-5 md:grid-cols-2">
+        {channels.map((c) => (
+          <Item key={c.title}>
+            <HoverCard className="group h-full">
+              <div className="h-full rounded-card border border-border-subtle bg-surface-raised/60 p-8 transition-colors duration-300 group-hover:border-brand-teal/40 md:p-9">
+                <h2 className="text-xl font-semibold tracking-tight">{c.title}</h2>
+                <p className="mt-4 leading-relaxed text-text-secondary">{c.body}</p>
+                <a
+                  href={`mailto:${c.email}`}
+                  className="mt-8 inline-flex items-center gap-2 font-semibold text-brand-glow underline-offset-4 hover:underline"
+                >
+                  {c.email}
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M3 8h10m0 0L9 4m4 4l-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </a>
+              </div>
+            </HoverCard>
+          </Item>
         ))}
-      </div>
+      </Stagger>
     </main>
   );
 }

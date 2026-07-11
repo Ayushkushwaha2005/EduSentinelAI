@@ -4,4 +4,11 @@
 body {
   background: var(--color-surface-base);
   color: var(--color-text-primary);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-brand-teal) 40%, transparent);
+  color: var(--color-text-primary);
 }
