@@ -25,7 +25,10 @@ export function Footer() {
       <div className="mx-auto grid max-w-[1360px] gap-14 px-6 py-24 md:grid-cols-[1.6fr_1fr_1fr_1fr] md:px-10">
         <div>
           <LogoWordmark />
-          <p className="mt-3 text-sm text-text-muted">EduSentinel AI</p>
+          <p className="mt-4 max-w-xs text-sm leading-relaxed text-text-muted">
+            Privacy-first technology ecosystem for cybersecurity, AI, cloud,
+            and education.
+          </p>
         </div>
         {columns.map((col, i) => (
           <ul key={i} className="space-y-5">

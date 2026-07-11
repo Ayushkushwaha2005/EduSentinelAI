@@ -47,15 +47,15 @@ export function Nav() {
         </Link>
 
         {/* center links, reference-style */}
-        <div className="mx-auto hidden items-center gap-9 md:flex">
+        <div className="mx-auto hidden items-center gap-10 md:flex">
           {links.map((l) => (
             <Link
               key={l.href}
               href={l.href}
-              className={`text-[15px] transition-colors ${
+              className={`text-[16px] transition-colors ${
                 pathname === l.href
                   ? "text-text-primary"
-                  : "text-text-primary/80 hover:text-text-primary"
+                  : "text-text-primary/75 hover:text-text-primary"
               }`}
             >
               {l.label}
@@ -63,16 +63,16 @@ export function Nav() {
           ))}
         </div>
 
-        <div className="hidden shrink-0 items-center gap-6 md:flex">
+        <div className="hidden shrink-0 items-center gap-7 md:flex">
           <Link
             href="/login"
-            className="text-[15px] text-text-primary/80 transition-colors hover:text-text-primary"
+            className="text-[16px] text-text-primary/75 transition-colors hover:text-text-primary"
           >
             Sign in
           </Link>
           <Link
             href="/contact"
-            className="inline-flex h-11 items-center rounded-control bg-ink px-5 text-sm font-medium text-surface-raised transition-colors hover:bg-ink-hover"
+            className="inline-flex h-11 items-center rounded-control bg-ink px-6 text-[15px] font-medium text-surface-raised transition-colors hover:bg-ink-hover"
           >
             Get started
           </Link>
