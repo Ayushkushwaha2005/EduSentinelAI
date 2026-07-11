@@ -9,6 +9,16 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-brand-teal) 40%, transparent);
-  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-brand-teal) 25%, transparent);
+}
+
+/* Faint vertical pinstripes used behind the footer (reference treatment) */
+.pinstripes {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent 79px,
+    rgba(18, 19, 23, 0.03) 79px,
+    rgba(18, 19, 23, 0.03) 80px
+  );
 }

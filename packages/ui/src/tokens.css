@@ -1,42 +1,44 @@
 /*
  * EduSentinel Design Tokens — single source of truth for the whole platform.
- * Derived from the ES logo (white + cyan→teal on dark) and approved mockups.
- * Consumed via Tailwind v4 @theme; use the utility classes these generate,
- * never hard-coded hex values in app code.
+ * Light "paper" enterprise theme per the approved reference set
+ * (see /reference screenshots). Brand cyan→teal survives from the logo,
+ * used sparingly for the mark and small accents.
  */
 @theme {
-  /* Surfaces (dark-first brand) */
-  --color-surface-base: #0a0e14;
-  --color-surface-raised: #111722;
-  --color-surface-overlay: #1a2230;
-  --color-border-subtle: #232d3f;
+  /* Surfaces — warm paper base, white cards */
+  --color-surface-base: #f5f4f1;
+  --color-surface-raised: #ffffff;
+  --color-surface-overlay: #ececea;
+  --color-border-subtle: #e3e1db;
+
+  /* Ink — black CTAs and primary text */
+  --color-ink: #121317;
+  --color-ink-hover: #2a2b31;
 
   /* Text */
-  --color-text-primary: #f5f7fa;
-  --color-text-secondary: #9aa7b8;
-  --color-text-muted: #64748b;
+  --color-text-primary: #16181d;
+  --color-text-secondary: #5c6066;
+  --color-text-muted: #93969e;
 
-  /* Brand accent — the logo gradient endpoints.
-     Accent colors are for accents/large text only; body text stays neutral
-     (small cyan-on-dark text fails WCAG AA). */
-  --color-brand-cyan: #22d3ee;
-  --color-brand-teal: #14b8a6;
-  --color-brand-glow: #67e8f9;
+  /* Brand accent — logo gradient endpoints (AA-safe on light for large use) */
+  --color-brand-cyan: #0891b2;
+  --color-brand-teal: #0d9488;
+  --color-brand-glow: #22d3ee;
 
   /* Semantic */
-  --color-success: #34d399;
-  --color-warning: #fbbf24;
-  --color-danger: #f87171;
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-danger: #b91c1c;
 
   /* Type */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", monospace;
 
-  /* Shape */
-  --radius-card: 1rem;
-  --radius-control: 0.5rem;
+  /* Shape — rectangular controls, soft cards (reference proportions) */
+  --radius-card: 0.75rem;
+  --radius-control: 0.375rem;
 
-  /* Motion — entrance/reveal budget; respect prefers-reduced-motion */
+  /* Motion — subtle, fast; respect prefers-reduced-motion */
   --duration-fast: 150ms;
   --duration-base: 250ms;
   --duration-reveal: 400ms;

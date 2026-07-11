@@ -3,7 +3,7 @@
  * (Phase 0 open item). Geometry is original — a gradient hexagon + ES
  * monogram echoing assets/brand/logo-master.png.
  */
-export function LogoMark({ size = 32 }: { size?: number }) {
+export function LogoMark({ size = 26 }: { size?: number }) {
   return (
     <svg
       width={size}
@@ -20,8 +20,9 @@ export function LogoMark({ size = 32 }: { size?: number }) {
       </defs>
       <path
         d="M24 3 42 13.5v21L24 45 6 34.5v-21L24 3Z"
+        fill="url(#es-grad)"
         stroke="url(#es-grad)"
-        strokeWidth="3"
+        strokeWidth="2"
         strokeLinejoin="round"
       />
       <text
@@ -31,7 +32,7 @@ export function LogoMark({ size = 32 }: { size?: number }) {
         fontFamily="var(--font-sans)"
         fontWeight="800"
         fontSize="17"
-        fill="var(--color-text-primary)"
+        fill="#ffffff"
       >
         ES
       </text>
@@ -41,13 +42,10 @@ export function LogoMark({ size = 32 }: { size?: number }) {
 
 export function LogoWordmark() {
   return (
-    <span className="flex items-center gap-2.5">
+    <span className="flex items-center gap-2">
       <LogoMark />
-      <span className="text-lg font-semibold tracking-tight">
-        EduSentinel{" "}
-        <span className="bg-gradient-to-r from-brand-cyan to-brand-teal bg-clip-text text-transparent">
-          AI
-        </span>
+      <span className="text-[19px] font-semibold tracking-tight text-text-primary">
+        EduSentinel <span className="text-brand-teal">AI</span>
       </span>
     </span>
   );
