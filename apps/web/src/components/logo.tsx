@@ -7,7 +7,7 @@ import Image from "next/image";
  * load the SVG favicon. Per brand policy this is the only mark used
  * anywhere on the site.
  */
-export function LogoMark({ size = 58 }: { size?: number }) {
+export function LogoMark({ size = 36 }: { size?: number }) {
   return (
     <Image
       src="/logo.svg"
