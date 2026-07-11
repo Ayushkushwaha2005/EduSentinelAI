@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function PricingPage() {
   return (
-    <main className="relative overflow-hidden pt-[72px]">
+    <main className="relative overflow-hidden pt-20">
       {/* warm radial glow, reference treatment */}
       <div
         aria-hidden="true"

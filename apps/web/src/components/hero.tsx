@@ -86,7 +86,7 @@ export function Hero() {
   });
 
   return (
-    <section className="overflow-hidden pt-[72px]">
+    <section className="overflow-hidden pt-20">
       <div className="mx-auto max-w-[1360px] px-6 md:px-10">
         <div className="grid items-center gap-14 pt-16 md:grid-cols-[0.95fr_1.05fr] md:pt-24">
           {/* left column */}

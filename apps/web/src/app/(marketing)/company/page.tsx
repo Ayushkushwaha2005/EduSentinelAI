@@ -1,45 +1,14 @@
 import type { Metadata } from "next";
 import { SplitHeading } from "@/components/section";
 import { Reveal, Stagger, Item } from "@/components/motion";
+import { TeamPhoto } from "@/components/team-photo";
+import { TEAM } from "@/lib/team";
 
 export const metadata: Metadata = {
   title: "Company",
   description:
     "The team behind EduSentinel AI — building a privacy-first technology ecosystem.",
 };
-
-const team = [
-  {
-    name: "Ayush Kushwaha",
-    title: "Founder",
-    roles: "Backend · Cloud Computing · AI/ML · Cybersecurity",
-  },
-  {
-    name: "Ayush Maurya",
-    title: "Co-Founder",
-    roles: "AI/ML · Data Analytics",
-  },
-  {
-    name: "Shalu Kumari",
-    title: "Co-Founder",
-    roles: "Frontend Development · UI/UX Design",
-  },
-  {
-    name: "Jujhar Singh",
-    title: "Core Team",
-    roles: "Frontend Development · Marketing Lead",
-  },
-  {
-    name: "Vedansh",
-    title: "Core Team",
-    roles: "Backend Development",
-  },
-  {
-    name: "Aishika",
-    title: "Core Team",
-    roles: "Collaborative Partner · Marketing Manager",
-  },
-];
 
 const commitments = [
   "No third-party trackers on any EduSentinel property.",
@@ -50,7 +19,7 @@ const commitments = [
 
 export default function CompanyPage() {
   return (
-    <main className="mx-auto max-w-[1360px] px-6 pb-32 pt-[72px] md:px-10">
+    <main className="mx-auto max-w-[1360px] px-6 pb-32 pt-20 md:px-10">
       <div className="pt-16 md:pt-24">
         <SplitHeading
           title="Privacy and capability shouldn’t be a trade-off."
@@ -61,21 +30,29 @@ export default function CompanyPage() {
       <Reveal className="mt-24">
         <h2 className="text-2xl font-medium tracking-tight">The team</h2>
       </Reveal>
-      <Stagger className="mt-8 grid border-l border-t border-border-subtle sm:grid-cols-2 lg:grid-cols-3">
-        {team.map((m) => (
+      <Stagger className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {TEAM.map((m) => (
           <Item key={m.name} className="h-full">
-            <div className="h-full border-b border-r border-border-subtle bg-surface-raised/40 p-8 transition-colors hover:bg-surface-raised">
-              <span
-                aria-hidden="true"
-                className="flex h-11 w-11 items-center justify-center rounded-control bg-gradient-to-br from-brand-cyan to-brand-teal font-bold text-surface-raised"
-              >
-                {m.name[0]}
-              </span>
-              <h3 className="mt-5 font-semibold tracking-tight">{m.name}</h3>
-              <p className="mt-0.5 text-sm text-text-muted">{m.title}</p>
-              <p className="mt-3 text-sm leading-relaxed text-text-secondary">
-                {m.roles}
-              </p>
+            <div className="flex h-full flex-col overflow-hidden rounded-card border border-border-subtle bg-surface-raised">
+              <TeamPhoto
+                name={m.name}
+                photo={m.photo}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="aspect-[4/4.5] w-full"
+              />
+              <div className="flex flex-1 flex-col p-6">
+                <h3 className="text-lg font-semibold tracking-tight">{m.name}</h3>
+                <p className="mt-0.5 text-sm font-medium text-brand-teal">
+                  {m.position}
+                </p>
+                <ul className="mt-3 space-y-1">
+                  {m.roles.map((r) => (
+                    <li key={r} className="text-sm leading-snug text-text-secondary">
+                      {r}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </Item>
         ))}
