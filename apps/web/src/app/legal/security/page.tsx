@@ -24,7 +24,7 @@ export default function SecurityPage() {
       <p>
         If you believe you have found a security issue in any EduSentinel AI
         property or product, email{" "}
-        <a href="mailto:security@edusentinel.ai" className="text-brand-glow">
+        <a href="mailto:security@edusentinel.ai" className="text-brand-teal underline underline-offset-4">
           security@edusentinel.ai
         </a>{" "}
         with a description, reproduction steps, and impact assessment.
@@ -38,7 +38,7 @@ export default function SecurityPage() {
       </ul>
       <p>
         Machine-readable contact details are published at{" "}
-        <a href="/.well-known/security.txt" className="text-brand-glow">
+        <a href="/.well-known/security.txt" className="text-brand-teal underline underline-offset-4">
           /.well-known/security.txt
         </a>
         .

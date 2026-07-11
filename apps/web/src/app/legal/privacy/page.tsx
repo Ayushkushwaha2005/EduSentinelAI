@@ -48,7 +48,7 @@ export default function PrivacyPage() {
       </p>
       <h2>Contact</h2>
       <p>
-        Privacy questions: <a href="mailto:hello@edusentinel.ai" className="text-brand-glow">hello@edusentinel.ai</a>
+        Privacy questions: <a href="mailto:hello@edusentinel.ai" className="text-brand-teal underline underline-offset-4">hello@edusentinel.ai</a>
       </p>
     </>
   );

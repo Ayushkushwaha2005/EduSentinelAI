@@ -1,37 +1,47 @@
 import type { ReactNode } from "react";
 import { Reveal } from "./motion";
 
-export function Eyebrow({ children }: { children: ReactNode }) {
+/*
+ * Reference section header: giant left-aligned title with a right-aligned
+ * two-line gray paragraph sitting on the same row (stacks on mobile).
+ */
+export function SplitHeading({
+  title,
+  aside,
+}: {
+  title: ReactNode;
+  aside?: string;
+}) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-surface-raised/60 px-3.5 py-1.5 text-xs font-medium uppercase tracking-[0.14em] text-text-secondary">
-      <span
-        aria-hidden="true"
-        className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-brand-cyan to-brand-teal"
-      />
-      {children}
-    </span>
+    <Reveal>
+      <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <h2 className="max-w-3xl text-balance text-4xl font-medium leading-[1.06] tracking-[-0.03em] md:text-6xl">
+          {title}
+        </h2>
+        {aside && (
+          <p className="max-w-md text-[17px] leading-relaxed text-text-secondary md:text-right">
+            {aside}
+          </p>
+        )}
+      </div>
+    </Reveal>
   );
 }
 
-export function SectionHeading({
-  eyebrow,
+export function CenterHeading({
   title,
   lead,
-  center = true,
 }: {
-  eyebrow: string;
   title: ReactNode;
-  lead?: string;
-  center?: boolean;
+  lead?: ReactNode;
 }) {
   return (
-    <Reveal className={center ? "flex flex-col items-center text-center" : ""}>
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="mt-6 max-w-2xl text-balance text-4xl font-semibold tracking-[-0.03em] md:text-5xl">
+    <Reveal className="flex flex-col items-center text-center">
+      <h1 className="max-w-3xl text-balance text-5xl font-medium tracking-[-0.03em] md:text-7xl">
         {title}
-      </h2>
+      </h1>
       {lead && (
-        <p className="mt-5 max-w-xl text-balance text-lg leading-relaxed text-text-secondary">
+        <p className="mt-6 max-w-xl text-balance text-[17px] leading-relaxed text-text-secondary">
           {lead}
         </p>
       )}

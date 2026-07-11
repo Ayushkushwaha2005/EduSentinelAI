@@ -16,76 +16,71 @@ import { EASE } from "./motion";
 const links = [
   { href: "/solutions", label: "Solutions" },
   { href: "/company", label: "Company" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/contact", label: "Contact" },
 ];
 
 export function Nav() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [hovered, setHovered] = useState<string | null>(null);
   const pathname = usePathname();
   const reduce = useReducedMotion();
   const { scrollY } = useScroll();
 
-  useMotionValueEvent(scrollY, "change", (y) => setScrolled(y > 12));
+  useMotionValueEvent(scrollY, "change", (y) => setScrolled(y > 8));
 
   return (
     <motion.header
-      className="fixed inset-x-0 top-0 z-50"
-      initial={reduce ? false : { y: -80, opacity: 0 }}
+      className={`fixed inset-x-0 top-0 z-50 bg-surface-base/90 backdrop-blur-md transition-shadow ${
+        scrolled ? "shadow-[0_1px_0_0_var(--color-border-subtle)]" : ""
+      }`}
+      initial={reduce ? false : { y: -64, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.7, ease: EASE }}
+      transition={{ duration: 0.6, ease: EASE }}
     >
-      <div
-        className={`mx-auto flex h-16 max-w-6xl items-center justify-between rounded-2xl border px-5 transition-all duration-300 md:mt-4 md:px-6 ${
-          scrolled || open
-            ? "border-border-subtle bg-surface-base/75 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl"
-            : "border-transparent bg-transparent"
-        }`}
+      <nav
+        aria-label="Main"
+        className="mx-auto flex h-[72px] max-w-[1360px] items-center px-6 md:px-10"
       >
         <Link href="/" aria-label="EduSentinel AI home" className="shrink-0">
           <LogoWordmark />
         </Link>
 
-        <div
-          className="hidden items-center gap-1 md:flex"
-          onMouseLeave={() => setHovered(null)}
-        >
+        {/* center links, reference-style */}
+        <div className="mx-auto hidden items-center gap-9 md:flex">
           {links.map((l) => (
             <Link
               key={l.href}
               href={l.href}
-              onMouseEnter={() => setHovered(l.href)}
-              className={`relative rounded-full px-4 py-2 text-sm transition-colors ${
+              className={`text-[15px] transition-colors ${
                 pathname === l.href
                   ? "text-text-primary"
-                  : "text-text-secondary hover:text-text-primary"
+                  : "text-text-primary/80 hover:text-text-primary"
               }`}
             >
-              {hovered === l.href && (
-                <motion.span
-                  layoutId="nav-pill"
-                  className="absolute inset-0 rounded-full bg-surface-overlay"
-                  transition={{ duration: 0.25, ease: EASE }}
-                />
-              )}
-              <span className="relative">{l.label}</span>
+              {l.label}
             </Link>
           ))}
         </div>
 
-        <div className="hidden md:block">
+        <div className="hidden shrink-0 items-center gap-6 md:flex">
           <Link
             href="/contact"
-            className="inline-flex h-10 items-center rounded-full bg-gradient-to-r from-brand-cyan to-brand-teal px-5 text-sm font-semibold text-surface-base shadow-[0_0_20px_-6px_rgba(34,211,238,0.5)] transition-shadow hover:shadow-[0_0_28px_-4px_rgba(34,211,238,0.7)]"
+            className="text-[15px] text-text-primary/80 transition-colors hover:text-text-primary"
           >
-            Get Started
+            Talk to us
+          </Link>
+          <Link
+            href="/contact"
+            className="inline-flex h-11 items-center rounded-control bg-ink px-5 text-sm font-medium text-surface-raised transition-colors hover:bg-ink-hover"
+          >
+            Get started
           </Link>
         </div>
 
         <button
           type="button"
-          className="p-2 md:hidden"
+          className="ml-auto p-2 md:hidden"
           aria-expanded={open}
           aria-label="Toggle menu"
           onClick={() => setOpen(!open)}
@@ -98,47 +93,41 @@ export function Nav() {
             )}
           </svg>
         </button>
-      </div>
+      </nav>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            className="mx-4 mt-2 overflow-hidden rounded-2xl border border-border-subtle bg-surface-base/95 backdrop-blur-xl md:hidden"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.35, ease: EASE }}
+            className="overflow-hidden border-t border-border-subtle bg-surface-base md:hidden"
+            initial={{ height: 0 }}
+            animate={{ height: "auto" }}
+            exit={{ height: 0 }}
+            transition={{ duration: 0.3, ease: EASE }}
           >
-            <div className="flex flex-col gap-1 p-4">
+            <div className="flex flex-col p-4">
               {links.map((l, i) => (
                 <motion.div
                   key={l.href}
-                  initial={{ opacity: 0, x: -12 }}
+                  initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.08 + i * 0.05, duration: 0.3, ease: EASE }}
+                  transition={{ delay: 0.05 + i * 0.04, duration: 0.25, ease: EASE }}
                 >
                   <Link
                     href={l.href}
                     onClick={() => setOpen(false)}
-                    className="block rounded-xl px-4 py-3 text-text-secondary hover:bg-surface-overlay hover:text-text-primary"
+                    className="block rounded-control px-3 py-3 text-[15px] text-text-primary hover:bg-surface-overlay"
                   >
                     {l.label}
                   </Link>
                 </motion.div>
               ))}
-              <motion.div
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.25, duration: 0.3, ease: EASE }}
+              <Link
+                href="/contact"
+                onClick={() => setOpen(false)}
+                className="mt-3 flex h-11 items-center justify-center rounded-control bg-ink text-sm font-medium text-surface-raised"
               >
-                <Link
-                  href="/contact"
-                  onClick={() => setOpen(false)}
-                  className="mt-2 block rounded-full bg-gradient-to-r from-brand-cyan to-brand-teal px-4 py-3 text-center font-semibold text-surface-base"
-                >
-                  Get Started
-                </Link>
-              </motion.div>
+                Get started
+              </Link>
             </div>
           </motion.div>
         )}

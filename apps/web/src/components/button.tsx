@@ -7,18 +7,19 @@ import type { ReactNode } from "react";
 const MotionLink = motion.create(Link);
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-full font-semibold tracking-tight transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cyan";
+  "inline-flex items-center justify-center gap-2 rounded-control font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
 
+/* Reference button set: solid black, quiet gray, and plain text link. */
 const variants = {
-  primary:
-    "bg-gradient-to-r from-brand-cyan to-brand-teal text-surface-base shadow-[0_0_0_1px_rgba(34,211,238,0.25),0_8px_30px_-8px_rgba(20,184,166,0.5)] hover:shadow-[0_0_0_1px_rgba(34,211,238,0.4),0_12px_40px_-8px_rgba(20,184,166,0.65)]",
-  ghost:
-    "border border-border-subtle text-text-primary bg-surface-raised/50 hover:border-brand-teal/60",
+  primary: "bg-ink text-surface-raised hover:bg-ink-hover transition-colors",
+  secondary:
+    "bg-surface-overlay text-text-primary hover:bg-border-subtle transition-colors",
+  text: "text-text-primary hover:text-text-secondary transition-colors !px-0",
 };
 
 const sizes = {
-  md: "h-11 px-6 text-sm",
-  lg: "h-13 px-8 text-base",
+  md: "h-11 px-5 text-sm",
+  lg: "h-12 px-6 text-[15px]",
 };
 
 export function Button({
@@ -39,9 +40,8 @@ export function Button({
     <MotionLink
       href={href}
       className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}
-      whileHover={reduce ? undefined : { scale: 1.03 }}
-      whileTap={reduce ? undefined : { scale: 0.97 }}
-      transition={{ duration: 0.2 }}
+      whileTap={reduce ? undefined : { scale: 0.98 }}
+      transition={{ duration: 0.15 }}
     >
       {children}
     </MotionLink>
