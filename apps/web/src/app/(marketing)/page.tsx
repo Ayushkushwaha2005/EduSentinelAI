@@ -2,6 +2,7 @@ import { Hero } from "@/components/hero";
 import { SplitHeading } from "@/components/section";
 import { Stagger, Item, Reveal } from "@/components/motion";
 import { CardRail } from "@/components/card-rail";
+import { TEAM } from "@/lib/team";
 import { Button } from "@/components/button";
 import { LogoMark } from "@/components/logo";
 
@@ -40,30 +41,6 @@ const showcases = [
     body: "Products and agents that document their data practices up front, so trust is verifiable instead of promised.",
     icon: <path d="M12 3v3m0 12v3M3 12h3m12 0h3M6.5 6.5l2 2m7 7l2 2m0-11l-2 2m-7 7l-2 2M12 9a3 3 0 110 6 3 3 0 010-6z" />,
     rows: [70, 92, 58, 80],
-  },
-];
-
-const voices = [
-  {
-    tag: "Security",
-    quote:
-      "Protection without surveillance isn't a slogan — it's an engineering constraint we apply to every release.",
-    name: "Ayush Kushwaha",
-    role: "Founder",
-  },
-  {
-    tag: "AI / ML",
-    quote:
-      "If we can't explain what a model does with your data in one paragraph, we don't ship it.",
-    name: "Ayush Maurya",
-    role: "Co-Founder",
-  },
-  {
-    tag: "Product",
-    quote:
-      "One design language, one identity, one platform — every product we add should feel inevitable.",
-    name: "Jujhar Singh",
-    role: "Frontend & Marketing Lead",
   },
 ];
 
@@ -126,7 +103,7 @@ export default function Home() {
 
       {/* voices rail (reference testimonial layout, honest content) */}
       <section className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32">
-        <CardRail title="Hear it from the team" cards={voices} />
+        <CardRail title="Hear it from the team" members={TEAM} />
       </section>
 
       {/* centered CTA */}

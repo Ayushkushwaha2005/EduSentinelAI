@@ -40,7 +40,7 @@ export function Nav() {
     >
       <nav
         aria-label="Main"
-        className="mx-auto flex h-[72px] max-w-[1360px] items-center px-6 md:px-10"
+        className="mx-auto flex h-20 max-w-[1360px] items-center px-6 md:px-10"
       >
         <Link href="/" aria-label="EduSentinel AI home" className="shrink-0">
           <LogoWordmark />

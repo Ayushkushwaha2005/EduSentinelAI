@@ -2,17 +2,20 @@
 
 import { useRef } from "react";
 import { Stagger, Item } from "./motion";
+import { TeamPhoto } from "./team-photo";
+import type { TeamMember } from "@/lib/team";
 
 /*
  * Reference "Hear it from our users" pattern: heading row with square
- * prev/next controls, cards in a horizontal rail.
+ * prev/next controls, cards in a horizontal rail. Cards carry the full
+ * member record: photo, name, position, complete technical designation.
  */
 export function CardRail({
   title,
-  cards,
+  members,
 }: {
   title: string;
-  cards: { tag: string; quote: string; name: string; role: string }[];
+  members: TeamMember[];
 }) {
   const rail = useRef<HTMLDivElement>(null);
 
@@ -54,31 +57,37 @@ export function CardRail({
           ref={rail}
           className="flex snap-x gap-5 overflow-x-auto pb-2 [scrollbar-width:none]"
         >
-          {cards.map((c) => (
+          {members.map((m) => (
             <Item
-              key={c.name + c.tag}
-              className="flex w-[85vw] max-w-[420px] shrink-0 snap-start flex-col justify-between rounded-card border border-border-subtle bg-surface-overlay/50 p-8 md:min-h-[430px]"
+              key={m.name}
+              className="flex w-[85vw] max-w-[400px] shrink-0 snap-start flex-col rounded-card border border-border-subtle bg-surface-overlay/50 p-7"
             >
-              <div>
-                <span className="text-sm font-semibold uppercase tracking-[0.08em] text-text-muted">
-                  {c.tag}
-                </span>
-                <p className="mt-16 text-[17px] leading-relaxed text-text-primary md:mt-24">
-                  “{c.quote}”
-                </p>
+              <div className="flex items-start gap-4">
+                <TeamPhoto
+                  name={m.name}
+                  photo={m.photo}
+                  sizes="80px"
+                  className="h-20 w-20 shrink-0 rounded-xl"
+                />
+                <div className="min-w-0">
+                  <h3 className="text-[17px] font-semibold tracking-tight">
+                    {m.name}
+                  </h3>
+                  <p className="mt-0.5 text-sm font-medium text-brand-teal">
+                    {m.position}
+                  </p>
+                  <ul className="mt-2 space-y-0.5">
+                    {m.roles.map((r) => (
+                      <li key={r} className="text-sm leading-snug text-text-secondary">
+                        {r}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-              <div className="mt-14 flex items-center gap-3">
-                <span
-                  aria-hidden="true"
-                  className="flex h-10 w-10 items-center justify-center rounded-control bg-gradient-to-br from-brand-cyan to-brand-teal text-sm font-bold text-surface-raised"
-                >
-                  {c.name[0]}
-                </span>
-                <span>
-                  <span className="block text-[15px] font-medium">{c.name}</span>
-                  <span className="block text-sm text-text-secondary">{c.role}</span>
-                </span>
-              </div>
+              <p className="mt-7 border-t border-border-subtle pt-6 text-[15px] leading-relaxed text-text-primary">
+                “{m.statement}”
+              </p>
             </Item>
           ))}
         </div>

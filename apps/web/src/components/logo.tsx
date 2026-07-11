@@ -5,7 +5,7 @@ import Image from "next/image";
  * to public/logo-tile.png). Per brand policy this is the only mark used
  * anywhere on the site — no placeholder logos.
  */
-export function LogoMark({ size = 28 }: { size?: number }) {
+export function LogoMark({ size = 40 }: { size?: number }) {
   return (
     <Image
       src="/logo-tile.png"
@@ -21,9 +21,9 @@ export function LogoMark({ size = 28 }: { size?: number }) {
 
 export function LogoWordmark() {
   return (
-    <span className="flex items-center gap-2.5">
+    <span className="flex items-center gap-3">
       <LogoMark />
-      <span className="text-[19px] font-semibold tracking-tight text-text-primary">
+      <span className="text-[23px] font-bold tracking-tight text-text-primary">
         EduSentinel <span className="text-brand-teal">AI</span>
       </span>
     </span>
