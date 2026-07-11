@@ -20,6 +20,11 @@ const team = [
     roles: "AI/ML · Data Analytics",
   },
   {
+    name: "Shalu Kumari",
+    title: "Co-Founder",
+    roles: "Frontend Development · UI/UX Design",
+  },
+  {
     name: "Jujhar Singh",
     title: "Core Team",
     roles: "Frontend Development · Marketing Lead",

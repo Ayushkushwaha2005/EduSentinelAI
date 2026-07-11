@@ -28,4 +28,4 @@ CI (`.github/workflows/ci.yml`) runs lint, typecheck, and build on every PR and 
 
 ## Team
 
-Founder: Ayush Kushwaha · Co-Founder: Ayush Maurya · Core: Jujhar Singh, Vedansh, Aishika
+Founder: Ayush Kushwaha · Co-Founders: Ayush Maurya, Shalu Kumari · Core: Jujhar Singh, Vedansh, Aishika
