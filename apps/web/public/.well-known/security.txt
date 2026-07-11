@@ -1,0 +1,4 @@
+Contact: mailto:security@edusentinel.ai
+Policy: https://edusentinel.ai/legal/security
+Preferred-Languages: en
+Expires: 2027-07-11T00:00:00.000Z
