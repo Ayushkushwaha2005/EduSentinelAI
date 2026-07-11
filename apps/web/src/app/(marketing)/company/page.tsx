@@ -57,6 +57,24 @@ export default function CompanyPage() {
                     “{m.motto}”
                   </p>
                 )}
+                {m.links && m.links.length > 0 && (
+                  <p className="mt-4 flex flex-wrap gap-x-4 gap-y-1 border-t border-border-subtle pt-4">
+                    {m.links.map((l) => (
+                      <a
+                        key={l.label}
+                        href={l.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-text-secondary transition-colors hover:text-brand-teal"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                          <path d="M6.5 3.5H3.5a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V9.5M9.5 2.5h4m0 0v4m0-4L7 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        {l.label}
+                      </a>
+                    ))}
+                  </p>
+                )}
               </div>
             </div>
           </Item>

@@ -14,6 +14,7 @@ export type TeamMember = {
   photo: string | null;
   statement: string;
   motto?: string;
+  links?: { label: string; href: string }[];
 };
 
 export const TEAM: TeamMember[] = [
@@ -25,6 +26,11 @@ export const TEAM: TeamMember[] = [
     statement:
       "Protection without surveillance isn't a slogan — it's an engineering constraint we apply to every release.",
     motto: "Build Until Success Finds You.",
+    links: [
+      { label: "Portfolio", href: "https://www.ayushkushwaha.me/" },
+      { label: "LinkedIn", href: "https://www.linkedin.com/in/ayush-kushwaha-b881132b8/" },
+      { label: "GitHub", href: "https://github.com/Ayushkushwaha2005" },
+    ],
   },
   {
     name: "Ayush Maurya",
@@ -33,6 +39,7 @@ export const TEAM: TeamMember[] = [
     photo: null,
     statement:
       "If we can't explain what a model does with your data in one paragraph, we don't ship it.",
+    links: [{ label: "LinkedIn", href: "https://www.linkedin.com/in/contactayush111/" }],
   },
   {
     name: "Shalu Kumari",
@@ -49,6 +56,7 @@ export const TEAM: TeamMember[] = [
     photo: "/team/jujhar-singh.jpeg",
     statement:
       "One design language, one identity, one platform — every product we add should feel inevitable.",
+    links: [{ label: "LinkedIn", href: "https://www.linkedin.com/in/jujhar-singh-23137a341/" }],
   },
   {
     name: "Vedansh Devnani",
@@ -57,6 +65,7 @@ export const TEAM: TeamMember[] = [
     photo: null,
     statement:
       "Reliable systems are quiet systems — the backend should earn trust by never demanding attention.",
+    links: [{ label: "LinkedIn", href: "https://www.linkedin.com/in/vedansh-devnani-7269b6322/" }],
   },
   {
     name: "Aishika",
@@ -65,5 +74,6 @@ export const TEAM: TeamMember[] = [
     photo: null,
     statement:
       "We grow by being worth recommending — clarity and honesty are the whole marketing strategy.",
+    links: [{ label: "LinkedIn", href: "https://www.linkedin.com/in/aishika-0a185725b/" }],
   },
 ];

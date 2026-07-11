@@ -16,6 +16,7 @@ import { EASE } from "./motion";
 const links = [
   { href: "/solutions", label: "Solutions" },
   { href: "/company", label: "Company" },
+  { href: "/products", label: "Products" },
   { href: "/pricing", label: "Pricing" },
   { href: "/contact", label: "Contact" },
 ];
