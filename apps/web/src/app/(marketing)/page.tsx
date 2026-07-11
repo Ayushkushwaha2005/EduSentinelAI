@@ -2,6 +2,7 @@ import { Hero } from "@/components/hero";
 import { SplitHeading } from "@/components/section";
 import { Stagger, Item, Reveal } from "@/components/motion";
 import { CardRail } from "@/components/card-rail";
+import { ProductsSection } from "@/components/products";
 import { TEAM } from "@/lib/team";
 import { Button } from "@/components/button";
 import { LogoMark } from "@/components/logo";
@@ -66,6 +67,9 @@ export default function Home() {
         </Stagger>
       </section>
 
+      {/* products grid */}
+      <ProductsSection />
+
       {/* big split heading + hairline-divided showcase */}
       <section className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32">
         <SplitHeading
@@ -104,6 +108,28 @@ export default function Home() {
       {/* voices rail (reference testimonial layout, honest content) */}
       <section className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32">
         <CardRail title="Hear it from the team" members={TEAM} />
+      </section>
+
+      {/* brand statement band */}
+      <section className="border-y border-border-subtle bg-surface-raised/40">
+        <div className="mx-auto max-w-[1360px] px-6 py-24 md:px-10 md:py-28">
+          <Reveal className="flex flex-col items-center text-center">
+            <h2 className="max-w-3xl text-balance text-3xl font-medium leading-[1.15] tracking-[-0.03em] md:text-5xl">
+              Trust Every Click.
+              <br />
+              Protect Every Digital Asset.
+            </h2>
+            <p className="mt-7 max-w-2xl text-balance text-[17px] leading-relaxed text-text-secondary">
+              EduSentinel AI is a privacy-first cybersecurity ecosystem focused
+              on digital trust, source verification, scam prevention, phishing
+              defense, browser protection, educational security and local
+              AI-powered intelligence.
+            </p>
+            <p className="mt-8 text-[17px] font-semibold tracking-tight text-brand-teal">
+              Build Until Success Finds You.
+            </p>
+          </Reveal>
+        </div>
       </section>
 
       {/* centered CTA */}

@@ -88,6 +88,11 @@ export function CardRail({
               <p className="mt-7 border-t border-border-subtle pt-6 text-[15px] leading-relaxed text-text-primary">
                 “{m.statement}”
               </p>
+              {m.motto && (
+                <p className="mt-3 text-sm font-medium italic text-brand-teal">
+                  {m.motto}
+                </p>
+              )}
             </Item>
           ))}
         </div>
