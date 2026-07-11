@@ -51,7 +51,7 @@ export const TEAM: TeamMember[] = [
       "One design language, one identity, one platform — every product we add should feel inevitable.",
   },
   {
-    name: "Vedansh",
+    name: "Vedansh Devnani",
     position: "Core Team",
     roles: ["Backend", "AI/ML", "Database Handling", "App Development"],
     photo: null,
