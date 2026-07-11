@@ -28,6 +28,6 @@ EduSentinel AI Platform — privacy-first technology ecosystem. npm-workspaces m
 
 - All colors/type/spacing/motion come from `packages/ui/src/tokens.css`; never hard-code hex values or durations in app code. Brand cyan/teal is for accents and large text only (fails AA at body size on dark).
 - Dark-first design; respect `prefers-reduced-motion`.
-- Development proceeds in approved phases (see planning discussion): Phase 0 foundation is done; Phase 1 (marketing site) onward requires founder approval before starting. Changes to auth, payments, or release signing require two-person review.
+- Development proceeds in approved phases — `ROADMAP.md` is the source of truth, with security gates per phase from `SECURITY-ROADMAP.md` (Security-by-Design: a phase is not complete until its 🔒 gates pass; the Founder Trust Model is a permanent architectural principle). Each phase requires founder approval before starting. Changes to auth, payments, or release signing require two-person review.
 - `npm audit` high/critical blocks merge; moderate findings must be logged in `SECURITY-NOTES.md`.
 - Security headers are set in `apps/web/next.config.ts` — keep them when editing config.
