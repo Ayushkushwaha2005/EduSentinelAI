@@ -1,0 +1,40 @@
+// EduSentinel identity schema — Phase 2.
+// Dev runs on SQLite for zero-setup; production switches provider to
+// "postgresql" (managed Postgres per the approved architecture) — the
+// schema is written to be portable. Role is a string because SQLite has
+// no enums; valid values: USER | EMPLOYEE | ADMIN | FOUNDER (enforced in
+// src/lib/roles.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  name         String
+  passwordHash String
+  role         String     @default("USER")
+  mfaEnabled   Boolean    @default(false)
+  totpSecret   String? // reserved: TOTP MFA (MFA-ready per roadmap)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  auditEvents  AuditLog[] @relation("actor")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String // e.g. user.signup, user.login, admin.role_change
+  detail    String?
+  actorId   String?
+  actor     User?    @relation("actor", fields: [actorId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
+}
