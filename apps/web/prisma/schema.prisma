@@ -56,7 +56,55 @@ model AuditLog {
   actorId   String?
   actor     User?    @relation("actor", fields: [actorId], references: [id])
   createdAt DateTime @default(now())
+  // R7b: tamper-evident hash chain — each row commits to its predecessor.
+  prevHash  String?
+  hash      String?
 
   @@index([createdAt])
   @@index([actorId])
+}
+
+// ---------- Phase 3: product registry & release pipeline ----------
+
+model Product {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String
+  ownerId     String // R12: every product has an owner; queries are ownership-scoped
+  createdAt   DateTime  @default(now())
+  releases    Release[]
+}
+
+// Release lifecycle: QUARANTINED -> (scan/review) -> PUBLISHED | REJECTED -> REVOKED
+model Release {
+  id           String    @id @default(cuid())
+  productId    String
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  version      String
+  notes        String?
+  status       String    @default("QUARANTINED") // QUARANTINED | PUBLISHED | REJECTED | REVOKED
+  createdById  String
+  createdAt    DateTime  @default(now())
+  publishedAt  DateTime?
+  revokedAt    DateTime?
+  revokeReason String?
+  artifact     Artifact?
+
+  @@unique([productId, version])
+}
+
+model Artifact {
+  id            String  @id @default(cuid())
+  releaseId     String  @unique
+  release       Release @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  fileName      String // original name, display only
+  storageName   String  @unique // generated name on disk (storage/ outside web root)
+  size          Int
+  mime          String
+  sha256        String
+  signature     String? // ed25519 over sha256, set at publish (founder-gated)
+  scanStatus    String  @default("PENDING") // PENDING | CLEAN | FLAGGED | NO_SCANNER
+  scanDetail    String?
+  downloadCount Int     @default(0)
 }

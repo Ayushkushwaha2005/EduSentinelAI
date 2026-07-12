@@ -13,7 +13,12 @@ EduSentinel AI Platform — privacy-first technology ecosystem. npm-workspaces m
 ## Commands (run at repo root)
 
 - `npm run dev` / `build` / `lint` / `typecheck` — all proxy to `apps/web`
-- In `apps/web`: `npm run db:push` (sync SQLite dev DB), `npm run db:seed` (founder bootstrap from env), `npm run test:security` (Phase 2.1 security invariants — also runs in CI)
+- In `apps/web`: `npm run db:push` (sync SQLite dev DB), `npm run db:seed` (founder bootstrap from env), `npm run test:security` (security invariants — also runs in CI), `npm run audit:verify` (check the audit hash chain)
+- At root: `npm run check:trackers` (no-tracker privacy invariant — also runs in CI)
+
+## Release pipeline (Phase 3)
+
+Upload (admin+MFA, own products only) → **quarantine** + magic-byte validation + scan → **founder-only** sign & publish (ed25519 over the SHA-256) → public download center via signed expiring URLs. Founder can revoke any release; revoked releases vanish from downloads and appear as public incident notices. All artifact access goes through `lib/products.ts` ownership-scoped helpers — never raw `db.product`/`db.release` queries in pages or actions.
 - CI (`.github/workflows/ci.yml`) runs lint + typecheck + build on PRs and `main`
 
 ## Auth architecture (Phase 2)

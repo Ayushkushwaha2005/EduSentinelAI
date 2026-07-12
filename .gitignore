@@ -24,3 +24,5 @@ build/
 *.log
 .vercel
 *.tsbuildinfo
+storage/
+apps/web/storage/
