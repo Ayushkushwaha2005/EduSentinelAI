@@ -59,7 +59,7 @@ retrofitting these controls after portals and products exist costs multiples.*
 - Email verification + password reset (single-use, expiring tokens) **(R9)**
 - Audit enrichment: failed logins, IP/user-agent, role-change events **(R7a)**
 
-## Phase 3 — Product Platform & Download Center ⏳ (blocked by 2.1)
+## Phase 3 — Product Platform & Download Center ✅ (built + tested 2026-07-12; exit pending second-person review)
 
 Product registry, release pipeline, download center UI, first real product
 published end-to-end.

@@ -27,12 +27,22 @@ export default async function AppLayout({
           >
             Overview
           </Link>
-          <span className="cursor-default rounded-control px-3 py-2 text-[15px] text-text-muted">
-            Products <span className="text-xs">(Phase 3)</span>
-          </span>
-          <span className="cursor-default rounded-control px-3 py-2 text-[15px] text-text-muted">
-            Downloads <span className="text-xs">(Phase 3)</span>
-          </span>
+          {admin && (
+            <Link
+              href="/app/products"
+              className="rounded-control px-3 py-2 text-[15px] font-medium text-text-primary hover:bg-surface-overlay"
+            >
+              Products
+            </Link>
+          )}
+          {admin && (
+            <Link
+              href="/app/admin/releases"
+              className="rounded-control px-3 py-2 text-[15px] font-medium text-text-primary hover:bg-surface-overlay"
+            >
+              Releases
+            </Link>
+          )}
           <Link
             href="/app/security"
             className="rounded-control px-3 py-2 text-[15px] font-medium text-text-primary hover:bg-surface-overlay"

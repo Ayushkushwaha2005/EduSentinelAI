@@ -4,6 +4,8 @@ import { LogoWordmark } from "./logo";
 const columns = [
   [
     { href: "/solutions", label: "Solutions" },
+    { href: "/products", label: "Products" },
+    { href: "/downloads", label: "Downloads" },
     { href: "/pricing", label: "Pricing" },
     { href: "/company", label: "Company" },
     { href: "/contact", label: "Contact" },
