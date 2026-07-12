@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; reset?: string }>;
 }) {
-  const { next } = await searchParams;
-  return <AuthForm mode="login" action={loginAction} next={next} />;
+  const { next, reset } = await searchParams;
+  return <AuthForm mode="login" action={loginAction} next={next} reset={reset === "1"} />;
 }

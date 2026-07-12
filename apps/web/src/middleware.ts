@@ -1,22 +1,82 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /*
- * Lightweight UX gate: bounce clearly-unauthenticated visitors off /app
- * without loading Node-only auth code in the Edge runtime. Real
- * enforcement happens server-side in src/app/app/layout.tsx via auth().
+ * Site-wide security headers (R4) + the /app UX gate.
+ *
+ * CSP strategy: dynamic routes (auth + app) get a strict per-request
+ * nonce policy; statically prerendered marketing pages cannot carry
+ * per-request nonces, so they get a policy that still pins every source
+ * to 'self' but allows inline scripts (accepted risk SN-002 — no
+ * user-generated content renders on those pages).
+ *
+ * Real authorization happens server-side in src/app/app/layout.tsx via
+ * auth(); the cookie check here is only a fast redirect for clearly
+ * unauthenticated visitors. Node-only auth code must never be imported
+ * here (Edge runtime).
  */
+
+const SHARED = [
+  "default-src 'self'",
+  "img-src 'self' blob: data:",
+  "font-src 'self'",
+  "connect-src 'self'",
+  "style-src 'self' 'unsafe-inline'", // framer-motion inline styles
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "upgrade-insecure-requests",
+].join("; ");
+
+const DYNAMIC_PREFIXES = [
+  "/app",
+  "/login",
+  "/signup",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+  "/api",
+];
+
 export function middleware(req: NextRequest) {
-  const hasSession =
-    req.cookies.has("authjs.session-token") ||
-    req.cookies.has("__Secure-authjs.session-token");
-  if (!hasSession) {
-    const login = new URL("/login", req.nextUrl.origin);
-    login.searchParams.set("next", req.nextUrl.pathname);
-    return NextResponse.redirect(login);
+  const { pathname } = req.nextUrl;
+
+  // /app UX gate
+  if (pathname.startsWith("/app")) {
+    const hasSession =
+      req.cookies.has("authjs.session-token") ||
+      req.cookies.has("__Secure-authjs.session-token");
+    if (!hasSession) {
+      const login = new URL("/login", req.nextUrl.origin);
+      login.searchParams.set("next", pathname);
+      return NextResponse.redirect(login);
+    }
   }
-  return NextResponse.next();
+
+  const isDynamic = DYNAMIC_PREFIXES.some((p) => pathname.startsWith(p));
+
+  let res: NextResponse;
+  let csp: string;
+  if (isDynamic) {
+    // Strict nonced CSP; Next.js picks the nonce up from the request CSP
+    // header and applies it to its own script tags.
+    const nonce = crypto.randomUUID().replaceAll("-", "");
+    csp = `${SHARED}; script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`;
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-nonce", nonce);
+    requestHeaders.set("content-security-policy", csp);
+    res = NextResponse.next({ request: { headers: requestHeaders } });
+  } else {
+    csp = `${SHARED}; script-src 'self' 'unsafe-inline'`;
+    res = NextResponse.next();
+  }
+  res.headers.set("content-security-policy", csp);
+  return res;
 }
 
 export const config = {
-  matcher: ["/app/:path*"],
+  matcher: [
+    // Everything except static assets and framework internals.
+    "/((?!_next/static|_next/image|favicon.ico|icon.png|icon.svg|logo.svg|logo.png|og.png|team/|showcase/|.well-known/).*)",
+  ],
 };

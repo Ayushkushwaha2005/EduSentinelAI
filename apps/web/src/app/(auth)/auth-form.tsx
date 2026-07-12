@@ -7,22 +7,19 @@ import { LogoMark } from "@/components/logo";
 import { EASE } from "@/components/motion";
 import type { FormState } from "./actions";
 
-const inputClass =
+export const inputClass =
   "h-11 w-full rounded-control border border-border-subtle bg-surface-raised px-3.5 text-[15px] text-text-primary placeholder:text-text-muted focus:border-ink focus:outline-none";
 
-export function AuthForm({
-  mode,
-  action,
-  next,
+export function AuthShell({
+  title,
+  subtitle,
+  children,
 }: {
-  mode: "login" | "signup";
-  action: (prev: FormState, data: FormData) => Promise<FormState>;
-  next?: string;
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
 }) {
-  const [state, formAction, pending] = useActionState(action, {});
   const reduce = useReducedMotion();
-  const isLogin = mode === "login";
-
   return (
     <motion.div
       initial={reduce ? false : { opacity: 0, y: 20 }}
@@ -32,26 +29,41 @@ export function AuthForm({
     >
       <div className="flex flex-col items-center text-center">
         <LogoMark size={64} />
-        <h1 className="mt-6 text-3xl font-medium tracking-[-0.02em]">
-          {isLogin ? "Welcome back" : "Create your account"}
-        </h1>
-        <p className="mt-2 text-[15px] text-text-secondary">
-          {isLogin
-            ? "Sign in to your EduSentinel AI account"
-            : "One identity for the whole EduSentinel ecosystem"}
-        </p>
+        <h1 className="mt-6 text-3xl font-medium tracking-[-0.02em]">{title}</h1>
+        <p className="mt-2 text-[15px] text-text-secondary">{subtitle}</p>
       </div>
+      {children}
+    </motion.div>
+  );
+}
 
+export function AuthForm({
+  mode,
+  action,
+  next,
+  reset,
+}: {
+  mode: "login" | "signup";
+  action: (prev: FormState, data: FormData) => Promise<FormState>;
+  next?: string;
+  reset?: boolean;
+}) {
+  const [state, formAction, pending] = useActionState(action, {});
+  const isLogin = mode === "login";
+
+  return (
+    <AuthShell
+      title={isLogin ? "Welcome back" : "Create your account"}
+      subtitle={
+        isLogin
+          ? "Sign in to your EduSentinel AI account"
+          : "One identity for the whole EduSentinel ecosystem"
+      }
+    >
       <form action={formAction} className="mt-9 space-y-4">
         {next && <input type="hidden" name="next" value={next} />}
         {!isLogin && (
-          <input
-            name="name"
-            placeholder="Full name"
-            autoComplete="name"
-            required
-            className={inputClass}
-          />
+          <input name="name" placeholder="Full name" autoComplete="name" required className={inputClass} />
         )}
         <input
           name="email"
@@ -70,6 +82,21 @@ export function AuthForm({
           minLength={isLogin ? 1 : 10}
           className={inputClass}
         />
+        {isLogin && state.mfaRequired && (
+          <input
+            name="code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="6-digit authenticator code"
+            required
+            className={inputClass}
+            autoFocus
+          />
+        )}
+        {reset && !state.error && !state.notice && (
+          <p className="text-sm text-success">Password updated — sign in with your new password.</p>
+        )}
+        {state.notice && <p className="text-sm text-text-secondary">{state.notice}</p>}
         {state.error && (
           <p role="alert" className="text-sm text-danger">
             {state.error}
@@ -91,6 +118,10 @@ export function AuthForm({
             <Link href="/signup" className="font-medium text-text-primary hover:underline">
               Create an account
             </Link>
+            <span className="mx-2 text-text-muted">·</span>
+            <Link href="/forgot-password" className="font-medium text-text-primary hover:underline">
+              Forgot password?
+            </Link>
           </>
         ) : (
           <>
@@ -101,6 +132,6 @@ export function AuthForm({
           </>
         )}
       </p>
-    </motion.div>
+    </AuthShell>
   );
 }
