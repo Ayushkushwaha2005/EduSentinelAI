@@ -12,6 +12,8 @@ jobs:
       DATABASE_URL: file:./ci.db
       AUTH_SECRET: ci-only-secret-not-used-in-production
       AUTH_TRUST_HOST: "true"
+      # dummy 32-byte key for CI only
+      MFA_ENC_KEY: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,4 +23,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      # security invariants (Founder Trust Model, tokens, lockout, crypto)
+      - run: npx prisma db push
+        working-directory: apps/web
+      - run: npx tsx scripts/test-phase21.mts
+        working-directory: apps/web
       - run: npm run build

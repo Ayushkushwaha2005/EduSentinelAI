@@ -85,6 +85,26 @@ export async function disableMfa(
   return { done: true };
 }
 
+/** R9: resend the email-verification link (single-use, supersedes prior links). */
+export async function resendVerification(): Promise<{ notice: string }> {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+  const user = await db.user.findUnique({ where: { id: session.user.id } });
+  const notice = "Verification link sent — check your inbox.";
+  if (!user || user.emailVerified) return { notice };
+  const { createAuthToken } = await import("@/lib/tokens");
+  const { sendMail, appUrl } = await import("@/lib/mailer");
+  const token = await createAuthToken(user.id, "verify-email");
+  await sendMail(
+    user.email,
+    "Verify your EduSentinel AI email",
+    `Verify your email address:\n${appUrl(`/verify-email?token=${token}`)}\n\nThis link expires in 24 hours.`,
+  );
+  const ctx = await requestContext();
+  await audit("user.verification_resent", { actorId: user.id, ...ctx });
+  return { notice };
+}
+
 /** R2: bump sessionVersion — revokes every session, including this one. */
 export async function revokeAllSessions() {
   const session = await auth();
