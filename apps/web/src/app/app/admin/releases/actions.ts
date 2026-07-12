@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { audit, requestContext } from "@/lib/audit";
-import { signDigest } from "@/lib/artifacts";
+import { signDigest, publishBlockedByScan } from "@/lib/artifacts";
 
 export type ReviewState = { error?: string; ok?: string };
 
@@ -42,8 +42,13 @@ export async function publishReleaseAction(
   if (!release?.artifact || release.status !== "QUARANTINED") {
     return { error: "Release not found or not in quarantine." };
   }
-  if (release.artifact.scanStatus === "FLAGGED") {
-    return { error: "Flagged by malware scan — publishing is blocked. Reject it instead." };
+  if (publishBlockedByScan(release.artifact.scanStatus)) {
+    return {
+      error:
+        release.artifact.scanStatus === "FLAGGED"
+          ? "Flagged by malware scan — publishing is blocked. Reject it instead."
+          : "No malware scanner is configured (VIRUSTOTAL_API_KEY or ClamAV). Publishing unscanned artifacts is blocked in production.",
+    };
   }
 
   // Sign the artifact digest (founder-gated key operation) and promote the
