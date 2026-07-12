@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
+import { Prisma } from "@prisma/client";
 import { hash } from "@node-rs/argon2";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -39,13 +40,33 @@ export async function signupAction(
   }
 
   const passwordHash = await hash(password, ARGON2_OPTS);
-  const user = await db.user.create({
-    data: { name, email, passwordHash }, // role defaults to USER
-  });
+  let user;
+  try {
+    user = await db.user.create({
+      data: { name, email, passwordHash }, // role defaults to USER
+    });
+  } catch (err) {
+    // Unique-constraint race: a concurrent signup won; same outcome as the
+    // findUnique check above.
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      return { error: "An account with this email already exists." };
+    }
+    throw err;
+  }
   await audit("user.signup", { actorId: user.id });
 
-  // Sign the new user in and land them on the dashboard.
-  await signIn("credentials", { email, password, redirectTo: "/app" });
+  // Sign the new user in and land them on the dashboard. If auto sign-in
+  // fails for any reason, the account still exists — send them to login
+  // rather than surfacing an error page.
+  try {
+    await signIn("credentials", { email, password, redirectTo: "/app" });
+  } catch (err) {
+    if (err instanceof AuthError) redirect("/login");
+    throw err; // NEXT_REDIRECT on success
+  }
   return {};
 }
 
