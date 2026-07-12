@@ -151,7 +151,7 @@ export default function Home() {
           <h2 className="max-w-2xl text-balance text-4xl font-medium tracking-[-0.03em] md:text-6xl">
             Build something you’re proud of
           </h2>
-          <Button href="/contact" size="lg" className="mt-10">
+          <Button href="/products" size="lg" className="mt-10">
             <span className="flex items-center gap-1">
               Try <LogoMark size={26} /> EduSentinel
             </span>
