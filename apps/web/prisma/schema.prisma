@@ -1,9 +1,9 @@
-// EduSentinel identity schema — Phase 2.
+// EduSentinel identity schema — Phase 2 + 2.1 (auth hardening).
 // Dev runs on SQLite for zero-setup; production switches provider to
 // "postgresql" (managed Postgres per the approved architecture) — the
 // schema is written to be portable. Role is a string because SQLite has
 // no enums; valid values: USER | EMPLOYEE | ADMIN | FOUNDER (enforced in
-// src/lib/roles.ts).
+// src/lib/roles.ts and src/lib/authz.ts).
 
 generator client {
   provider = "prisma-client-js"
@@ -15,22 +15,44 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
-  name         String
-  passwordHash String
-  role         String     @default("USER")
-  mfaEnabled   Boolean    @default(false)
-  totpSecret   String? // reserved: TOTP MFA (MFA-ready per roadmap)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  auditEvents  AuditLog[] @relation("actor")
+  id             String      @id @default(cuid())
+  email          String      @unique
+  name           String
+  passwordHash   String
+  role           String      @default("USER")
+  emailVerified  DateTime?
+  mfaEnabled     Boolean     @default(false)
+  totpSecret     String? // AES-256-GCM encrypted (never plaintext)
+  failedLogins   Int         @default(0)
+  lockedUntil    DateTime?
+  sessionVersion Int         @default(0) // bump = revoke all sessions
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  auditEvents    AuditLog[]  @relation("actor")
+  authTokens     AuthToken[]
+}
+
+// Single-use expiring tokens for email verification and password reset.
+// Only the SHA-256 hash of the token is stored.
+model AuthToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  type      String // "verify-email" | "reset-password"
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, type])
 }
 
 model AuditLog {
   id        String   @id @default(cuid())
-  action    String // e.g. user.signup, user.login, admin.role_change
+  action    String // e.g. user.signup, user.login, user.login_failed, admin.role_change
   detail    String?
+  ip        String?
+  userAgent String?
   actorId   String?
   actor     User?    @relation("actor", fields: [actorId], references: [id])
   createdAt DateTime @default(now())

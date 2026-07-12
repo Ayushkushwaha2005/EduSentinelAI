@@ -33,6 +33,12 @@ export default async function AppLayout({
           <span className="cursor-default rounded-control px-3 py-2 text-[15px] text-text-muted">
             Downloads <span className="text-xs">(Phase 3)</span>
           </span>
+          <Link
+            href="/app/security"
+            className="rounded-control px-3 py-2 text-[15px] font-medium text-text-primary hover:bg-surface-overlay"
+          >
+            Security
+          </Link>
           {admin && (
             <Link
               href="/app/admin"

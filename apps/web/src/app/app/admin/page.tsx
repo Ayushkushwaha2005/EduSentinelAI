@@ -2,10 +2,22 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isAdminRole } from "@/lib/roles";
+import { RoleSelect } from "./role-select";
 
 export default async function AdminPage() {
   const session = await auth();
   if (!isAdminRole(session?.user?.role)) redirect("/app");
+
+  // MFA is mandatory for admin surfaces (R6).
+  const actor = await db.user.findUnique({
+    where: { id: session!.user.id },
+    select: { mfaEnabled: true, role: true },
+  });
+  if (!actor?.mfaEnabled) redirect("/app/security");
+
+  // One-directional granting: FOUNDER assigns up to ADMIN; ADMIN up to EMPLOYEE.
+  const grantable =
+    actor.role === "FOUNDER" ? ["USER", "EMPLOYEE", "ADMIN"] : ["USER", "EMPLOYEE"];
 
   const [users, events] = await Promise.all([
     db.user.findMany({
@@ -40,6 +52,7 @@ export default async function AdminPage() {
                 <th className="px-5 py-3 font-medium">Email</th>
                 <th className="px-5 py-3 font-medium">Role</th>
                 <th className="px-5 py-3 font-medium">Joined</th>
+                <th className="px-5 py-3 font-medium">Manage</th>
               </tr>
             </thead>
             <tbody>
@@ -54,6 +67,17 @@ export default async function AdminPage() {
                   </td>
                   <td className="px-5 py-3 text-text-secondary">
                     {u.createdAt.toLocaleDateString("en-GB")}
+                  </td>
+                  <td className="px-5 py-3">
+                    <RoleSelect
+                      userId={u.id}
+                      currentRole={u.role}
+                      options={
+                        u.id === session!.user.id || !grantable.includes(u.role)
+                          ? []
+                          : grantable
+                      }
+                    />
                   </td>
                 </tr>
               ))}
