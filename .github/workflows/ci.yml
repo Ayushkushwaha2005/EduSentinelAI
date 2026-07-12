@@ -42,6 +42,9 @@ jobs:
         working-directory: apps/web
       # restore the real public key that the throwaway keypair overwrote
       - run: git checkout -- apps/web/public/signing-key.pem
+      # Phase 4 gates (output sanitization, bot defense, moderation)
+      - run: npx tsx scripts/test-phase4.mts
+        working-directory: apps/web
       # audit hash chain must verify (tamper-evidence)
       - run: npx tsx scripts/verify-audit.mts
         working-directory: apps/web

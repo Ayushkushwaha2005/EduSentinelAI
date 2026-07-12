@@ -43,6 +43,14 @@ export default async function AppLayout({
               Releases
             </Link>
           )}
+          {admin && (
+            <Link
+              href="/app/admin/collaborations"
+              className="rounded-control px-3 py-2 text-[15px] font-medium text-text-primary hover:bg-surface-overlay"
+            >
+              Inbox
+            </Link>
+          )}
           <Link
             href="/app/security"
             className="rounded-control px-3 py-2 text-[15px] font-medium text-text-primary hover:bg-surface-overlay"

@@ -38,8 +38,39 @@ const DYNAMIC_PREFIXES = [
   "/api",
 ];
 
+/*
+ * Explicit CORS policy (Phase 4 gate): the API is same-origin only. We
+ * send no Access-Control-Allow-Origin header, so browsers block all
+ * cross-origin reads by default — and we reject cross-origin
+ * state-changing requests outright rather than relying on that default.
+ * Public artifact downloads are exempt: they are GETs with signed URLs and
+ * are meant to be fetchable (e.g. from a package manager).
+ */
+const CORS_EXEMPT = ["/api/download/"];
+
+function crossOriginBlocked(req: NextRequest): boolean {
+  const { pathname } = req.nextUrl;
+  if (!pathname.startsWith("/api")) return false;
+  if (CORS_EXEMPT.some((p) => pathname.startsWith(p))) return false;
+
+  const origin = req.headers.get("origin");
+  if (!origin) return false; // same-origin / non-browser request
+  try {
+    return new URL(origin).origin !== req.nextUrl.origin;
+  } catch {
+    return true; // malformed Origin header
+  }
+}
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // CORS: reject cross-origin API requests explicitly.
+  if (crossOriginBlocked(req)) {
+    return new NextResponse("Cross-origin requests are not permitted.", {
+      status: 403,
+    });
+  }
 
   // /app UX gate
   if (pathname.startsWith("/app")) {

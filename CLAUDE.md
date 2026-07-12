@@ -13,7 +13,11 @@ EduSentinel AI Platform — privacy-first technology ecosystem. npm-workspaces m
 ## Commands (run at repo root)
 
 - `npm run dev` / `build` / `lint` / `typecheck` — all proxy to `apps/web`
-- In `apps/web`: `npm run db:push` (sync SQLite dev DB), `npm run db:seed` (founder bootstrap), `npm run test:security` + `npm run test:pipeline` (security/release invariants — both run in CI), `npm run audit:verify` (audit hash chain), `npm run gen:signing-key` (new release-signing keypair)
+- In `apps/web`: `npm run db:push` (sync SQLite dev DB), `npm run db:seed` (founder bootstrap), `npm run test:security` + `npm run test:pipeline` + `npm run test:content` (security/release/content-gate invariants — all run in CI), `npm run audit:verify` (audit hash chain), `npm run gen:signing-key` (new release-signing keypair)
+
+## Content & user-submitted text (Phase 4)
+
+Blog/docs are repo-authored MDX under `apps/web/content/` — trusted, PR-reviewed, rendered via `components/prose.tsx`. **Anything submitted by the public** (collaboration requests, abuse reports) goes through `lib/sanitize.ts` on write and is rendered as plain text only — never MDX, never HTML. Public forms carry bot defense (`lib/bot-defense.ts`: honeypot + signed timing token, no third-party CAPTCHA since that would be a tracker).
 - At root: `npm run check:trackers` (no-tracker privacy invariant — also runs in CI)
 
 ## Release pipeline (Phase 3)

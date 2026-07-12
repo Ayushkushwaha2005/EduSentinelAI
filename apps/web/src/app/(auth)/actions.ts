@@ -11,6 +11,7 @@ import { signIn } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAuthToken, consumeAuthToken } from "@/lib/tokens";
 import { sendMail, appUrl } from "@/lib/mailer";
+import { checkHuman } from "@/lib/bot-defense";
 
 // OWASP-recommended argon2id parameters
 const ARGON2_OPTS = { memoryCost: 19456, timeCost: 2, parallelism: 1 };
@@ -39,6 +40,14 @@ export async function signupAction(
   // R1: per-IP limit — 5 signups / 10 minutes.
   if (!rateLimit(await ipKey("signup"), 5, 10 * 60_000)) {
     return { error: "Too many attempts. Please try again later." };
+  }
+
+  // Phase 4 gate: bot defense (honeypot + signed timing token).
+  const human = checkHuman(formData);
+  if (!human.ok) {
+    const ctx = await requestContext();
+    await audit("user.signup_bot_blocked", { detail: human.reason, ...ctx });
+    return { error: "We couldn't verify this submission. Please try again." };
   }
 
   const parsed = signupSchema.safeParse({

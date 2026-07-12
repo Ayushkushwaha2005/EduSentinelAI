@@ -1,0 +1,58 @@
+---
+title: "Introducing the EduSentinel Download Center"
+description: "Every release we ship is quarantined, scanned, reviewed, signed, and published with its checksum. Here is why, and how to verify it yourself."
+date: "2026-07-12"
+author: "Ayush Kushwaha"
+---
+
+A security company that ships software has one obligation above all others:
+the thing you download must be the thing we built. Not a lookalike, not a
+tampered copy, not something an attacker slipped into our pipeline.
+
+That obligation is why the Download Center exists, and why it works the way
+it does.
+
+## What happens to a release before you see it
+
+Every artifact travels the same path, with no exceptions and no shortcuts:
+
+1. **Upload.** The file is validated by its actual contents — the first
+   bytes of the file itself, not its extension or the name it claims. An
+   executable renamed to `.zip` does not get in.
+2. **Quarantine.** It is stored outside the web root under a generated name.
+   Nothing links to it. Nothing serves it.
+3. **Scan.** The artifact is scanned for malware. A flagged artifact can
+   never be published — the option is removed, not merely discouraged.
+4. **Human review.** A person looks at it. Specifically, the founder: the
+   only account permitted to sign a release.
+5. **Signing.** The artifact's SHA-256 digest is signed with the platform's
+   key, and the release is published with that checksum shown in public.
+
+If any step fails, the release does not ship. There is no "publish anyway"
+button, because the moment such a button exists, someone eventually presses
+it at 2am.
+
+## How to verify a download yourself
+
+Do not take our word for any of the above. Check it:
+
+```bash
+sha256sum edusentinel-tool.zip
+```
+
+Compare the output to the checksum printed next to the download. If they
+differ — even by one character — stop, and tell us at
+security@edusentinel.ai.
+
+Our signing public key is published at
+[/signing-key.pem](/signing-key.pem), so you can verify the signature over
+that digest independently of us.
+
+## Why we publish the failures too
+
+If we ever discover that a published release is malicious or compromised,
+we revoke it: the download disappears immediately, and a notice appears on
+the Download Center saying what happened and why.
+
+We would rather tell you about our worst day than have you find out from
+someone else.

@@ -1,0 +1,52 @@
+---
+title: "Privacy-first is an engineering constraint, not a slogan"
+description: "What 'no third-party trackers' actually means when you enforce it in your build pipeline instead of your marketing copy."
+date: "2026-07-11"
+author: "Ayush Maurya"
+---
+
+Every company says it respects your privacy. Very few can show you the line
+of code that makes it true.
+
+The difference matters, because a privacy promise kept by good intentions
+lasts exactly until the first deadline. A privacy promise kept by a build
+failure lasts indefinitely.
+
+## The claim
+
+On our marketing pages we say: no third-party trackers, no advertising
+pixels, no cross-site fingerprinting.
+
+## The enforcement
+
+Our continuous integration pipeline scans the built output of the entire
+website on every single change. If it finds a request to any known tracking
+or analytics host, **the build fails and the change cannot be merged.**
+
+That is the whole mechanism. It is not sophisticated. It does not need to
+be. It simply removes the possibility that someone adds an analytics
+snippet on a Friday afternoon and quietly breaks the one thing we tell
+every visitor about ourselves.
+
+## What we do collect
+
+Being honest about this is part of the same discipline:
+
+- **Server logs** — standard access logs, kept briefly, for abuse
+  prevention and debugging.
+- **What you send us** — if you email or submit a collaboration request, we
+  receive what you wrote, and use it only to reply.
+- **Your account** — if you create one, we store your email, name, and a
+  hash of your password. Never the password itself.
+
+That is the list. If it ever grows, the Privacy Policy changes first, and
+it changes in public.
+
+## The uncomfortable version
+
+Privacy-first means saying no to things that would be genuinely useful. It
+means less product analytics, slower answers about how features are used,
+and harder growth decisions.
+
+We think that trade is correct. It is also the entire reason this platform
+exists.
