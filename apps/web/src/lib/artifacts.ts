@@ -20,6 +20,22 @@ export function detectArtifactType(head: Uint8Array): string | null {
   return null;
 }
 
+/*
+ * Malware-scan publish gate (R5). FLAGGED never publishes, anywhere.
+ * NO_SCANNER (no ClamAV/VirusTotal configured) is tolerated only in
+ * development: in production, publishing an unscanned artifact is exactly
+ * the failure mode the roadmap forbids, so it is blocked outright.
+ * See SECURITY-NOTES SN-005.
+ */
+export function publishBlockedByScan(
+  scanStatus: string,
+  env: string | undefined = process.env.NODE_ENV,
+): boolean {
+  if (scanStatus === "FLAGGED") return true;
+  if (scanStatus === "NO_SCANNER" && env === "production") return true;
+  return false;
+}
+
 /* Release signing (founder-gated): ed25519 over the artifact's sha256.
  * Public key ships at /signing-key.pem for user verification. */
 export function signDigest(sha256Hex: string): string {

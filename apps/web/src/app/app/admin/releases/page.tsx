@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isAdminRole } from "@/lib/roles";
+import { publishBlockedByScan } from "@/lib/artifacts";
 import { ReviewControls, RevokeControl } from "./review-forms";
 
 export default async function ReleaseReviewPage() {
@@ -72,7 +73,7 @@ export default async function ReleaseReviewPage() {
                 <div className="mt-4">
                   <ReviewControls
                     releaseId={r.id}
-                    flagged={r.artifact?.scanStatus === "FLAGGED"}
+                    flagged={publishBlockedByScan(r.artifact?.scanStatus ?? "PENDING")}
                   />
                 </div>
               )}

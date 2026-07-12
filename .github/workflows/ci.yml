@@ -32,6 +32,19 @@ jobs:
         working-directory: apps/web
       - run: npx tsx scripts/test-phase21.mts
         working-directory: apps/web
+      # Phase 3 release-pipeline invariants (upload validation, signing,
+      # signed URLs, ownership scoping, quarantine, revocation, scan gate).
+      # A throwaway keypair is generated here: the real signing key never
+      # touches CI.
+      - run: node scripts/gen-signing-key.mjs
+        working-directory: apps/web
+      - run: npx tsx scripts/test-phase3.mts
+        working-directory: apps/web
+      # restore the real public key that the throwaway keypair overwrote
+      - run: git checkout -- apps/web/public/signing-key.pem
+      # audit hash chain must verify (tamper-evidence)
+      - run: npx tsx scripts/verify-audit.mts
+        working-directory: apps/web
       - run: npm run build
       # privacy promise, machine-enforced: no third-party trackers in output
       - run: node scripts/check-trackers.mjs

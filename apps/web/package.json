@@ -12,7 +12,9 @@
     "db:seed": "node --env-file=.env prisma/seed.mjs",
     "postinstall": "prisma generate",
     "test:security": "tsx --env-file=.env scripts/test-phase21.mts",
-    "audit:verify": "tsx --env-file=.env scripts/verify-audit.mts"
+    "audit:verify": "tsx --env-file=.env scripts/verify-audit.mts",
+    "test:pipeline": "tsx --env-file=.env scripts/test-phase3.mts",
+    "gen:signing-key": "node scripts/gen-signing-key.mjs"
   },
   "dependencies": {
     "@edusentinel/ui": "*",
