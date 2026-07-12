@@ -78,7 +78,7 @@ published end-to-end.
 - Hash-chained audit log + second-channel alerts on privileged events **(R7b)**
 - Tracker-domain CI check (privacy promise becomes machine-enforced)
 
-## Phase 4 — Content & Community ⏳
+## Phase 4 — Content & Community ✅ (built + tested 2026-07-12; exit pending second-person review)
 
 Blog (MDX), docs, collaboration-request flow, community guidelines.
 

@@ -1,0 +1,47 @@
+---
+title: "Getting started"
+description: "Create an EduSentinel account, secure it, and install your first product."
+order: 1
+---
+
+EduSentinel AI is one account across every product in the ecosystem — the
+browser extension, the mobile app, the learning hub, and everything that
+follows. You sign up once.
+
+## 1. Create your account
+
+Go to [Sign up](/signup) and register with your email address. You will
+receive a verification link; it expires in 24 hours.
+
+## 2. Turn on two-factor authentication
+
+From your dashboard, open **Security** and set up two-factor
+authentication with any authenticator app (Google Authenticator, 1Password,
+Aegis, and others all work).
+
+This is optional for regular accounts and **mandatory** for administrator
+accounts. We recommend it for everyone: a password alone is one leak away
+from being useless.
+
+## 3. Install a product
+
+Visit the [Download Center](/downloads). Every artifact there is published
+with its SHA-256 checksum and signed with our release key.
+
+Before installing anything, verify it:
+
+```bash
+sha256sum <downloaded-file>
+```
+
+Compare the result to the checksum shown on the page. If it does not match,
+do not install the file — report it to security@edusentinel.ai.
+
+## 4. If something goes wrong
+
+- Lost your password? Use [Forgot password](/forgot-password). Resetting it
+  signs you out of every device.
+- Think your account is compromised? Sign in, open **Security**, and choose
+  **Sign out everywhere**, then change your password.
+- Found a vulnerability? See our
+  [Security & Disclosure policy](/legal/security).

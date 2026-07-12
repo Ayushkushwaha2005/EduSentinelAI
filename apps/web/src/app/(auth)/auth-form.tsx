@@ -42,11 +42,13 @@ export function AuthForm({
   action,
   next,
   reset,
+  formToken,
 }: {
   mode: "login" | "signup";
   action: (prev: FormState, data: FormData) => Promise<FormState>;
   next?: string;
   reset?: boolean;
+  formToken?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const isLogin = mode === "login";
@@ -60,8 +62,18 @@ export function AuthForm({
           : "One identity for the whole EduSentinel ecosystem"
       }
     >
-      <form action={formAction} className="mt-9 space-y-4">
+      <form action={formAction} className="relative mt-9 space-y-4">
         {next && <input type="hidden" name="next" value={next} />}
+        {/* bot defense: honeypot + signed timing token (signup only) */}
+        {!isLogin && formToken && (
+          <>
+            <input type="hidden" name="formToken" value={formToken} />
+            <div aria-hidden="true" className="absolute left-[-9999px] h-0 w-0 overflow-hidden">
+              <label htmlFor="website">Leave this field empty</label>
+              <input id="website" name="website" tabIndex={-1} autoComplete="off" />
+            </div>
+          </>
+        )}
         {!isLogin && (
           <input name="name" placeholder="Full name" autoComplete="name" required className={inputClass} />
         )}

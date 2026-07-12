@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AuthForm } from "../auth-form";
 import { signupAction } from "../actions";
+import { issueFormToken } from "@/lib/bot-defense";
 
 export const metadata: Metadata = {
   title: "Create account",
@@ -8,6 +9,10 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
+export const dynamic = "force-dynamic"; // form tokens are per-request
+
 export default function SignupPage() {
-  return <AuthForm mode="signup" action={signupAction} />;
+  return (
+    <AuthForm mode="signup" action={signupAction} formToken={issueFormToken()} />
+  );
 }

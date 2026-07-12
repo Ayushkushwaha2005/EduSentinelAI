@@ -1,0 +1,62 @@
+---
+title: "Verifying downloads"
+description: "How to check the checksum and signature of any EduSentinel release before you install it."
+order: 2
+---
+
+Every published release carries two independent guarantees: a **SHA-256
+checksum** (the file is exactly what we published) and an **ed25519
+signature** over that checksum (we, and only we, published it).
+
+You should check both. Here is how.
+
+## Step 1 — Check the checksum
+
+Download the file, then compute its digest:
+
+```bash
+# macOS / Linux
+sha256sum edusentinel-release.zip
+
+# Windows (PowerShell)
+Get-FileHash edusentinel-release.zip -Algorithm SHA256
+```
+
+Compare the output to the checksum displayed next to the download on the
+[Download Center](/downloads). They must match exactly.
+
+## Step 2 — Verify the signature
+
+Our public signing key is published at
+[/signing-key.pem](/signing-key.pem). The signature proves the checksum was
+signed by the holder of our private key — which never leaves the founder's
+control and is never present in our build system.
+
+```bash
+# save the digest as raw bytes
+echo -n "<sha256-hex-from-the-site>" | xxd -r -p > digest.bin
+# save the signature (base64) as raw bytes
+echo -n "<signature-base64>" | base64 -d > sig.bin
+# verify
+openssl pkeyutl -verify -pubin -inkey signing-key.pem \
+  -rawin -in digest.bin -sigfile sig.bin
+```
+
+A successful verification prints `Signature Verified Successfully`.
+
+## If verification fails
+
+Do not install the file. Do not "try again from a different network."
+Email **security@edusentinel.ai** with the product name, version, and what
+you observed.
+
+A failed verification means one of three things: the download was corrupted
+in transit, someone tampered with it, or we made a mistake. All three are
+things we want to hear about immediately.
+
+## Revoked releases
+
+If we discover that a published release is unsafe, we revoke it. The
+download stops working immediately and a public notice appears on the
+Download Center explaining what happened. Check there before reinstalling
+anything old.

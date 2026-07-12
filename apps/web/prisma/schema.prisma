@@ -94,6 +94,42 @@ model Release {
   @@unique([productId, version])
 }
 
+// ---------- Phase 4: collaboration requests & abuse reports ----------
+
+// Public submissions. Text is sanitized on write (never trusted on read).
+model CollaborationRequest {
+  id         String    @id @default(cuid())
+  name       String
+  email      String
+  org        String?
+  kind       String // partnership | contributor | research | other
+  message    String
+  status     String    @default("PENDING") // PENDING | APPROVED | REJECTED | SPAM
+  ip         String?
+  reviewedAt DateTime?
+  reviewedBy String?
+  reviewNote String?
+  createdAt  DateTime  @default(now())
+
+  @@index([status, createdAt])
+}
+
+// Abuse reports against collaboration submissions or published content.
+model AbuseReport {
+  id         String    @id @default(cuid())
+  targetType String // collaboration | release | other
+  targetRef  String? // id or URL of the reported item
+  reason     String
+  reporter   String? // optional contact
+  status     String    @default("OPEN") // OPEN | ACTIONED | DISMISSED
+  ip         String?
+  handledAt  DateTime?
+  handledBy  String?
+  createdAt  DateTime  @default(now())
+
+  @@index([status, createdAt])
+}
+
 model Artifact {
   id            String  @id @default(cuid())
   releaseId     String  @unique

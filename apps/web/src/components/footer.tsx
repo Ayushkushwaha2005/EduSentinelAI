@@ -11,6 +11,12 @@ const columns = [
     { href: "/contact", label: "Contact" },
   ],
   [
+    { href: "/docs", label: "Documentation" },
+    { href: "/blog", label: "Blog" },
+    { href: "/collaborate", label: "Collaborate" },
+    { href: "/legal/community", label: "Community Guidelines" },
+  ],
+  [
     { href: "/legal/privacy", label: "Privacy Policy" },
     { href: "/legal/terms", label: "Terms of Service" },
     { href: "/legal/security", label: "Security & Disclosure" },
