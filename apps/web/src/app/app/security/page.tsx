@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { isAdminRole } from "@/lib/roles";
 import { MfaPanel } from "./mfa-panel";
-import { revokeAllSessions } from "./actions";
+import { revokeAllSessions, resendVerification } from "./actions";
 
 export default async function SecurityPage() {
   const session = await auth();
@@ -39,8 +39,23 @@ export default async function SecurityPage() {
         <p className="mt-4 text-[15px] text-text-secondary">
           {account?.emailVerified
             ? `Verified on ${account.emailVerified.toLocaleDateString("en-GB")}.`
-            : "Not verified yet — use the link sent to your inbox when you signed up."}
+            : "Not verified yet — use the link sent to your inbox, or request a new one."}
         </p>
+        {!account?.emailVerified && (
+          <form
+            action={async () => {
+              "use server";
+              await resendVerification();
+            }}
+          >
+            <button
+              type="submit"
+              className="mt-4 h-11 rounded-control bg-surface-overlay px-5 text-sm font-medium transition-colors hover:bg-border-subtle"
+            >
+              Resend verification email
+            </button>
+          </form>
+        )}
       </section>
 
       <section className="mt-6 rounded-card border border-border-subtle bg-surface-raised p-7">

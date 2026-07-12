@@ -13,7 +13,7 @@ EduSentinel AI Platform — privacy-first technology ecosystem. npm-workspaces m
 ## Commands (run at repo root)
 
 - `npm run dev` / `build` / `lint` / `typecheck` — all proxy to `apps/web`
-- In `apps/web`: `npm run db:push` (sync SQLite dev DB), `npm run db:seed` (founder bootstrap from env)
+- In `apps/web`: `npm run db:push` (sync SQLite dev DB), `npm run db:seed` (founder bootstrap from env), `npm run test:security` (Phase 2.1 security invariants — also runs in CI)
 - CI (`.github/workflows/ci.yml`) runs lint + typecheck + build on PRs and `main`
 
 ## Auth architecture (Phase 2)

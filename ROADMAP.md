@@ -33,7 +33,7 @@ Security delivered: `security.txt` + responsible-disclosure policy (72h ack /
 trackers (to become CI-enforced, Phase 3 gates).
 Carried forward: 🔒 CSP + HSTS moved into Phase 2.1 (site-wide headers).
 
-## Phase 2 — Identity Core ✅ (built, pending founder review)
+## Phase 2 — Identity Core ✅ (approved 2026-07-12)
 
 Auth.js v5 credentials + argon2id, Prisma (SQLite dev / Postgres-portable
 schema), roles (USER/EMPLOYEE/ADMIN/FOUNDER), audit log, dashboard shell,
@@ -45,7 +45,7 @@ audit log from day one · MFA-ready schema.
 🔒 **Exit criterion:** second-person review of all auth code (Founder Trust
 Model rule: changes to auth/release infrastructure require two-person review).
 
-## Phase 2.1 — Auth Hardening 🔒 ⏳ (CRITICAL tier — next work package; blocks Phase 3)
+## Phase 2.1 — Auth Hardening 🔒 ✅ (built + tested 2026-07-12; exit pending second-person auth review)
 
 *Why this phase exists: every later feature stacks on the identity layer;
 retrofitting these controls after portals and products exist costs multiples.*
