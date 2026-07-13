@@ -8,8 +8,17 @@ import { hash } from "@node-rs/argon2";
 
 const db = new PrismaClient();
 
+// Two independent fences (Phase 6.1). The SQLite check was already here; the
+// NODE_ENV check is not redundant with it, because the day production runs on a
+// local file — a restore drill, a staging box, a mistake — the first fence opens.
+// Demo rows must never be reachable in a production build: they are people who do
+// not exist, holding roles nobody granted them.
 if (!process.env.DATABASE_URL?.startsWith("file:")) {
-  console.error("seed:workspace — refusing to run: this is dev-only demo data.");
+  console.error("seed:workspace — refusing to run: this is dev-only demo data (non-SQLite database).");
+  process.exit(1);
+}
+if (process.env.NODE_ENV === "production") {
+  console.error("seed:workspace — refusing to run: this is dev-only demo data (NODE_ENV=production).");
   process.exit(1);
 }
 

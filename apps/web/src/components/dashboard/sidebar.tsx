@@ -33,7 +33,19 @@ const ICONS: Record<NavIcon, (p: { size?: number }) => React.ReactElement> = {
   chat: ChatIcon,
 };
 
-export type Presence = { name: string; title: string | null };
+/*
+ * Presence is measured, not decorated (Phase 6.1). This rail used to render the
+ * five oldest staff accounts with `online` hard-coded on every one of them — it
+ * claimed the team was at their desks whether or not anyone had signed in for a
+ * month. It now shows only people seen in the last five minutes, and shows
+ * nothing at all when nobody has been.
+ */
+export type Presence = {
+  name: string;
+  title: string | null;
+  avatarUrl: string | null;
+  online: boolean;
+};
 
 export function Sidebar({
   items,
@@ -66,7 +78,7 @@ export function Sidebar({
           <ul className="mt-4 flex flex-col gap-4">
             {presence.map((p) => (
               <li key={p.name} className="flex items-center gap-3">
-                <Avatar name={p.name} size={36} online />
+                <Avatar name={p.name} size={36} src={p.avatarUrl} online={p.online} />
                 <span className="min-w-0">
                   <span className="block truncate text-[15px] text-text-primary">
                     {p.name}

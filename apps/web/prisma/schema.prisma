@@ -30,6 +30,35 @@ model User {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   authTokens     AuthToken[]
+
+  // ---- Phase 6.2: profile ----
+  // Self-service for every role. Free text is sanitized on write (lib/sanitize.ts)
+  // and rendered as plain text — a display name reaches the directory, the message
+  // center and CSV exports, so it is treated as untrusted like any other input.
+  //
+  // The avatar is a FILE, therefore a threat: `avatarName` is a generated name in
+  // storage/avatars (outside the web root), never the uploaded filename, and the
+  // bytes are magic-byte validated and stripped of metadata before they land
+  // (lib/images.ts). Only PNG and JPEG — SVG is script.
+  title          String?
+  bio            String?
+  pronouns       String?
+  timezone       String?
+  location       String?
+  phone          String? // internal contact; never shown to collaborators
+  avatarName     String? // generated storage name
+  avatarMime     String?
+  avatarAt       DateTime? // cache-buster for the avatar route
+
+  // Presence. Stamped by the workspace shell, throttled — the "Team Online" rail
+  // used to hard-code everyone as online, which was decoration, not data.
+  lastSeenAt     DateTime?
+
+  // Notification preferences (Phase 9 consumes these; the profile owns them).
+  // Security-critical mail is deliberately NOT optional and has no flag here.
+  notifyDigest   Boolean     @default(true)
+  notifyMentions Boolean     @default(true)
+  notifyProduct  Boolean     @default(false)
   // Phase 5
   grants         PermissionGrant[] @relation("grantee")
   memberships    TeamMember[]      @relation("membership")

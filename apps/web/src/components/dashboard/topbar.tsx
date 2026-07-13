@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { Avatar } from "./avatar";
-import { BellIcon, CalendarIcon, SearchIcon } from "./icons";
+import { CalendarIcon, SearchIcon } from "./icons";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
 import { SignOutButton } from "./sign-out";
 import { MessagePeek, type PeekItem } from "./message-peek";
@@ -7,16 +8,22 @@ import { MobileNav } from "./mobile-nav";
 import type { NavItem } from "./nav-config";
 
 /*
- * Top bar from the reference: period label + calendar, global search, message
- * and notification bells, identity chip. The identity chip shows the role
- * label so the viewer always knows which authority they are acting under.
+ * Top bar from the reference: period label + calendar, global search, messages,
+ * identity chip. The identity chip shows the role label so the viewer always
+ * knows which authority they are acting under, and links to their profile.
  *
  * The search box is a real GET form to /app/search — results there are scoped to
  * what the viewer may actually see, never a global index.
+ *
+ * The reference's notification bell is GONE (Phase 6.1). It was a <button> with no
+ * handler, wearing a permanently-lit unread dot: it announced notifications that
+ * did not exist and could not be opened. Notifications are Phase 9 and the bell
+ * comes back when it has something true to say.
  */
 export function Topbar({
   name,
   role,
+  avatarUrl = null,
   unread = 0,
   messages = [],
   showMessages = false,
@@ -24,6 +31,7 @@ export function Topbar({
 }: {
   name: string;
   role: Role;
+  avatarUrl?: string | null;
   unread?: number;
   messages?: PeekItem[];
   showMessages?: boolean;
@@ -64,23 +72,19 @@ export function Topbar({
 
         {showMessages && <MessagePeek items={messages} unread={unread} />}
 
-        <button
-          type="button"
-          className="relative text-text-secondary transition-colors duration-[--duration-fast] hover:text-text-primary"
-          aria-label="Notifications"
-        >
-          <BellIcon size={22} />
-          <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-brand-cyan" />
-        </button>
-
         <div className="flex items-center gap-3 border-l border-border-subtle pl-4">
-          <span className="hidden text-right leading-tight sm:block">
-            <span className="block text-[15px] font-semibold tracking-[-0.01em]">
-              {name}
+          <Link
+            href="/app/profile"
+            className="flex items-center gap-3 rounded-control transition-colors duration-[--duration-fast] hover:opacity-80"
+          >
+            <span className="hidden text-right leading-tight sm:block">
+              <span className="block text-[15px] font-semibold tracking-[-0.01em]">
+                {name}
+              </span>
+              <span className="block text-xs text-text-muted">{ROLE_LABELS[role]}</span>
             </span>
-            <span className="block text-xs text-text-muted">{ROLE_LABELS[role]}</span>
-          </span>
-          <Avatar name={name} size={42} />
+            <Avatar name={name} size={42} src={avatarUrl} />
+          </Link>
           <SignOutButton />
         </div>
       </div>

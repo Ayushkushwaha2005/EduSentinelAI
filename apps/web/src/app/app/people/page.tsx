@@ -137,7 +137,7 @@ export default async function PeoplePage({
                   </td>
                   <td className="px-5 py-4">
                     <span className="flex items-center gap-2.5">
-                      <Avatar name={p.name} size={32} />
+                      <Avatar name={p.name} size={32} src={p.avatarUrl} online={p.online} />
                       <span className="font-medium">{p.name}</span>
                     </span>
                   </td>

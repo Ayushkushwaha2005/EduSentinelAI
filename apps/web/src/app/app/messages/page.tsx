@@ -7,6 +7,7 @@ import {
   openConversation,
   type ConversationKind,
 } from "@/lib/messages";
+import { avatarUrlFor, isOnline } from "@/lib/profile";
 import { Avatar } from "@/components/dashboard/avatar";
 import { Breadcrumb, Panel } from "@/components/dashboard/widgets";
 import { SearchIcon } from "@/components/dashboard/icons";
@@ -104,7 +105,12 @@ export default async function MessagesPage({
                         active ? "bg-surface-overlay" : "hover:bg-surface-overlay/60"
                       }`}
                     >
-                      <Avatar name={conv.others[0]?.name ?? conv.title} size={40} online />
+                      <Avatar
+                        name={conv.others[0]?.name ?? conv.title}
+                        size={40}
+                        src={conv.others[0] ? avatarUrlFor(conv.others[0]) : null}
+                        online={isOnline(conv.others[0]?.lastSeenAt)}
+                      />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center justify-between gap-2">
                           <span className="truncate text-[15px] font-medium">
@@ -145,7 +151,12 @@ export default async function MessagesPage({
             ) : thread ? (
               <>
                 <div className="flex items-center gap-3 border-b border-border-subtle p-5">
-                  <Avatar name={thread.others[0]?.name ?? "—"} size={44} online />
+                  <Avatar
+                    name={thread.others[0]?.name ?? "—"}
+                    size={44}
+                    src={thread.others[0] ? avatarUrlFor(thread.others[0]) : null}
+                    online={isOnline(thread.others[0]?.lastSeenAt)}
+                  />
                   <span>
                     <span className="block text-[15px] font-semibold tracking-[-0.01em]">
                       {thread.others.map((o) => o.name).join(", ") || "Conversation"}

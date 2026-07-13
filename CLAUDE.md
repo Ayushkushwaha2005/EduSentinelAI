@@ -13,7 +13,7 @@ EduSentinel AI Platform — privacy-first technology ecosystem. npm-workspaces m
 ## Commands (run at repo root)
 
 - `npm run dev` / `build` / `lint` / `typecheck` — all proxy to `apps/web`
-- In `apps/web`: `npm run db:push` (sync SQLite dev DB), `npm run db:seed` (founder bootstrap), `npm run test:security` + `npm run test:pipeline` + `npm run test:content` (security/release/content-gate invariants — all run in CI), `npm run audit:verify` (audit hash chain), `npm run gen:signing-key` (new release-signing keypair)
+- In `apps/web`: `npm run db:push` (sync SQLite dev DB), `npm run db:seed` (founder bootstrap), `npm run test:security` + `npm run test:pipeline` + `npm run test:content` + `npm run test:data` (security/release/content/real-data invariants — all run in CI), `npm run audit:verify` (audit hash chain), `npm run gen:signing-key` (new release-signing keypair)
 
 ## Content & user-submitted text (Phase 4)
 
@@ -49,6 +49,13 @@ Products are **database records, not code**. The Founder adds/edits/publishes/ar
 - The catalogue renders publicly, so it is treated as untrusted: icons are **keys into the fixed set in `lib/product-icons.tsx`** (never raw SVG/HTML), text is sanitized on write and rendered as plain text, and CTA links are restricted to internal paths or `https://` (`safeHref`).
 - Migration seed for the original five products: `npm run db:seed:catalog`.
 - Prisma is pinned to v6 (v7 moved datasource URLs out of schema files — do not upgrade casually).
+
+## Real data, profiles & analytics (Phase 6)
+
+- **No placeholders.** Nothing in `/app` may render a number, name or state that is not read from the database. A control that does nothing is deleted, not styled; a series with no data says so instead of drawing floor-height bars. Presence (`online`) must come from `lastSeenAt` via `lib/profile.ts` — `test:data` fails CI if a shell component hard-codes it again.
+- **Profiles are self-service for every role** (`/app/profile`, gated on `requireViewer`, no capability). `PROFILE_FIELDS` in `lib/profile.ts` is the exhaustive allowlist of what an update may write: never add `role`, `passwordHash`, `mfaEnabled` or `sessionVersion` to it, and never build the Prisma `data` object by spreading `FormData`. Privilege changes happen in Access Control (founder-reserved) and nowhere else.
+- **Avatars go through `lib/images.ts`, always.** Magic-byte validated (never the filename or claimed MIME), PNG/JPEG only — **SVG is script and is refused** — capped at 2 MB, metadata/EXIF stripped (a phone photo carries GPS), stored in `storage/avatars` under a generated name, served only by `/api/avatar` with a session. Persist the bytes the stripper *returns*, never the bytes you were handed.
+- **Analytics are computed server-side from our own records** (`lib/analytics.ts`), gated on the grantable `analytics.read`. No third-party analytics SDK, ever — `npm run check:trackers` is the machine-enforced version of that promise. A metric that cannot be measured is reported as unmeasured, **never as zero**.
 
 ## Rules
 

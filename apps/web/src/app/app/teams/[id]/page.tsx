@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireCapability } from "@/lib/guard";
 import { teamDetail } from "@/lib/people";
+import { avatarUrlFor, isOnline } from "@/lib/profile";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
 import { Avatar } from "@/components/dashboard/avatar";
 import {
@@ -76,7 +77,12 @@ export default async function TeamPage({
                 key={m.id}
                 className="flex items-center gap-3 border-b border-border-subtle py-3 last:border-0"
               >
-                <Avatar name={m.user.name} size={40} online />
+                <Avatar
+                  name={m.user.name}
+                  size={40}
+                  src={avatarUrlFor(m.user)}
+                  online={isOnline(m.user.lastSeenAt)}
+                />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15px] font-medium">
                     {m.user.name}

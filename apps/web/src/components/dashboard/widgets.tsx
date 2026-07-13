@@ -47,7 +47,16 @@ export function Breadcrumb({ trail }: { trail: { label: string; href?: string }[
   );
 }
 
-/** The three summary cards across the top of the reference dashboard. */
+/*
+ * The summary cards across the top of the reference dashboard.
+ *
+ * `people` and `href` are OPTIONAL (Phase 6.1). The avatar stack used to be
+ * required, so every card carried one whether or not people had anything to do
+ * with it — the member and collaborator dashboards passed `[viewer.name]` and
+ * rendered a stack of you, alone, looking at yourself. A card now shows the
+ * stack only when it is genuinely about those people, and the "More" link only
+ * when there is somewhere else to go.
+ */
 export function StatCard({
   icon,
   title,
@@ -58,9 +67,12 @@ export function StatCard({
   icon: React.ReactNode;
   title: string;
   subtitle: string;
-  people: string[];
-  href: string;
+  people?: string[];
+  href?: string;
 }) {
+  const hasPeople = !!people?.length;
+  const footer = hasPeople || !!href;
+
   return (
     <Panel>
       <div className="flex items-start gap-4">
@@ -74,15 +86,19 @@ export function StatCard({
           <span className="mt-0.5 block text-sm text-text-secondary">{subtitle}</span>
         </span>
       </div>
-      <div className="mt-6 flex items-end justify-between">
-        <AvatarStack names={people} />
-        <Link
-          href={href}
-          className="text-sm font-medium text-brand-cyan transition-colors duration-[--duration-fast] hover:text-brand-teal"
-        >
-          More
-        </Link>
-      </div>
+      {footer && (
+        <div className="mt-6 flex items-end justify-between">
+          {hasPeople ? <AvatarStack names={people!} /> : <span />}
+          {href && (
+            <Link
+              href={href}
+              className="text-sm font-medium text-brand-cyan transition-colors duration-[--duration-fast] hover:text-brand-teal"
+            >
+              More
+            </Link>
+          )}
+        </div>
+      )}
     </Panel>
   );
 }
@@ -309,42 +325,61 @@ export function TeamCard({ team }: { team: TeamCardData }) {
   );
 }
 
-/** Bar chart from the reference (pure CSS — no charting dependency). */
+/*
+ * Bar chart from the reference (pure CSS — no charting dependency).
+ *
+ * A series with nothing in it says so (`emptyNote`) instead of drawing a row of
+ * floor-height bars, which reads as "we measured, and it is nearly zero" when the
+ * truth is "there is nothing here yet". Long ranges thin out their labels rather
+ * than overlapping them into mush.
+ */
 export function GrowthChart({
   title,
   data,
   caption,
+  emptyNote = "Nothing to show for this range yet.",
 }: {
   title: string;
   data: { label: string; value: number }[];
   caption?: string;
+  emptyNote?: string;
 }) {
   const max = Math.max(1, ...data.map((d) => d.value));
+  const empty = data.length === 0 || data.every((d) => d.value === 0);
+  const every = Math.ceil(data.length / 12); // keep ~12 labels, whatever the range
+
   return (
     <Panel>
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-[19px] font-semibold tracking-[-0.01em]">{title}</h2>
         {caption && <span className="text-sm text-text-secondary">{caption}</span>}
       </div>
-      <div className="mt-8 flex h-[200px] items-end justify-between gap-3">
-        {data.map((d) => {
-          const pct = Math.round((d.value / max) * 100);
-          return (
-            <div key={d.label} className="flex flex-1 flex-col items-center gap-3">
-              <div className="relative flex h-full w-full max-w-[46px] items-end rounded-[6px] bg-surface-overlay">
-                <div
-                  className="w-full rounded-[6px] bg-brand-cyan transition-[height] duration-[--duration-reveal] ease-[--ease-brand]"
-                  style={{ height: `${Math.max(4, pct)}%` }}
-                  title={`${d.label}: ${d.value}`}
-                />
+
+      {empty ? (
+        <p className="mt-8 flex h-[200px] items-center justify-center text-center text-[15px] text-text-muted">
+          {emptyNote}
+        </p>
+      ) : (
+        <div className="mt-8 flex h-[200px] items-end justify-between gap-1.5 sm:gap-3">
+          {data.map((d, i) => {
+            const pct = Math.round((d.value / max) * 100);
+            return (
+              <div key={d.label + i} className="flex flex-1 flex-col items-center gap-3">
+                <div className="relative flex h-full w-full max-w-[46px] items-end rounded-[6px] bg-surface-overlay">
+                  <div
+                    className="w-full rounded-[6px] bg-brand-cyan transition-[height] duration-[--duration-reveal] ease-[--ease-brand]"
+                    style={{ height: `${d.value === 0 ? 2 : Math.max(4, pct)}%` }}
+                    title={`${d.label}: ${d.value}`}
+                  />
+                </div>
+                <span className="h-4 whitespace-nowrap text-xs text-text-secondary">
+                  {i % every === 0 ? d.label : ""}
+                </span>
               </div>
-              <span className="whitespace-nowrap text-xs text-text-secondary">
-                {d.label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </Panel>
   );
 }

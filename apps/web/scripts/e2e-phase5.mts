@@ -328,6 +328,50 @@ try {
   );
   assert.ok(!dash.includes("No staff yet"), "the staff panel must list staff");
   console.log("  ✓ Dashboard widgets render real data, not empty placeholders");
+
+  // ---------- Phase 6: profiles, analytics, avatars ----------
+
+  // Every role manages their own identity through the SAME page. A capability
+  // check here would be wrong: having an account is what entitles you to it.
+  for (const actor of [founder, cofounder, employee, collaborator]) {
+    await canOpen(actor, "/app/profile", "Your profile");
+  }
+
+  // ...but a profile page must never become a way to see someone else's record,
+  // or a second surface that can change a role.
+  assert.ok(
+    !(await get(collaborator, "/app/profile")).html.includes(founder.email),
+    "the profile page shows only your own account",
+  );
+  await sees(founder, "/app/profile", "Access Control", true); // as prose, not a control
+  assert.ok(
+    !(await get(employee, "/app/profile")).html.includes('name="role"'),
+    "no surface on the profile page can submit a role",
+  );
+
+  // Analytics is a grantable capability, so it gates like one.
+  await canOpen(founder, "/app/analytics", "Account growth and platform posture");
+  await cannotOpen(employee, "/app/analytics", "Account growth and platform posture");
+  await cannotOpen(collaborator, "/app/analytics", "Account growth and platform posture");
+
+  // An unmeasurable metric must say so rather than render as a confident zero.
+  const { html: analytics } = await get(founder, "/app/analytics");
+  assert.ok(
+    analytics.includes("Invitations arrive in Phase 7"),
+    "invitation acceptance reports itself as unmeasured, not as 0%",
+  );
+  // A range that is not a range must not reach a query — it falls back.
+  const bogus = await get(founder, "/app/analytics?range=../../etc/passwd");
+  assert.ok(
+    bogus.html.includes("Last 30 days"),
+    "an unknown range falls back to the default instead of being trusted",
+  );
+
+  // The avatar route is not a public asset host: no session, no bytes.
+  const anon = await fetch(`${BASE}/api/avatar/${founder.id}`, { redirect: "manual" });
+  assert.equal(anon.status, 401, "an unauthenticated request for an avatar is refused");
+
+  console.log("  ✓ Profiles are self-service for every role; analytics gates on capability");
 } finally {
   if (productId) await db.product.delete({ where: { id: productId } }).catch(() => null);
   await db.user.deleteMany({ where: { email: { startsWith: tag } } });

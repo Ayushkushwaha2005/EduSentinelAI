@@ -1,8 +1,15 @@
 /*
- * Initial-avatars. The reference uses stock photography; we render deterministic
- * initials instead — no remote image fetches, which keeps the no-tracker
- * privacy invariant (scripts/check-trackers) intact and avoids leaking staff
- * likenesses. Tint is derived from the name so a person looks the same everywhere.
+ * Avatars.
+ *
+ * The reference uses stock photography. We render deterministic initials by
+ * default — no remote image fetches, which keeps the no-tracker privacy invariant
+ * (scripts/check-trackers) intact. Tint is derived from the name so a person looks
+ * the same everywhere.
+ *
+ * Phase 6.2 adds real photos: when a person has uploaded one, `src` points at
+ * /api/avatar, our own authenticated route — never a third-party host, never
+ * gravatar (which is an email-hash lookup, i.e. a tracker). Initials remain the
+ * fallback for everyone who has not uploaded anything, which is most people.
  */
 const TINTS = [
   "bg-brand-cyan/15 text-brand-cyan",
@@ -29,22 +36,40 @@ export function Avatar({
   name,
   size = 36,
   online,
+  src,
   className = "",
 }: {
   name: string;
   size?: number;
+  /** Real presence (lib/profile.ts) — never decoration. Omit if unknown. */
   online?: boolean;
+  /** /api/avatar URL when this person has uploaded a photo. */
+  src?: string | null;
   className?: string;
 }) {
   return (
     <span className={`relative inline-flex shrink-0 ${className}`} style={{ width: size, height: size }}>
-      <span
-        className={`flex h-full w-full items-center justify-center rounded-full font-semibold ring-2 ring-surface-raised ${tintFor(name)}`}
-        style={{ fontSize: Math.round(size * 0.36) }}
-        title={name}
-      >
-        {initialsOf(name)}
-      </span>
+      {src ? (
+        // Same-origin, already validated and metadata-stripped on upload; the
+        // image optimizer would add nothing but a second code path.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt=""
+          width={size}
+          height={size}
+          title={name}
+          className="h-full w-full rounded-full object-cover ring-2 ring-surface-raised"
+        />
+      ) : (
+        <span
+          className={`flex h-full w-full items-center justify-center rounded-full font-semibold ring-2 ring-surface-raised ${tintFor(name)}`}
+          style={{ fontSize: Math.round(size * 0.36) }}
+          title={name}
+        >
+          {initialsOf(name)}
+        </span>
+      )}
       {online && (
         <span
           className="absolute bottom-0 right-0 block rounded-full bg-success ring-2 ring-surface-raised"
