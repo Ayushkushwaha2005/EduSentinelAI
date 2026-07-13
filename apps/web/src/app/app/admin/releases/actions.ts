@@ -3,36 +3,38 @@
 import { rename, mkdir } from "fs/promises";
 import path from "path";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { audit, requestContext } from "@/lib/audit";
 import { signDigest, publishBlockedByScan } from "@/lib/artifacts";
+import { assertCapability } from "@/lib/guard";
+import type { Capability } from "@/lib/permissions";
 
 export type ReviewState = { error?: string; ok?: string };
 
 const STORAGE = path.join(process.cwd(), "storage");
 
 /*
- * Publish/reject/revoke are FOUNDER-gated (Founder Trust Model §3: signing
- * key operations require founder authorization) and require MFA — which is
- * mandatory for FOUNDER anyway.
+ * Publish/reject/revoke run on founder-reserved capabilities (Founder Trust
+ * Model §3: signing-key operations require founder authorization). Because
+ * `releases.publish` / `releases.reject` / `releases.revoke` are in
+ * FOUNDER_RESERVED, effectiveCapabilities() strips them from every non-founder
+ * regardless of any grant row — so this check can only ever succeed for the
+ * FOUNDER, and MFA is enforced inside assertCapability.
  */
-async function requireFounder() {
-  const session = await auth();
-  if (session?.user?.role !== "FOUNDER") return null;
-  const account = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { mfaEnabled: true },
-  });
-  if (!account?.mfaEnabled) return null;
-  return session.user.id;
+async function founderActor(cap: Capability): Promise<string | null> {
+  try {
+    const viewer = await assertCapability(cap);
+    return viewer.id;
+  } catch {
+    return null;
+  }
 }
 
 export async function publishReleaseAction(
   _prev: ReviewState,
   formData: FormData,
 ): Promise<ReviewState> {
-  const founderId = await requireFounder();
+  const founderId = await founderActor("releases.publish");
   if (!founderId) return { error: "Publishing is founder-only and requires MFA." };
 
   const release = await db.release.findUnique({
@@ -82,7 +84,7 @@ export async function rejectReleaseAction(
   _prev: ReviewState,
   formData: FormData,
 ): Promise<ReviewState> {
-  const founderId = await requireFounder();
+  const founderId = await founderActor("releases.reject");
   if (!founderId) return { error: "Review is founder-only and requires MFA." };
   const release = await db.release.findUnique({
     where: { id: formData.get("releaseId") as string },
@@ -110,7 +112,7 @@ export async function revokeReleaseAction(
   _prev: ReviewState,
   formData: FormData,
 ): Promise<ReviewState> {
-  const founderId = await requireFounder();
+  const founderId = await founderActor("releases.revoke");
   if (!founderId) return { error: "Revocation is founder-only and requires MFA." };
   const reason = ((formData.get("reason") as string) ?? "").trim();
   if (reason.length < 5) return { error: "A public revocation reason is required." };

@@ -163,18 +163,44 @@ through `lib/audit.ts`, leaving a null hash that broke the R7b chain for every
 row after it. It now chains correctly; `npm run audit:verify` passes across a
 bootstrap.
 
+### 5.4 — Capability migration of the Phase 3/4 surfaces ✅
+
+The surfaces built before the capability layer (`/app/products`,
+`/app/admin/releases`, `/app/admin/collaborations`, `/app/security`) still
+authorized with ad-hoc `isAdminRole` + MFA checks. All of them now go through
+`lib/guard.ts`, so the capability system is the *only* authorization path in the
+workspace:
+- Products: viewing is `products.view`, registering is `products.manage`,
+  uploading is `releases.upload` — three distinct powers the Founder can grant
+  separately. (Previously one page-level admin check, which also meant an
+  employee saw a Products nav item that bounced them.) Reads stay
+  ownership-scoped, so a viewer sees only products they own.
+- Releases: the queue is `releases.review`; publish/reject/revoke run on
+  founder-reserved capabilities. `releases.reject` was added to
+  FOUNDER_RESERVED so rejection stays founder-only exactly as before.
+- Moderation: `collab.moderate` — grantable to one person without also handing
+  over products, releases or the account directory.
+
+**Fixed in passing:** `disableMfa` refused ADMIN and FOUNDER by name, so
+`CO_FOUNDER` — introduced by this phase's role ladder — could have switched off
+its own mandatory MFA. It now uses the rank check (`isAdminRole`).
+
 🔒 **Security gates (blocking):**
-- Deny-by-default authorization: a capability check on **every** dashboard route
-  and server action, server-side. Sidebar filtering is UX only — never the
-  enforcement boundary (same rule as `src/middleware.ts`).
-- Founder-reserved capabilities provably non-delegable — covered by
-  `npm run test:security`, extended with permission-escalation cases
-  (no grant path yields FOUNDER; no ADMIN/CO_FOUNDER can self-grant).
-- MFA continues to be mandatory for every privileged surface (ADMIN,
-  CO_FOUNDER, FOUNDER).
-- Collaborator tenant isolation: collaborators reach only their own records,
-  via ownership-scoped query helpers (the `lib/products.ts` pattern).
-- Two-person review before merge — this phase touches authorization.
+- ✅ Deny-by-default authorization: a capability check on **every** dashboard
+  route and server action, server-side. Sidebar filtering is UX only — never the
+  enforcement boundary (same rule as `src/middleware.ts`). Enforced by a static
+  sweep in `test:permissions`: every `/app` page and `actions.ts` must call a
+  `lib/guard.ts` helper, and nothing under `/app` may read the role off the
+  session — a new route added without a guard fails CI.
+- ✅ Founder-reserved capabilities provably non-delegable — `test:permissions`
+  writes forged rows straight into `PermissionGrant`, bypassing every action and
+  UI check, and asserts no reserved capability or FOUNDER role can be produced.
+- ✅ MFA mandatory for every privileged surface (ADMIN, CO_FOUNDER, FOUNDER),
+  enforced inside `requireCapability`/`assertCapability` and regression-tested.
+- ✅ Collaborator tenant isolation: collaborators reach only their own records,
+  via participant-scoped and ownership-scoped query helpers.
+- ⏳ **Two-person review before merge — this phase touches authorization.**
+  (The one remaining exit criterion; founder action.)
 
 ## Pre-Launch Gate 🔒 (MEDIUM tier — before public exposure, any phase)
 

@@ -1,23 +1,24 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { isAdminRole } from "@/lib/roles";
 import { audit, requestContext } from "@/lib/audit";
 import { sanitizeLine } from "@/lib/sanitize";
+import { assertCapability } from "@/lib/guard";
 
 export type ModerationState = { error?: string; ok?: boolean };
 
-async function requireModerator() {
-  const session = await auth();
-  if (!session?.user || !isAdminRole(session.user.role)) return null;
-  const account = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { mfaEnabled: true },
-  });
-  if (!account?.mfaEnabled) return null;
-  return session.user.id;
+/*
+ * Moderation runs on the `collab.moderate` capability, so the Founder can grant
+ * it to one person without also handing over products, releases or the account
+ * directory. MFA for privileged roles is enforced inside assertCapability.
+ */
+async function requireModerator(): Promise<string | null> {
+  try {
+    return (await assertCapability("collab.moderate")).id;
+  } catch {
+    return null;
+  }
 }
 
 const COLLAB_STATUSES = ["APPROVED", "REJECTED", "SPAM"];
@@ -27,7 +28,7 @@ export async function moderateCollaborationAction(
   formData: FormData,
 ): Promise<ModerationState> {
   const moderatorId = await requireModerator();
-  if (!moderatorId) return { error: "Moderation requires an admin role with MFA." };
+  if (!moderatorId) return { error: "Moderation requires the collab.moderate permission and MFA." };
 
   const id = formData.get("id") as string;
   const status = formData.get("status") as string;
@@ -61,7 +62,7 @@ export async function handleAbuseReportAction(
   formData: FormData,
 ): Promise<ModerationState> {
   const moderatorId = await requireModerator();
-  if (!moderatorId) return { error: "Moderation requires an admin role with MFA." };
+  if (!moderatorId) return { error: "Moderation requires the collab.moderate permission and MFA." };
 
   const id = formData.get("id") as string;
   const status = formData.get("status") as string;

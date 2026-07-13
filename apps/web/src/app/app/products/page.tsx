@@ -1,7 +1,4 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { isAdminRole } from "@/lib/roles";
+import { requireCapability } from "@/lib/guard";
 import { productsFor } from "@/lib/products";
 import { CreateProductForm, UploadReleaseForm } from "./forms";
 
@@ -13,15 +10,15 @@ const statusTone: Record<string, string> = {
 };
 
 export default async function PublisherPage() {
-  const session = await auth();
-  if (!session?.user || !isAdminRole(session.user.role)) redirect("/app");
-  const account = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { mfaEnabled: true },
-  });
-  if (!account?.mfaEnabled) redirect("/app/security");
+  // Viewing is `products.view`; creating and uploading are separate
+  // capabilities, so the Founder can let someone see the registry without
+  // letting them add to it. The list itself is ownership-scoped (R12), so a
+  // viewer only ever sees products they own.
+  const viewer = await requireCapability("products.view");
+  const canManage = viewer.can("products.manage");
+  const canUpload = viewer.can("releases.upload");
 
-  const products = await productsFor(session.user.id, session.user.role);
+  const products = await productsFor(viewer.id, viewer.role);
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -31,14 +28,22 @@ export default async function PublisherPage() {
         publishing requires founder review and signing.
       </p>
 
-      <section className="mt-10 rounded-card border border-border-subtle bg-surface-raised p-7">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.08em] text-text-muted">
-          New product
-        </h2>
-        <div className="mt-5 max-w-lg">
-          <CreateProductForm />
-        </div>
-      </section>
+      {canManage && (
+        <section className="mt-10 rounded-card border border-border-subtle bg-surface-raised p-7">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.08em] text-text-muted">
+            New product
+          </h2>
+          <div className="mt-5 max-w-lg">
+            <CreateProductForm />
+          </div>
+        </section>
+      )}
+
+      {products.length === 0 && (
+        <p className="mt-10 rounded-card border border-border-subtle bg-surface-raised p-10 text-center text-text-muted">
+          You do not own any products yet.
+        </p>
+      )}
 
       {products.map((p) => (
         <section key={p.id} className="mt-6 rounded-card border border-border-subtle bg-surface-raised p-7">
@@ -67,7 +72,7 @@ export default async function PublisherPage() {
               ))}
             </ul>
           )}
-          <UploadReleaseForm productId={p.id} />
+          {canUpload && <UploadReleaseForm productId={p.id} />}
         </section>
       ))}
     </div>

@@ -1,19 +1,13 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { isAdminRole } from "@/lib/roles";
+import { requireCapability } from "@/lib/guard";
 import { publishBlockedByScan } from "@/lib/artifacts";
 import { ReviewControls, RevokeControl } from "./review-forms";
 
 export default async function ReleaseReviewPage() {
-  const session = await auth();
-  if (!isAdminRole(session?.user?.role)) redirect("/app");
-  const actor = await db.user.findUnique({
-    where: { id: session!.user.id },
-    select: { mfaEnabled: true, role: true },
-  });
-  if (!actor?.mfaEnabled) redirect("/app/security");
-  const isFounder = actor.role === "FOUNDER";
+  // Viewing the queue needs `releases.review`; acting on it needs the
+  // founder-reserved capabilities, which no grant can hand to anyone else.
+  const viewer = await requireCapability("releases.review");
+  const isFounder = viewer.can("releases.publish");
 
   const [pending, published] = await Promise.all([
     db.release.findMany({

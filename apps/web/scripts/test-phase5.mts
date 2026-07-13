@@ -6,6 +6,8 @@
  * PermissionGrant — bypassing every server action and every UI check — and
  * assert that effectiveCapabilities() still refuses to hand them out. */
 import assert from "node:assert";
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { db } from "../src/lib/db";
 import {
   CAPABILITIES,
@@ -332,5 +334,77 @@ try {
   });
 }
 
-console.log("phase 5 — permission + message-isolation invariants hold (no escalation path found).");
+// ---------- MFA is mandatory for every privileged role ----------
+// Regression: disableMfa named ADMIN and FOUNDER explicitly, so CO_FOUNDER —
+// added in this phase — could have switched off its own mandatory MFA. Rank
+// checks, not role names.
+for (const role of ["ADMIN", "CO_FOUNDER", "FOUNDER"]) {
+  assert.ok(isAdminRole(role), `${role} must be treated as privileged (MFA mandatory)`);
+}
+for (const role of ["USER", "COLLABORATOR", "EMPLOYEE"]) {
+  assert.ok(!isAdminRole(role), `${role} must not be treated as privileged`);
+}
+
+// ---------- deny-by-default: every workspace surface goes through the guard ----------
+// A page or action that authorizes by hand is how the boundary rots. This walks
+// the real files, so a new route added without a guard fails CI rather than
+// quietly shipping open.
+const APP_DIR = path.join(process.cwd(), "src", "app", "app");
+const GUARDS = [
+  "requireViewer",
+  "requireCapability",
+  "requireFounder",
+  "assertCapability",
+];
+
+function walk(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const full = path.join(dir, e.name);
+    return e.isDirectory() ? walk(full) : [full];
+  });
+}
+
+const guarded: string[] = [];
+const unguarded: string[] = [];
+
+for (const file of walk(APP_DIR)) {
+  const base = path.basename(file);
+  const isPage = base === "page.tsx";
+  const isActions = base === "actions.ts";
+  if (!isPage && !isActions) continue;
+
+  const src = readFileSync(file, "utf8");
+  const rel = path.relative(APP_DIR, file).replace(/\\/g, "/");
+
+  // A page that only redirects (the retired /app/admin console) holds no data.
+  const redirectOnly = isPage && /redirect\(/.test(src) && !/db\./.test(src);
+  if (redirectOnly) continue;
+
+  if (GUARDS.some((g) => src.includes(g))) guarded.push(rel);
+  else unguarded.push(rel);
+}
+
+assert.deepEqual(
+  unguarded,
+  [],
+  `every /app page and action must authorize through lib/guard.ts — unguarded: ${unguarded.join(", ")}`,
+);
+assert.ok(guarded.length >= 10, "the guard sweep must actually be finding files");
+
+// Nothing under /app may authorize by hand-rolling a role comparison against
+// the session — that path bypasses capabilities and the MFA gate entirely.
+for (const file of walk(APP_DIR)) {
+  if (!/\.(ts|tsx)$/.test(file)) continue;
+  const src = readFileSync(file, "utf8");
+  const rel = path.relative(APP_DIR, file).replace(/\\/g, "/");
+  assert.ok(
+    !/session\??\.user\??\.role/.test(src),
+    `${rel}: authorize via lib/guard.ts, never by reading the role off the session`,
+  );
+}
+
+console.log(
+  `phase 5 — permission, message-isolation and deny-by-default invariants hold ` +
+    `(${guarded.length} guarded surfaces; no escalation path found).`,
+);
 await db.$disconnect();
