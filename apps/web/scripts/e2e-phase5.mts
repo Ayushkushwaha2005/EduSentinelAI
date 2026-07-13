@@ -166,24 +166,38 @@ try {
   for (const a of actors) await signIn(a);
   console.log("  ✓ all five accounts signed in (TOTP accepted for MFA-enrolled roles)");
 
-  // ---------- MFA onboarding gate ----------
-  // A FOUNDER without MFA must be held at enrolment, not handed the console —
-  // and must be TOLD why, with a way back.
-  const gated = await get(noMfaFounder, "/app/access");
+  // ---------- MFA onboarding ----------
+  // Login demands a code once MFA is enrolled, so an unenrolled privileged
+  // account MUST be walked through setup on its FIRST landing — not left to
+  // discover a button. Hitting the workspace root is enough.
+  const landing = await get(noMfaFounder, "/app");
   assert.ok(
-    gated.url.includes("/app/security"),
-    "a founder without MFA must be redirected to enrolment",
+    landing.url.includes("/app/security"),
+    "the first login of an unenrolled Founder must open enrolment automatically",
   );
   assert.ok(
-    gated.html.includes("Two-factor authentication is required"),
+    landing.html.includes("Two-factor authentication is required"),
     "the MFA gate must explain itself",
   );
+
+  // The QR and the manual key must actually be on the page — an authenticator
+  // cannot be configured from a promise that setup exists.
+  const setupPage = await get(noMfaFounder, "/app/security?mfa=required&next=%2Fapp");
+  assert.ok(
+    setupPage.html.includes("Scan this QR code") ||
+      setupPage.html.includes("Preparing your authenticator setup"),
+    "the setup page must present the QR flow, not a button to find",
+  );
+
+  // And a deep link still carries its return path.
+  const gated = await get(noMfaFounder, "/app/access");
+  assert.ok(gated.url.includes("/app/security"), "privileged routes still gate on MFA");
   assert.ok(
     gated.html.includes("/app/access"),
     "the MFA gate must offer the way back to where they were going",
   );
   await cannotOpen(noMfaFounder, "/app/access", "Reserved to the Founder");
-  console.log("  ✓ MFA onboarding gate holds an unenrolled Founder and explains itself");
+  console.log("  ✓ Unenrolled Founder is taken straight to authenticator setup");
 
   // ---------- Founder: full authority after enrolment ----------
   await canOpen(founder, "/app", "Good"); // greeting on the leadership dashboard

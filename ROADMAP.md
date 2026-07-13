@@ -330,8 +330,38 @@ rendering their empty states.
 - ⏳ **Two-person review before merge — this phase touches authorization.**
   (The one remaining exit criterion; founder action.)
 
-✅ **Founder MFA enrolled.** Every privileged surface (product console, Access
-Control, release signing, audit) is open and verified working.
+### 5.8 — MFA onboarding done properly ✅
+
+**A lockout was created and then fixed.** Phase 5.7 enrolled the Founder by
+issuing a secret and confirming it with a code generated *from that secret* —
+so MFA switched on for an authenticator that had never held it, and login then
+demanded a code the Founder could not produce. Confirming enrolment on someone's
+behalf defeats the entire point of the second factor: the code must come from
+**their** device, or it proves nothing. The account was reset (secret cleared,
+MFA off, sessions revoked) and re-enrolment now happens in the browser.
+
+The flow, as it should have been:
+- **First landing enrols.** An `isAdminRole` account without MFA is redirected
+  from *anywhere* in `/app` — including the root — straight to setup. Previously
+  only privileged sub-pages redirected, so a Founder could sit on `/app` with no
+  sign that half the product was closed to them or why.
+- **The QR opens itself.** Setup no longer hides behind a "Set up" button the
+  user has to discover; the QR and manual key are on screen, ready to scan.
+- **The pending secret is stable.** `startMfaSetup()` used to mint a fresh secret
+  on every call. Harmless when it sat behind a button — fatal once the page opens
+  automatically, because a reload (or a second tab) would silently invalidate the
+  QR just scanned and the codes would never match. It now resumes the pending
+  enrolment and only mints a secret when none is pending.
+- **Enforcement stays where it belongs:** login demands a code only once
+  `mfaEnabled` is true, i.e. only after a real code from the user's own device
+  has been verified. The account is never left requiring a factor that was never
+  configured.
+
+`npm run mfa:enroll` remains as a break-glass path (it still refuses to enable
+MFA without a valid live code), but the browser flow is the normal one.
+
+⏳ **Founder action:** sign in with your password, scan the QR that appears, and
+enter one code. MFA is enforced from the next login onward.
 
 ## Pre-Launch Gate 🔒 (MEDIUM tier — before public exposure, any phase)
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 /* eslint-disable @next/next/no-img-element -- QR code is a generated data URL */
 import {
   startMfaSetup,
@@ -44,6 +44,26 @@ export function MfaPanel({
   useEffect(() => {
     if (confirmState.done) router.refresh();
   }, [confirmState.done, router]);
+
+  /*
+   * Open the QR immediately when MFA is required but not yet enrolled.
+   *
+   * MFA is mandatory for privileged roles, so hiding the setup behind a "Set up"
+   * button meant a Founder could be bounced here and still not obviously be told
+   * to scan anything. startMfaSetup() reuses a pending secret, so this is safe to
+   * run on every mount — it will not invalidate a QR already scanned.
+   */
+  const needsEnrolment = !mfaEnabled && mandatory;
+  const requested = useRef(false);
+
+  useEffect(() => {
+    if (!needsEnrolment || setup || requested.current) return;
+    requested.current = true;
+    startTransition(async () => {
+      const res = await startMfaSetup();
+      if (res.setup) setSetup(res.setup);
+    });
+  }, [needsEnrolment, setup, startTransition]);
 
   if (mfaEnabled && !disableState.done) {
     return (
@@ -96,16 +116,21 @@ export function MfaPanel({
   }
 
   if (!setup) {
+    // Mandatory-MFA accounts get the QR opened for them (effect above); show the
+    // in-flight state rather than a button they would have to discover.
+    if (needsEnrolment) {
+      return (
+        <p className="text-[15px] text-text-secondary">
+          Preparing your authenticator setup…
+        </p>
+      );
+    }
+
     return (
       <div>
         <p className="max-w-lg text-[15px] leading-relaxed text-text-secondary">
           Protect your account with a 6-digit code from an authenticator app
           (Google Authenticator, 1Password, Aegis…).
-          {mandatory && (
-            <span className="mt-2 block font-medium text-warning">
-              MFA is mandatory for your role — set it up now to keep admin access.
-            </span>
-          )}
         </p>
         <button
           type="button"
