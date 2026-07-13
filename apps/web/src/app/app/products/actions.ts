@@ -5,28 +5,31 @@ import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { isAdminRole } from "@/lib/roles";
 import { audit, requestContext } from "@/lib/audit";
 import { ownedProduct } from "@/lib/products";
 import { detectArtifactType, MAX_ARTIFACT_BYTES } from "@/lib/artifacts";
 import { scanArtifact } from "@/lib/scanner";
+import { assertCapability } from "@/lib/guard";
+import type { Capability } from "@/lib/permissions";
 
 export type PublishState = { error?: string; ok?: string };
 
 const STORAGE = path.join(process.cwd(), "storage");
 
-/** Publisher gate: admin-tier role + MFA enabled (Phase 3: internal publishers only). */
-async function requirePublisher() {
-  const session = await auth();
-  if (!session?.user || !isAdminRole(session.user.role)) return null;
-  const account = await db.user.findUnique({
-    where: { id: session.user.id },
-    select: { mfaEnabled: true, role: true },
-  });
-  if (!account?.mfaEnabled) return null;
-  return { id: session.user.id, role: account.role };
+/*
+ * Publisher gate, now capability-based: registering a product (`products.manage`)
+ * and uploading an artifact (`releases.upload`) are distinct powers, so the
+ * Founder can grant one without the other. MFA for privileged roles is enforced
+ * inside assertCapability. Writes stay ownership-scoped via lib/products.ts.
+ */
+async function publisher(cap: Capability): Promise<{ id: string; role: string } | null> {
+  try {
+    const viewer = await assertCapability(cap);
+    return { id: viewer.id, role: viewer.role };
+  } catch {
+    return null;
+  }
 }
 
 const productSchema = z.object({
@@ -43,8 +46,8 @@ export async function createProductAction(
   _prev: PublishState,
   formData: FormData,
 ): Promise<PublishState> {
-  const actor = await requirePublisher();
-  if (!actor) return { error: "Publishing requires an admin role with MFA enabled." };
+  const actor = await publisher("products.manage");
+  if (!actor) return { error: "Creating a product requires the products.manage permission and MFA." };
 
   const parsed = productSchema.safeParse({
     name: formData.get("name"),
@@ -73,8 +76,8 @@ export async function uploadReleaseAction(
   _prev: PublishState,
   formData: FormData,
 ): Promise<PublishState> {
-  const actor = await requirePublisher();
-  if (!actor) return { error: "Publishing requires an admin role with MFA enabled." };
+  const actor = await publisher("releases.upload");
+  if (!actor) return { error: "Uploading a release requires the releases.upload permission and MFA." };
 
   const productId = formData.get("productId") as string;
   const version = ((formData.get("version") as string) ?? "").trim();

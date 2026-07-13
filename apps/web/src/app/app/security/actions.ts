@@ -4,28 +4,29 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { Secret, TOTP } from "otpauth";
 import QRCode from "qrcode";
-import { auth, verifyTotp } from "@/lib/auth";
+import { verifyTotp } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { audit, requestContext } from "@/lib/audit";
 import { encryptSecret } from "@/lib/crypto";
+import { requireViewer } from "@/lib/guard";
+import { isAdminRole } from "@/lib/roles";
 
 export type MfaSetup = { otpauthUri: string; qrDataUrl: string; manualKey: string };
 export type MfaState = { error?: string; setup?: MfaSetup; done?: boolean };
 
 /** Step 1: generate + store (encrypted, still disabled) a TOTP secret. */
 export async function startMfaSetup(): Promise<MfaState> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const viewer = await requireViewer();
   const secret = new Secret({ size: 20 });
   const totp = new TOTP({
     issuer: "EduSentinel AI",
-    label: session.user.email ?? session.user.id,
+    label: viewer.email,
     secret,
     digits: 6,
     period: 30,
   });
   await db.user.update({
-    where: { id: session.user.id },
+    where: { id: viewer.id },
     data: { totpSecret: encryptSecret(secret.base32), mfaEnabled: false },
   });
   const otpauthUri = totp.toString();
@@ -43,9 +44,8 @@ export async function confirmMfa(
   _prev: MfaState,
   formData: FormData,
 ): Promise<MfaState> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
-  const user = await db.user.findUnique({ where: { id: session.user.id } });
+  const viewer = await requireViewer();
+  const user = await db.user.findUnique({ where: { id: viewer.id } });
   const code = (formData.get("code") as string) ?? "";
   if (!user?.totpSecret || !verifyTotp(user.totpSecret, code)) {
     return { error: "That code didn't match. Try again." };
@@ -60,17 +60,21 @@ export async function confirmMfa(
   return { done: true };
 }
 
-/** Disable MFA — requires a live code (not available to ADMIN/FOUNDER, for whom MFA is mandatory). */
+/**
+ * Disable MFA — requires a live code, and is refused for every privileged role
+ * (ADMIN, CO_FOUNDER, FOUNDER), for whom MFA is mandatory. This uses the rank
+ * check rather than naming roles: the previous string comparison listed ADMIN
+ * and FOUNDER only, so CO_FOUNDER could have switched off its own mandatory MFA.
+ */
 export async function disableMfa(
   _prev: MfaState,
   formData: FormData,
 ): Promise<MfaState> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
-  if (session.user.role === "ADMIN" || session.user.role === "FOUNDER") {
-    return { error: "MFA is mandatory for administrator accounts." };
+  const viewer = await requireViewer();
+  if (isAdminRole(viewer.role)) {
+    return { error: "MFA is mandatory for privileged accounts." };
   }
-  const user = await db.user.findUnique({ where: { id: session.user.id } });
+  const user = await db.user.findUnique({ where: { id: viewer.id } });
   const code = (formData.get("code") as string) ?? "";
   if (!user?.totpSecret || !verifyTotp(user.totpSecret, code)) {
     return { error: "That code didn't match. Try again." };
@@ -87,9 +91,8 @@ export async function disableMfa(
 
 /** R9: resend the email-verification link (single-use, supersedes prior links). */
 export async function resendVerification(): Promise<{ notice: string }> {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
-  const user = await db.user.findUnique({ where: { id: session.user.id } });
+  const viewer = await requireViewer();
+  const user = await db.user.findUnique({ where: { id: viewer.id } });
   const notice = "Verification link sent — check your inbox.";
   if (!user || user.emailVerified) return { notice };
   const { createAuthToken } = await import("@/lib/tokens");
@@ -107,13 +110,12 @@ export async function resendVerification(): Promise<{ notice: string }> {
 
 /** R2: bump sessionVersion — revokes every session, including this one. */
 export async function revokeAllSessions() {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const viewer = await requireViewer();
   await db.user.update({
-    where: { id: session.user.id },
+    where: { id: viewer.id },
     data: { sessionVersion: { increment: 1 } },
   });
   const ctx = await requestContext();
-  await audit("user.sessions_revoked", { actorId: session.user.id, ...ctx });
+  await audit("user.sessions_revoked", { actorId: viewer.id, ...ctx });
   redirect("/login");
 }

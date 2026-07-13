@@ -1,15 +1,18 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { requireViewer } from "@/lib/guard";
 import { isAdminRole } from "@/lib/roles";
 import { MfaPanel } from "./mfa-panel";
 import { revokeAllSessions, resendVerification } from "./actions";
 
+/*
+ * Own-account security. Deliberately gated on requireViewer, not a capability:
+ * this is where privileged users are sent to enrol MFA, so it must stay
+ * reachable by someone who cannot yet reach anything else.
+ */
 export default async function SecurityPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const viewer = await requireViewer();
   const account = await db.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: viewer.id },
     select: { mfaEnabled: true, emailVerified: true },
   });
 
@@ -27,7 +30,7 @@ export default async function SecurityPage() {
         <div className="mt-5">
           <MfaPanel
             mfaEnabled={account?.mfaEnabled ?? false}
-            mandatory={isAdminRole(session.user.role)}
+            mandatory={isAdminRole(viewer.role)}
           />
         </div>
       </section>

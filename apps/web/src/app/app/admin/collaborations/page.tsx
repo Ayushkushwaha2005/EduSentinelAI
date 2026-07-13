@@ -1,7 +1,5 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { isAdminRole } from "@/lib/roles";
+import { requireCapability } from "@/lib/guard";
 import { CollaborationControls, AbuseControls } from "./moderation-forms";
 
 const tone: Record<string, string> = {
@@ -15,13 +13,8 @@ const tone: Record<string, string> = {
 };
 
 export default async function CollaborationInbox() {
-  const session = await auth();
-  if (!isAdminRole(session?.user?.role)) redirect("/app");
-  const actor = await db.user.findUnique({
-    where: { id: session!.user.id },
-    select: { mfaEnabled: true },
-  });
-  if (!actor?.mfaEnabled) redirect("/app/security");
+  // MFA for privileged roles is enforced inside requireCapability.
+  await requireCapability("collab.moderate");
 
   const [requests, reports] = await Promise.all([
     db.collaborationRequest.findMany({ orderBy: { createdAt: "desc" }, take: 100 }),

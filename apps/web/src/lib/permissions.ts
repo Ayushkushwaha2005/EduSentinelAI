@@ -21,6 +21,7 @@ export const CAPABILITIES = [
   "releases.upload", // upload into quarantine
   "releases.review", // scan results, approve/reject
   "releases.publish", // sign + publish  (founder-reserved)
+  "releases.reject", // reject a quarantined upload  (founder-reserved)
   "releases.revoke", // pull a published artifact  (founder-reserved)
   "collab.view",
   "collab.moderate", // approve/reject collaboration requests, abuse reports
@@ -46,6 +47,7 @@ export function isCapability(value: unknown): value is Capability {
  */
 export const FOUNDER_RESERVED: readonly Capability[] = [
   "releases.publish",
+  "releases.reject",
   "releases.revoke",
   "users.manage_roles",
   "permissions.grant",
