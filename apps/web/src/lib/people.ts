@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { avatarUrlFor, isOnline } from "./profile";
 import { ROLE_LABELS, type Role } from "./roles";
 
 /*
@@ -26,6 +27,8 @@ export type DirectoryPerson = {
   mfaEnabled: boolean;
   verified: boolean;
   openTasks: number;
+  avatarUrl: string | null;
+  online: boolean;
 };
 
 export type DirectoryGroup = "ALL" | "LEADERSHIP" | "EMPLOYEE" | "COLLABORATOR" | "MEMBER";
@@ -53,9 +56,13 @@ export async function directory(
       name: true,
       email: true,
       role: true,
+      title: true,
       createdAt: true,
       mfaEnabled: true,
       emailVerified: true,
+      avatarName: true,
+      avatarAt: true,
+      lastSeenAt: true,
       memberships: {
         take: 1,
         select: { title: true, team: { select: { name: true } } },
@@ -78,12 +85,16 @@ export async function directory(
       email: u.email,
       role: u.role as Role,
       roleLabel: ROLE_LABELS[u.role as Role] ?? u.role,
-      title: u.memberships[0]?.title ?? null,
+      // The person's own title (Phase 6.2 profile) wins over the team-membership
+      // title an admin set for them — it is their record to keep correct.
+      title: u.title ?? u.memberships[0]?.title ?? null,
       team: u.memberships[0]?.team.name ?? null,
       joined: u.createdAt,
       mfaEnabled: u.mfaEnabled,
       verified: !!u.emailVerified,
       openTasks: u.tasks.length,
+      avatarUrl: avatarUrlFor(u),
+      online: isOnline(u.lastSeenAt),
     }));
 }
 
@@ -110,7 +121,17 @@ export async function teamDetail(teamId: string) {
     include: {
       members: {
         include: {
-          user: { select: { id: true, name: true, email: true, role: true } },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              avatarName: true,
+              avatarAt: true,
+              lastSeenAt: true,
+            },
+          },
         },
       },
       projects: { orderBy: [{ status: "asc" }, { name: "asc" }] },

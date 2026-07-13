@@ -19,6 +19,7 @@
     "gen:signing-key": "node scripts/gen-signing-key.mjs",
     "test:content": "tsx --env-file=.env scripts/test-phase4.mts",
     "test:permissions": "tsx --env-file=.env scripts/test-phase5.mts",
+    "test:data": "tsx --env-file=.env scripts/test-phase6.mts",
     "test:e2e": "tsx --env-file=.env scripts/e2e-phase5.mts",
     "mfa:enroll": "node --env-file=.env scripts/mfa-enroll.mjs"
   },

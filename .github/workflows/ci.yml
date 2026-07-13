@@ -49,6 +49,11 @@ jobs:
       # yields a founder-reserved capability or the FOUNDER role.
       - run: npx tsx scripts/test-phase5.mts
         working-directory: apps/web
+      # Phase 6 gates: an avatar cannot be an SVG or carry EXIF into storage, a
+      # profile update cannot write `role`, presence is measured and analytics
+      # report unmeasurable metrics as unmeasured rather than as zero.
+      - run: npx tsx scripts/test-phase6.mts
+        working-directory: apps/web
       # audit hash chain must verify (tamper-evidence)
       - run: npx tsx scripts/verify-audit.mts
         working-directory: apps/web

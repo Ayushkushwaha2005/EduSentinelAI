@@ -1,5 +1,6 @@
 import { db } from "./db";
 import type { Viewer } from "./guard";
+import { avatarUrlFor, isOnline } from "./profile";
 import type { TeamCardData } from "@/components/dashboard/widgets";
 
 /*
@@ -106,36 +107,19 @@ export async function myCollaborations(email: string) {
   });
 }
 
-/**
- * Account growth over the last 7 days — backs the reference's bar chart.
- *
- * CUMULATIVE (total accounts at the end of each day), not per-day signups.
- * Per-day was the honest number but produced a chart that read as empty: a young
- * platform signs everyone up on one day, so six bars sat at zero and one spiked.
- * The running total is equally true and actually shows the shape of growth.
+/*
+ * Account growth used to live here as a hand-rolled 7-day loop. It now comes from
+ * lib/analytics.ts, which is the one definition of "growth" on the platform —
+ * the dashboard card and the Analytics page must never be able to disagree about
+ * what a number means.
  */
-export async function growthSeries(): Promise<{ label: string; value: number }[]> {
-  const days: { label: string; value: number }[] = [];
-  const now = new Date();
-
-  for (let i = 6; i >= 0; i--) {
-    const end = new Date(now);
-    end.setDate(now.getDate() - i);
-    end.setHours(23, 59, 59, 999);
-
-    const value = await db.user.count({ where: { createdAt: { lte: end } } });
-
-    days.push({
-      label: end.toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
-      value,
-    });
-  }
-  return days;
-}
 
 /**
  * Staff with their current work — the reference's "List Techs" panel.
  * Internal staff only; never shown to a collaborator.
+ *
+ * `online` is real (lib/profile.ts): seen in the last five minutes. This panel
+ * used to pass `online` unconditionally to every avatar.
  */
 export async function staffWithWork(take = 6) {
   const staff = await db.user.findMany({
@@ -146,6 +130,10 @@ export async function staffWithWork(take = 6) {
       id: true,
       name: true,
       role: true,
+      title: true,
+      avatarName: true,
+      avatarAt: true,
+      lastSeenAt: true,
       memberships: { take: 1, select: { title: true, team: { select: { name: true } } } },
       tasks: {
         where: { status: { not: "DONE" } },
@@ -160,10 +148,41 @@ export async function staffWithWork(take = 6) {
     id: s.id,
     name: s.name,
     role: s.role,
-    title: s.memberships[0]?.title ?? null,
+    title: s.title ?? s.memberships[0]?.title ?? null,
     team: s.memberships[0]?.team.name ?? null,
     task: s.tasks[0] ?? null,
+    avatarUrl: avatarUrlFor(s),
+    online: isOnline(s.lastSeenAt),
   }));
+}
+
+/**
+ * Who owns the catalogue, and who ships the releases.
+ *
+ * The summary cards used to render the same avatar stack of "some staff" on all
+ * three, which told the operator nothing: the faces on the Products card had no
+ * relationship to the products. These are the people actually behind each number.
+ */
+export async function productOwners(): Promise<string[]> {
+  const products = await db.product.findMany({ select: { ownerId: true } });
+  const ids = [...new Set(products.map((p) => p.ownerId))];
+  if (ids.length === 0) return [];
+  const owners = await db.user.findMany({
+    where: { id: { in: ids } },
+    select: { name: true },
+  });
+  return owners.map((o) => o.name);
+}
+
+export async function releasePublishers(): Promise<string[]> {
+  const releases = await db.release.findMany({ select: { createdById: true } });
+  const ids = [...new Set(releases.map((r) => r.createdById))];
+  if (ids.length === 0) return [];
+  const people = await db.user.findMany({
+    where: { id: { in: ids } },
+    select: { name: true },
+  });
+  return people.map((p) => p.name);
 }
 
 export async function recentAudit(take = 8) {

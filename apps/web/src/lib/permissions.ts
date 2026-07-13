@@ -34,6 +34,7 @@ export const CAPABILITIES = [
   "permissions.grant", // grant/revoke capabilities  (founder-reserved)
   "audit.read",
   "messages.use",
+  "analytics.read", // account growth & posture  (Phase 6.3; grantable)
 ] as const;
 export type Capability = (typeof CAPABILITIES)[number];
 
@@ -86,6 +87,10 @@ const BASE_ADMIN: Capability[] = [
   "collab.moderate",
   "users.view",
   "audit.read",
+  // Who signed up, who is active, who has MFA. Operational, not privileged —
+  // and grantable on its own, so the Founder can hand someone the numbers
+  // without also handing them the account directory's management surface.
+  "analytics.read",
 ];
 
 // Publishing to the public catalogue is a trust action (it speaks for the

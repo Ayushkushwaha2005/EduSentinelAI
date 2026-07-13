@@ -2,6 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import type { Viewer } from "@/lib/guard";
 import { greeting } from "@/lib/dashboard";
+import { ROLE_LABELS } from "@/lib/roles";
 import { BoxIcon, ShieldIcon } from "@/components/dashboard/icons";
 import { Breadcrumb, Panel, StatCard } from "@/components/dashboard/widgets";
 
@@ -11,10 +12,15 @@ import { Breadcrumb, Panel, StatCard } from "@/components/dashboard/widgets";
  * a deliberate act by the Founder.
  */
 export default async function MemberDashboard({ viewer }: { viewer: Viewer }) {
-  const account = await db.user.findUnique({
-    where: { id: viewer.id },
-    select: { createdAt: true, emailVerified: true, mfaEnabled: true },
-  });
+  const [account, published] = await Promise.all([
+    db.user.findUnique({
+      where: { id: viewer.id },
+      select: { createdAt: true, emailVerified: true, mfaEnabled: true },
+    }),
+    // Real count. The subtitle used to read "Signed, verified releases" — true of
+    // the download centre in general, but not a fact about anything.
+    db.release.count({ where: { status: "PUBLISHED" } }),
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -29,32 +35,46 @@ export default async function MemberDashboard({ viewer }: { viewer: Viewer }) {
         </p>
       </div>
 
+      {/* No avatar stacks here: these cards used to render a stack of the viewer,
+          alone — decoration, not information. */}
       <div className="grid gap-4 lg:grid-cols-2">
         <StatCard
           icon={<BoxIcon size={26} />}
           title="Downloads"
-          subtitle="Signed, verified releases"
-          people={[viewer.name]}
+          subtitle={
+            published === 0
+              ? "No public releases yet"
+              : `${published} signed ${published === 1 ? "release" : "releases"} available`
+          }
           href="/downloads"
         />
         <StatCard
           icon={<ShieldIcon size={26} />}
           title="Security"
           subtitle={account?.mfaEnabled ? "Two-factor enabled" : "Two-factor not enabled"}
-          people={[viewer.name]}
           href="/app/security"
         />
       </div>
 
       <Panel>
-        <h2 className="text-[19px] font-semibold tracking-[-0.01em]">Account</h2>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h2 className="text-[19px] font-semibold tracking-[-0.01em]">Account</h2>
+          <Link
+            href="/app/profile"
+            className="text-sm font-medium text-brand-cyan hover:text-brand-teal"
+          >
+            Edit profile
+          </Link>
+        </div>
         <dl className="mt-5 grid gap-4 sm:grid-cols-2">
           <Row label="Email" value={viewer.email} />
           <Row
             label="Email verified"
             value={account?.emailVerified ? "Yes" : "Not verified"}
           />
-          <Row label="Role" value="Member" />
+          {/* Was hard-coded to "Member" — wrong the moment this account's role
+              changes, which is exactly when it matters most. */}
+          <Row label="Role" value={ROLE_LABELS[viewer.role]} />
           <Row
             label="Member since"
             value={

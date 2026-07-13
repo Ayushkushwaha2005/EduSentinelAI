@@ -2,13 +2,15 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import type { Viewer } from "@/lib/guard";
 import {
-  growthSeries,
   greeting,
   leadershipStats,
+  productOwners,
   recentAudit,
+  releasePublishers,
   staffWithWork,
   teamCards,
 } from "@/lib/dashboard";
+import { growth } from "@/lib/analytics";
 import { directory } from "@/lib/people";
 import { BoxIcon, ServerIcon, UsersIcon } from "@/components/dashboard/icons";
 import { Avatar } from "@/components/dashboard/avatar";
@@ -32,22 +34,25 @@ import {
  * puts those capabilities in their effective set.
  */
 export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }) {
-  const [stats, teams, growth, audit, releases, people, staff] = await Promise.all([
-    leadershipStats(),
-    teamCards(),
-    growthSeries(),
-    recentAudit(5),
-    db.release.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      include: {
-        product: { select: { name: true } },
-        artifact: { select: { scanStatus: true } },
-      },
-    }),
-    viewer.can("users.view") ? directory("ALL") : [],
-    staffWithWork(6),
-  ]);
+  const [stats, teams, series, audit, releases, people, staff, owners, publishers] =
+    await Promise.all([
+      leadershipStats(),
+      teamCards(),
+      growth("7d"),
+      recentAudit(5),
+      db.release.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        include: {
+          product: { select: { name: true } },
+          artifact: { select: { scanStatus: true } },
+        },
+      }),
+      viewer.can("users.view") ? directory("ALL") : [],
+      staffWithWork(6),
+      productOwners(),
+      releasePublishers(),
+    ]);
 
   const staffNames = staff.map((s) => s.name);
   const isFounder = viewer.role === "FOUNDER";
@@ -69,20 +74,22 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
         </div>
       </div>
 
-      {/* ---- summary cards ---- */}
+      {/* ---- summary cards. The faces on a card are the people behind ITS number
+              (owners, publishers, staff) — all three used to show the same
+              unrelated stack. ---- */}
       <div className="grid gap-4 lg:grid-cols-3">
         <StatCard
           icon={<BoxIcon size={26} />}
           title="Products"
           subtitle={`${stats.liveProducts} live · ${stats.draftProducts} draft`}
-          people={staffNames}
+          people={owners}
           href="/app/products"
         />
         <StatCard
           icon={<ServerIcon size={26} />}
           title="Releases"
           subtitle={`${stats.releases} published`}
-          people={staffNames}
+          people={publishers}
           href="/app/admin/releases"
         />
         <StatCard
@@ -132,7 +139,7 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
                     </td>
                     <td className="px-5 py-4">
                       <span className="flex items-center gap-2.5">
-                        <Avatar name={p.name} size={30} />
+                        <Avatar name={p.name} size={30} src={p.avatarUrl} online={p.online} />
                         <span className="font-medium">{p.name}</span>
                       </span>
                     </td>
@@ -176,7 +183,22 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
 
       {/* ---- growth chart + staff panel ---- */}
       <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-        <GrowthChart title="Account Growth" caption="Last 7 days" data={growth} />
+        <div className="flex flex-col gap-2">
+          <GrowthChart
+            title="Account Growth"
+            caption="Last 7 days"
+            data={series.cumulative}
+            emptyNote="No accounts yet — the first signup starts this chart."
+          />
+          {viewer.can("analytics.read") && (
+            <Link
+              href="/app/analytics"
+              className="self-end text-sm font-medium text-brand-cyan hover:text-brand-teal"
+            >
+              Open analytics →
+            </Link>
+          )}
+        </div>
 
         <Panel>
           <div className="flex items-center justify-between gap-4">
@@ -191,7 +213,7 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
                 key={s.id}
                 className="flex items-center gap-3 rounded-card border border-border-subtle p-3"
               >
-                <Avatar name={s.name} size={38} online />
+                <Avatar name={s.name} size={38} src={s.avatarUrl} online={s.online} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15px] font-medium">{s.name}</span>
                   <span className="block truncate text-xs text-text-muted">

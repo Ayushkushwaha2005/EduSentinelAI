@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Viewer } from "@/lib/guard";
 import { greeting, myTasks, myTeams } from "@/lib/dashboard";
+import { productsFor } from "@/lib/products";
 import { ClipboardIcon, UsersIcon, BoxIcon } from "@/components/dashboard/icons";
 import {
   Breadcrumb,
@@ -19,7 +20,17 @@ import {
  * the UI were tampered with.
  */
 export default async function EmployeeDashboard({ viewer }: { viewer: Viewer }) {
-  const [tasks, teams] = await Promise.all([myTasks(viewer.id), myTeams(viewer.id)]);
+  const [tasks, teams, products] = await Promise.all([
+    myTasks(viewer.id),
+    myTeams(viewer.id),
+    // The Products card's subtitle used to be the literal string "EduSentinel
+    // product registry" — a label pretending to be a figure. `productsFor` is the
+    // ownership-scoped helper (R12), so this counts what this employee may
+    // actually open, not what exists.
+    viewer.can("products.view")
+      ? productsFor(viewer.id, viewer.role)
+      : Promise.resolve([]),
+  ]);
 
   const open = tasks.filter((t) => t.status !== "DONE");
   const teammates = [...new Set(teams.flatMap((t) => t.members))];
@@ -55,9 +66,12 @@ export default async function EmployeeDashboard({ viewer }: { viewer: Viewer }) 
         <StatCard
           icon={<BoxIcon size={26} />}
           title="Products"
-          subtitle="EduSentinel product registry"
-          people={teammates}
-          href="/app/products"
+          subtitle={
+            products.length === 1
+              ? "1 product you can open"
+              : `${products.length} products you can open`
+          }
+          href={viewer.can("products.view") ? "/app/products" : undefined}
         />
       </div>
 

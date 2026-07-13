@@ -22,7 +22,18 @@ export async function listConversations(userId: string, kind?: ConversationKind)
     orderBy: { lastMessageAt: "desc" },
     include: {
       participants: {
-        include: { user: { select: { id: true, name: true, role: true } } },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              role: true,
+              avatarName: true,
+              avatarAt: true,
+              lastSeenAt: true,
+            },
+          },
+        },
       },
       messages: {
         orderBy: { createdAt: "desc" },
@@ -55,7 +66,18 @@ export async function openConversation(userId: string, conversationId: string) {
     where: { id: conversationId, participants: { some: { userId } } },
     include: {
       participants: {
-        include: { user: { select: { id: true, name: true, role: true } } },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              role: true,
+              avatarName: true,
+              avatarAt: true,
+              lastSeenAt: true,
+            },
+          },
+        },
       },
       messages: {
         orderBy: { createdAt: "asc" },

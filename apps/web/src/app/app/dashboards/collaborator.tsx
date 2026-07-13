@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { db } from "@/lib/db";
 import type { Viewer } from "@/lib/guard";
 import { greeting, myCollaborations } from "@/lib/dashboard";
 import { ChatIcon, BoxIcon, ShieldIcon } from "@/components/dashboard/icons";
@@ -17,7 +18,10 @@ import {
  * tenant-isolation gate from ROADMAP Phase 5.
  */
 export default async function CollaboratorDashboard({ viewer }: { viewer: Viewer }) {
-  const threads = await myCollaborations(viewer.email);
+  const [threads, published] = await Promise.all([
+    myCollaborations(viewer.email),
+    db.release.count({ where: { status: "PUBLISHED" } }),
+  ]);
   const openThreads = threads.filter((t) => t.status === "PENDING").length;
 
   return (
@@ -33,26 +37,32 @@ export default async function CollaboratorDashboard({ viewer }: { viewer: Viewer
         </p>
       </div>
 
+      {/* Each card used to carry an avatar stack of the viewer, and "My Requests"
+          linked to the page it was already on. Both removed. */}
       <div className="grid gap-4 lg:grid-cols-3">
         <StatCard
           icon={<ChatIcon size={26} />}
           title="My Requests"
-          subtitle={`Awaiting review (${openThreads})`}
-          people={[viewer.name]}
-          href="/app"
+          subtitle={
+            threads.length === 0
+              ? "No requests submitted"
+              : `${openThreads} awaiting review of ${threads.length}`
+          }
         />
         <StatCard
           icon={<BoxIcon size={26} />}
           title="Downloads"
-          subtitle="Signed public releases"
-          people={[viewer.name]}
+          subtitle={
+            published === 0
+              ? "No public releases yet"
+              : `${published} signed ${published === 1 ? "release" : "releases"} available`
+          }
           href="/downloads"
         />
         <StatCard
           icon={<ShieldIcon size={26} />}
           title="Account"
-          subtitle="Security & two-factor"
-          people={[viewer.name]}
+          subtitle={viewer.can("messages.use") ? "Security & two-factor" : "Security"}
           href="/app/security"
         />
       </div>

@@ -74,6 +74,9 @@ export const NAV: NavItem[] = [
     ],
   },
   { label: "Tasks", href: "/app/tasks", icon: "clipboard" },
+  // Grantable on its own: the Founder can hand someone the numbers without also
+  // handing them the account directory.
+  { label: "Analytics", href: "/app/analytics", icon: "report", cap: "analytics.read" },
   {
     label: "Collaboration",
     href: "/app/admin/collaborations",
@@ -93,6 +96,9 @@ export const NAV: NavItem[] = [
       { label: "Permissions", href: "/app/access#permissions" },
     ],
   },
+  // No capability: managing your own identity is not a privilege the Founder
+  // grants, it is what having an account means. Every role sees these two.
+  { label: "Profile", href: "/app/profile", icon: "user" },
   { label: "Security", href: "/app/security", icon: "shield" },
 ];
 
