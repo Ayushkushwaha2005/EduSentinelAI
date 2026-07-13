@@ -331,6 +331,75 @@ model Message {
   @@index([conversationId, createdAt])
 }
 
+// ---------- Phase 7: invitations, mail, access review ----------
+
+// How a person joins EduSentinel.
+//
+// The offer IS the access decision: the role (and, from the Founder, the starting
+// capabilities) are chosen at invitation time, made once and audited — not a
+// signup followed by a scramble to promote someone.
+//
+// The token is stored ONLY as a SHA-256 hash, exactly like AuthToken (R9): the
+// plaintext exists in the email and nowhere else, so a database leak cannot be
+// replayed into an account. Single-use and expiring.
+//
+// FOUNDER and CO_FOUNDER are not invitable (lib/invitations.ts). An invitation
+// cannot mint privilege at or above the inviter, and can never mint a Founder —
+// the Trust Model closes that door before the feature exists rather than after.
+model Invitation {
+  id            String    @id @default(cuid())
+  email         String
+  tokenHash     String    @unique
+  role          String // the role granted on acceptance
+  capabilities  String    @default("[]") // JSON string[] — founder-issued starting grants
+  status        String    @default("PENDING") // PENDING | ACCEPTED | REVOKED
+  message       String?
+  invitedById   String
+  invitedByEmail String // snapshot, like the audit log: it outlives the account
+  expiresAt     DateTime
+  acceptedAt    DateTime?
+  acceptedById  String?
+  revokedAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+// Mail we tried to send. A failed invitation that vanishes into a log file is an
+// invitation the Founder thinks they sent — so delivery outcomes are records, and
+// they surface in the workspace.
+//
+// The BODY IS NOT STORED. It would put password-reset and invitation links —
+// live credentials, in effect — in a table that is not treated as one. Subject and
+// outcome are enough to answer "did it go?".
+model MailLog {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  kind      String // invitation | verify-email | reset-password | alert | notice
+  status    String // SENT | FAILED | DEV_OUTBOX
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([status, createdAt])
+}
+
+// Quarterly access review (Continuous Security Track, given a surface).
+// The Founder is shown everyone holding elevated capability and confirms or
+// revokes — on the record, so "we review access quarterly" is a fact with rows
+// behind it rather than a claim in a policy document.
+model AccessReview {
+  id          String   @id @default(cuid())
+  reviewerId  String
+  reviewedAt  DateTime @default(now())
+  accounts    Int // how many elevated accounts were in scope
+  revoked     Int // how many grants the review removed
+  note        String?
+
+  @@index([reviewedAt])
+}
+
 // ---------- Phase 6.5: organization & company ----------
 
 // The company itself, as a record. Exactly one row (id = "company"): a singleton

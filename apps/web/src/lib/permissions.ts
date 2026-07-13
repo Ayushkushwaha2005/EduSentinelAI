@@ -38,6 +38,8 @@ export const CAPABILITIES = [
   "org.manage", // the org chart: who we are  (founder-reserved)
   "company.manage", // company identity & branding  (founder-reserved)
   "collab.manage", // create/edit collaborations (Phase 6.5; grantable)
+  "people.invite", // invite someone to join  (Phase 7; grantable, one-directional)
+  "people.offboard", // strip access and end an account's tenure  (founder-reserved)
 ] as const;
 export type Capability = (typeof CAPABILITIES)[number];
 
@@ -65,6 +67,11 @@ export const FOUNDER_RESERVED: readonly Capability[] = [
   // stay with the Founder.
   "org.manage",
   "company.manage",
+  // Offboarding is the mirror image of role management: it strips a role, deletes
+  // grants and revokes every session. If `users.manage_roles` is founder-reserved
+  // because handing out access is the Founder's alone, then taking it away — which
+  // is also how you silence someone who has noticed something — must be too.
+  "people.offboard",
 ];
 
 export function isFounderReserved(cap: Capability): boolean {
@@ -112,6 +119,11 @@ const BASE_CO_FOUNDER: Capability[] = [
   ...BASE_ADMIN,
   "team.manage",
   "products.publish",
+  "collab.manage",
+  // Inviting is one-directional (lib/invitations.ts): a Co-Founder can invite an
+  // Employee, never a peer, and never with capabilities attached — attaching
+  // capabilities IS permissions.grant, which is founder-reserved.
+  "people.invite",
 ];
 
 // The Founder holds every capability, including the reserved ones.

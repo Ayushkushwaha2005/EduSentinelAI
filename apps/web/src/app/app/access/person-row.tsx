@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import {
   clearPermissionAction,
+  offboard,
   revokeSessionsAction,
   setPermissionAction,
   setRoleAction,
@@ -26,6 +27,7 @@ export function PersonRow({
   grantable,
   defaults,
   overrides,
+  canOffboard,
 }: {
   user: { id: string; email: string; role: string };
   isSelf: boolean;
@@ -33,13 +35,16 @@ export function PersonRow({
   roles: Role[];
   grantable: string[];
   defaults: string[];
-  overrides: { capability: string; allow: boolean }[];
+  overrides: { capability: string; allow: boolean; expiresAt: Date | null; reason: string | null }[];
+  canOffboard: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [roleState, roleAction, rolePending] = useActionState(setRoleAction, EMPTY);
   const [permState, permAction, permPending] = useActionState(setPermissionAction, EMPTY);
   const [clearState, clearAction] = useActionState(clearPermissionAction, EMPTY);
   const [sessState, sessAction] = useActionState(revokeSessionsAction, EMPTY);
+  const [offState, offAction, offPending] = useActionState(offboard, EMPTY);
+  const [offOpen, setOffOpen] = useState(false);
 
   const locked = isSelf || isFounderAccount;
   const overrideOf = (cap: string) => overrides.find((o) => o.capability === cap);
@@ -48,11 +53,44 @@ export function PersonRow({
     permState.error ??
     clearState.error ??
     sessState.error ??
+    offState.error ??
     roleState.ok ??
     permState.ok ??
     clearState.ok ??
-    sessState.ok;
-  const isError = !!(roleState.error ?? permState.error ?? clearState.error ?? sessState.error);
+    sessState.ok ??
+    offState.ok;
+  const isError = !!(
+    roleState.error ??
+    permState.error ??
+    clearState.error ??
+    sessState.error ??
+    offState.error
+  );
+
+  /*
+   * "Why can this person do this?" (Phase 7.4).
+   *
+   * Authorization that cannot be inspected becomes folklore — people remember that
+   * someone "has access" and nobody remembers why. Every capability states its
+   * provenance: the role default, an explicit grant, an explicit revoke, and when
+   * it lapses.
+   */
+  const explain = (cap: string) => {
+    const byDefault = defaults.includes(cap);
+    const override = overrideOf(cap);
+    if (!override) return byDefault ? "from role" : "not in role";
+    const when = override.expiresAt
+      ? ` · expires ${new Date(override.expiresAt).toLocaleDateString("en-GB")}`
+      : " · no expiry";
+    const what = override.allow
+      ? byDefault
+        ? "granted explicitly (already in role)"
+        : "granted explicitly"
+      : byDefault
+        ? "revoked explicitly (overrides role)"
+        : "revoked explicitly";
+    return what + when;
+  };
 
   return (
     <div className="mt-4 border-t border-border-subtle pt-4">
@@ -110,7 +148,66 @@ export function PersonRow({
                 Revoke sessions
               </button>
             </form>
+
+            {canOffboard && (
+              <button
+                type="button"
+                onClick={() => setOffOpen((v) => !v)}
+                aria-expanded={offOpen}
+                className="h-9 rounded-control px-3 text-sm font-medium text-danger transition-colors duration-[--duration-fast] hover:bg-danger/5"
+              >
+                Offboard
+              </button>
+            )}
           </div>
+
+          {/* Offboarding: one action, everything that must happen. The account is
+              NOT deleted — the audit chain snapshots the actor precisely so a record
+              survives the person. What is removed is access. */}
+          {offOpen && canOffboard && (
+            <form
+              action={offAction}
+              className="mt-4 rounded-card border border-danger/30 bg-danger/[0.03] p-4"
+            >
+              <input type="hidden" name="userId" value={user.id} />
+              <p className="text-sm font-semibold text-danger">Offboard {user.email}</p>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-text-secondary">
+                Role stripped to Member, every capability removed, all sessions
+                revoked, pending invitations they sent withdrawn, products they own
+                reassigned to you, teams and open tasks released, org-chart entry
+                removed and collaborations ended. The account and its history remain
+                — offboarding is not deletion.
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <label className="sr-only" htmlFor={`off-confirm-${user.id}`}>
+                  Type {user.email} to confirm
+                </label>
+                <input
+                  id={`off-confirm-${user.id}`}
+                  name="confirm"
+                  required
+                  placeholder={`Type ${user.email} to confirm`}
+                  className="h-9 min-w-[240px] flex-1 rounded-control border border-border-subtle bg-surface-raised px-3 text-sm outline-none focus:border-danger"
+                />
+                <label className="sr-only" htmlFor={`off-reason-${user.id}`}>
+                  Reason
+                </label>
+                <input
+                  id={`off-reason-${user.id}`}
+                  name="reason"
+                  placeholder="Reason (optional)"
+                  className="h-9 min-w-[160px] rounded-control border border-border-subtle bg-surface-raised px-3 text-sm outline-none focus:border-brand-cyan"
+                />
+                <button
+                  type="submit"
+                  disabled={offPending}
+                  className="h-9 rounded-control bg-danger px-4 text-sm font-medium text-surface-raised transition-opacity duration-[--duration-fast] hover:opacity-90 disabled:opacity-60"
+                >
+                  {offPending ? "Offboarding…" : "Offboard"}
+                </button>
+              </div>
+            </form>
+          )}
 
           {open && (
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -129,21 +226,41 @@ export function PersonRow({
                         {cap}
                       </span>
                       <span className="block text-[11px] text-text-muted">
-                        {override
-                          ? override.allow
-                            ? "granted explicitly"
-                            : "revoked explicitly"
-                          : byDefault
-                            ? "from role"
-                            : "not in role"}
+                        {explain(cap)}
                       </span>
+                      {override?.reason && (
+                        <span className="block truncate text-[11px] text-text-muted">
+                          “{override.reason}”
+                        </span>
+                      )}
                     </span>
 
                     <span className="flex shrink-0 items-center gap-1.5">
-                      <form action={permAction}>
+                      <form action={permAction} className="flex items-center gap-1.5">
                         <input type="hidden" name="userId" value={user.id} />
                         <input type="hidden" name="capability" value={cap} />
                         <input type="hidden" name="allow" value={String(!effective)} />
+                        {/* Temporary access that quietly becomes permanent is how a
+                            company stops knowing who can do what. Expiry is now a
+                            choice, and effectiveCapabilities() has always honoured it. */}
+                        {!effective && (
+                          <>
+                            <label className="sr-only" htmlFor={`exp-${user.id}-${cap}`}>
+                              Expiry for {cap}
+                            </label>
+                            <select
+                              id={`exp-${user.id}-${cap}`}
+                              name="expiresInDays"
+                              defaultValue="0"
+                              className="h-7 rounded-full border border-border-subtle bg-surface-raised px-1.5 text-[11px] outline-none focus:border-brand-cyan"
+                            >
+                              <option value="0">forever</option>
+                              <option value="7">7 days</option>
+                              <option value="30">30 days</option>
+                              <option value="90">90 days</option>
+                            </select>
+                          </>
+                        )}
                         <button
                           type="submit"
                           disabled={permPending}

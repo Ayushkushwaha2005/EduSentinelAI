@@ -225,16 +225,23 @@ export async function downloadsByRelease(take = 8) {
 }
 
 /**
- * Invitation acceptance rate. Invitations do not exist yet — they are Phase 7 —
- * so this metric is UNMEASURED, and says so. It is not zero, and it is not
- * hidden: an operator who cannot see that a number is missing will assume it is
- * a real number, which is exactly how a dashboard starts lying.
+ * Invitation acceptance rate.
+ *
+ * In Phase 6.3 this reported itself as UNMEASURED, because invitations did not
+ * exist and zero would have been a lie dressed as a number. Phase 7 built them, so
+ * it now measures — and when no invitation has ever been sent it says *that*,
+ * rather than reporting 0% acceptance of nothing.
  */
 export async function invitationAcceptance(): Promise<
   { measured: false; reason: string } | { measured: true; sent: number; accepted: number }
 > {
-  return {
-    measured: false,
-    reason: "Invitations arrive in Phase 7 — nothing to measure yet.",
-  };
+  const [sent, accepted] = await Promise.all([
+    db.invitation.count(),
+    db.invitation.count({ where: { status: "ACCEPTED" } }),
+  ]);
+
+  if (sent === 0) {
+    return { measured: false, reason: "No invitations sent yet — nothing to measure." };
+  }
+  return { measured: true, sent, accepted };
 }

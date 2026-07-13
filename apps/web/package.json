@@ -22,6 +22,7 @@
     "test:permissions": "tsx --env-file=.env scripts/test-phase5.mts",
     "test:data": "tsx --env-file=.env scripts/test-phase6.mts",
     "test:org": "tsx --env-file=.env scripts/test-phase65.mts",
+    "test:invites": "tsx --env-file=.env scripts/test-phase7.mts",
     "test:e2e": "tsx --env-file=.env scripts/e2e-phase5.mts",
     "mfa:enroll": "node --env-file=.env scripts/mfa-enroll.mjs"
   },
