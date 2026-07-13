@@ -1,12 +1,7 @@
 import Link from "next/link";
 import { AvatarStack } from "./avatar";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ExportIcon,
-  PlusIcon,
-  SearchIcon,
-} from "./icons";
+import { ExportButton, type ExportRow } from "./export-button";
+import { ChevronLeft, ChevronRight, PlusIcon, SearchIcon } from "./icons";
 
 /* Reference widgets, re-skinned to EduSentinel tokens. Layout follows the
  * approved screenshots closely; colours/type/radius come from tokens.css only. */
@@ -92,31 +87,54 @@ export function StatCard({
   );
 }
 
+/*
+ * Table toolbar. Search and Export are rendered ONLY when the page actually
+ * implements them — a control that does nothing when clicked is worse than no
+ * control, however closely it matches the reference.
+ *
+ * `searchPath` turns the box into a plain GET form, so search survives with
+ * JavaScript disabled and the query lives in a shareable URL.
+ */
 export function TableToolbar({
   title,
   onAddHref,
   addLabel = "Add",
+  searchPath,
+  query = "",
+  exportRows,
+  exportName,
 }: {
   title: string;
   onAddHref?: string;
   addLabel?: string;
+  searchPath?: string;
+  query?: string;
+  exportRows?: ExportRow[];
+  exportName?: string;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
       <h2 className="text-[19px] font-semibold tracking-[-0.01em]">{title}</h2>
-      <div className="flex items-center gap-3">
-        <label className="relative">
-          <span className="sr-only">Search {title}</span>
-          <SearchIcon
-            size={17}
-            className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-muted"
-          />
-          <input
-            type="search"
-            placeholder="Search for ..."
-            className="h-10 w-[200px] rounded-full border border-border-subtle bg-surface-raised pl-4 pr-10 text-sm outline-none transition-colors duration-[--duration-fast] placeholder:text-text-muted focus:border-brand-cyan"
-          />
-        </label>
+      <div className="flex flex-wrap items-center gap-3">
+        {searchPath && (
+          <form action={searchPath} className="relative">
+            <label className="sr-only" htmlFor={`q-${searchPath}`}>
+              Search {title}
+            </label>
+            <SearchIcon
+              size={17}
+              className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-muted"
+            />
+            <input
+              id={`q-${searchPath}`}
+              name="q"
+              type="search"
+              defaultValue={query}
+              placeholder="Search for ..."
+              className="h-10 w-[200px] rounded-full border border-border-subtle bg-surface-raised pl-4 pr-10 text-sm outline-none transition-colors duration-[--duration-fast] placeholder:text-text-muted focus:border-brand-cyan"
+            />
+          </form>
+        )}
         {onAddHref && (
           <Link
             href={onAddHref}
@@ -126,13 +144,9 @@ export function TableToolbar({
             <PlusIcon size={15} />
           </Link>
         )}
-        <button
-          type="button"
-          className="flex h-10 items-center gap-1.5 rounded-control bg-ink px-4 text-sm font-medium text-surface-raised transition-colors duration-[--duration-fast] hover:bg-ink-hover"
-        >
-          Export
-          <ExportIcon size={15} />
-        </button>
+        {exportRows && exportName && (
+          <ExportButton rows={exportRows} filename={exportName} />
+        )}
       </div>
     </div>
   );
@@ -156,13 +170,29 @@ export function StatusDot({ status }: { status: string }) {
   );
 }
 
+/*
+ * Pagination. Page controls appear only when there is more than one page, and
+ * the current page is the real one — the reference's static "01" chip would be
+ * lying to the operator about how much data they are looking at.
+ *
+ * `hrefFor` makes the pages real links (GET), so paging works without JS.
+ */
 export function Pagination({
   shown,
   total,
+  page = 1,
+  pageSize,
+  hrefFor,
 }: {
   shown: number;
   total: number;
+  page?: number;
+  pageSize?: number;
+  hrefFor?: (page: number) => string;
 }) {
+  const pages = pageSize ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  const paged = !!hrefFor && !!pageSize && pages > 1;
+
   return (
     <div className="mt-5 flex flex-wrap items-center justify-between gap-4 text-sm text-text-secondary">
       <span>
@@ -170,27 +200,45 @@ export function Pagination({
         <span className="rounded-control border border-border-subtle px-2 py-1 font-medium text-text-primary">
           {String(shown).padStart(2, "0")}
         </span>{" "}
-        of {total} Results
+        of {total} {total === 1 ? "result" : "results"}
       </span>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          aria-label="Previous page"
-          className="flex h-8 w-8 items-center justify-center rounded-control text-text-muted hover:bg-surface-overlay"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <span className="flex h-8 w-8 items-center justify-center rounded-control bg-brand-cyan text-sm font-medium text-surface-raised">
-          01
-        </span>
-        <button
-          type="button"
-          aria-label="Next page"
-          className="flex h-8 w-8 items-center justify-center rounded-control text-text-muted hover:bg-surface-overlay"
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
+
+      {paged && (
+        <div className="flex items-center gap-2">
+          {page > 1 ? (
+            <Link
+              href={hrefFor(page - 1)}
+              aria-label="Previous page"
+              className="flex h-8 w-8 items-center justify-center rounded-control text-text-muted hover:bg-surface-overlay"
+            >
+              <ChevronLeft size={16} />
+            </Link>
+          ) : (
+            <span className="flex h-8 w-8 items-center justify-center rounded-control text-border-subtle">
+              <ChevronLeft size={16} />
+            </span>
+          )}
+
+          <span className="flex h-8 min-w-8 items-center justify-center rounded-control bg-brand-cyan px-2 text-sm font-medium text-surface-raised">
+            {String(page).padStart(2, "0")}
+          </span>
+          <span className="text-text-muted">/ {String(pages).padStart(2, "0")}</span>
+
+          {page < pages ? (
+            <Link
+              href={hrefFor(page + 1)}
+              aria-label="Next page"
+              className="flex h-8 w-8 items-center justify-center rounded-control text-text-muted hover:bg-surface-overlay"
+            >
+              <ChevronRight size={16} />
+            </Link>
+          ) : (
+            <span className="flex h-8 w-8 items-center justify-center rounded-control text-border-subtle">
+              <ChevronRight size={16} />
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

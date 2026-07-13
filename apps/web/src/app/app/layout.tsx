@@ -55,6 +55,7 @@ export default async function AppLayout({
           <Topbar
             name={viewer.name}
             role={viewer.role as Role}
+            nav={items}
             showMessages={canMessage}
             unread={unread}
             messages={recent.map((c) => ({

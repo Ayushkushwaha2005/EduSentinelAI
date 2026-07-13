@@ -22,3 +22,24 @@ body {
     rgba(18, 19, 23, 0.03) 80px
   );
 }
+
+/*
+ * Reduced motion. This is a standing project rule (CLAUDE.md) that was written
+ * down but never actually implemented — the token comment promised it and no
+ * media query delivered it. Honour the OS setting globally rather than trusting
+ * every component to remember: animation is decoration everywhere on this
+ * platform, so it is always safe to drop.
+ *
+ * `!important` is deliberate — it has to beat framer-motion's inline styles and
+ * Tailwind's utility transitions.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

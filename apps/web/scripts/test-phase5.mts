@@ -33,6 +33,7 @@ import {
   serializeList,
 } from "../src/lib/catalog";
 import { isProductIconKey } from "../src/lib/product-icons";
+import { audit } from "../src/lib/audit";
 
 // ---------- role ladder ----------
 assert.deepEqual(
@@ -340,6 +341,45 @@ try {
   await db.user.deleteMany({
     where: { id: { in: [alice.id, bob.id, mallory.id, extern.id, extern2.id] } },
   });
+}
+
+// ---------- audit log is immutable w.r.t. the users table ----------
+// Regression: AuditLog.actor used to be an optional FK to User, so Prisma's
+// default SetNull rewrote actorId to null when an account was deleted. The R7b
+// hash commits to actorId, so ordinary offboarding silently broke the chain and
+// looked exactly like tampering. The log now holds no FK and snapshots the actor.
+{
+  const doomed = await db.user.create({
+    data: {
+      email: `audit-immutability-${Date.now()}@test.local`,
+      name: "Offboarding Probe",
+      passwordHash: "x",
+      role: "EMPLOYEE",
+    },
+  });
+  await audit("test.offboarding_probe", { actorId: doomed.id, detail: "probe" });
+
+  const before = await db.auditLog.findFirst({
+    where: { action: "test.offboarding_probe", actorId: doomed.id },
+  });
+  assert.ok(before, "the probe audit row was written");
+  assert.equal(before.actorEmail, doomed.email, "the actor's email is snapshot on the row");
+
+  await db.user.delete({ where: { id: doomed.id } });
+
+  const after = await db.auditLog.findUnique({ where: { id: before.id } });
+  assert.ok(after, "deleting the account must not delete its audit rows");
+  assert.equal(
+    after.actorId,
+    doomed.id,
+    "deleting the account must NOT rewrite actorId — that would break the hash chain",
+  );
+  assert.equal(after.hash, before.hash, "the audit row is byte-for-byte unchanged");
+  assert.equal(after.actorEmail, doomed.email, "the snapshot survives the account");
+
+  // The probe row is deliberately LEFT in the chain. Cleaning it up would mean
+  // deleting an audit row, which is the very thing the chain exists to detect —
+  // an append-only log is not something a test gets to tidy.
 }
 
 // ---------- 5.5: product catalogue ----------

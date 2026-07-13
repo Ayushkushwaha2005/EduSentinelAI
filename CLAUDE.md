@@ -31,6 +31,7 @@ Upload (admin+MFA, own products only) → **quarantine** + magic-byte validation
 - Route groups: `(marketing)` has Nav/Footer; `(auth)` is bare (login/signup); `/app` is the authenticated shell.
 - `src/middleware.ts` is only a cookie-presence UX gate — real enforcement is `auth()` in `app/app/layout.tsx` and per-page role checks (`isAdminRole`). Keep it that way: argon2 is Node-only and must not enter the Edge bundle.
 - Roles are strings (SQLite has no enums) validated by `src/lib/roles.ts`. Audit via `src/lib/audit.ts` on all security-relevant actions.
+- **`AuditLog` has no foreign key to `User` by design** — it snapshots the actor (id + email). Never add a relation back: Prisma's `SetNull` would rewrite `actorId` when an account is deleted, and the R7b hash commits to it, so offboarding would break the chain and look like tampering.
 
 ## Workspace & permissions (Phase 5)
 

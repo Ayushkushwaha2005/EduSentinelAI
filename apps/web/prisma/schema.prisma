@@ -29,7 +29,6 @@ model User {
   sessionVersion Int         @default(0) // bump = revoke all sessions
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
-  auditEvents    AuditLog[]  @relation("actor")
   authTokens     AuthToken[]
   // Phase 5
   grants         PermissionGrant[] @relation("grantee")
@@ -55,18 +54,31 @@ model AuthToken {
   @@index([userId, type])
 }
 
+// Append-only and INDEPENDENT of the users table — deliberately no foreign key
+// to User.
+//
+// It used to have one (`actor User? @relation`). Prisma's default onDelete for an
+// optional relation is SetNull, so deleting an account rewrote actorId to null on
+// that account's audit rows — and because the hash commits to actorId, routine
+// offboarding or an erasure request silently broke the R7b chain and looked
+// exactly like tampering. An audit log cannot be mutable as a side effect of
+// activity elsewhere in the schema.
+//
+// The actor is therefore SNAPSHOT here (id + email as they were at the time),
+// which is also what an audit record should hold: what was true when the event
+// happened, not a join to a row someone can later change or delete.
 model AuditLog {
-  id        String   @id @default(cuid())
-  action    String // e.g. user.signup, user.login, user.login_failed, admin.role_change
-  detail    String?
-  ip        String?
-  userAgent String?
-  actorId   String?
-  actor     User?    @relation("actor", fields: [actorId], references: [id])
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  action     String // e.g. user.signup, user.login, user.login_failed, admin.role_change
+  detail     String?
+  ip         String?
+  userAgent  String?
+  actorId    String? // no FK: the log outlives the account
+  actorEmail String? // snapshot for display; never joined
+  createdAt  DateTime @default(now())
   // R7b: tamper-evident hash chain — each row commits to its predecessor.
-  prevHash  String?
-  hash      String?
+  prevHash   String?
+  hash       String?
 
   @@index([createdAt])
   @@index([actorId])

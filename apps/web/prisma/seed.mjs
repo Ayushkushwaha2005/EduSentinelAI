@@ -44,6 +44,7 @@ await db.auditLog.create({
   data: {
     action,
     actorId: user.id,
+    actorEmail: email, // snapshot; the log holds no FK to User
     detail: email,
     createdAt,
     prevHash,

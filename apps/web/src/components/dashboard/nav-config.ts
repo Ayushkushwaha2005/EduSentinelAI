@@ -47,7 +47,8 @@ export const NAV: NavItem[] = [
     cap: "releases.review",
     children: [
       { label: "Review Queue", href: "/app/admin/releases", cap: "releases.review" },
-      { label: "Upload", href: "/app/admin/releases#upload", cap: "releases.upload" },
+      // Uploading happens against a product, so it lives on the product console.
+      { label: "Upload", href: "/app/products", cap: "releases.upload" },
     ],
   },
   {
