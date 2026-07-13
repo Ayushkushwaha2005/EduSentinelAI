@@ -1,5 +1,8 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireViewer } from "@/lib/guard";
+import { isAdminRole } from "@/lib/roles";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
 import { navFor } from "@/components/dashboard/nav-config";
@@ -21,6 +24,28 @@ export default async function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const viewer = await requireViewer();
+
+  /*
+   * MFA onboarding, at the door.
+   *
+   * MFA is mandatory for privileged roles, and login demands a code once it is
+   * enrolled — so an account in that state MUST be walked through enrolment the
+   * first time it signs in. Previously only privileged sub-pages redirected, so
+   * a Founder could sit on /app with no indication that half the product was
+   * closed to them and why.
+   *
+   * /app/security is exempt (it is the destination) and so is the sign-out form,
+   * or this would be a redirect loop.
+   */
+  const pathname = (await headers()).get("x-pathname") ?? "/app";
+  if (
+    isAdminRole(viewer.role) &&
+    !viewer.mfaEnabled &&
+    !pathname.startsWith("/app/security")
+  ) {
+    const next = /^\/app(\/[\w\-/]*)?$/.test(pathname) ? pathname : "/app";
+    redirect(`/app/security?mfa=required&next=${encodeURIComponent(next)}`);
+  }
 
   const items = navFor(viewer.caps as Set<string>, viewer.role);
 

@@ -7,17 +7,37 @@ import QRCode from "qrcode";
 import { verifyTotp } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { audit, requestContext } from "@/lib/audit";
-import { encryptSecret } from "@/lib/crypto";
+import { decryptSecret, encryptSecret } from "@/lib/crypto";
 import { requireViewer } from "@/lib/guard";
 import { isAdminRole } from "@/lib/roles";
 
 export type MfaSetup = { otpauthUri: string; qrDataUrl: string; manualKey: string };
 export type MfaState = { error?: string; setup?: MfaSetup; done?: boolean };
 
-/** Step 1: generate + store (encrypted, still disabled) a TOTP secret. */
+/**
+ * Step 1: issue (or re-show) a TOTP secret. MFA stays OFF until a live code
+ * proves the authenticator actually holds it.
+ *
+ * If a setup is already pending, the SAME secret is shown again rather than a
+ * fresh one. Rotating on every call looked harmless but was not: the setup page
+ * now opens automatically, so a reload — or a second tab — would silently
+ * invalidate the QR the user had just scanned, and their codes would never
+ * match. A new secret is minted only when there is nothing pending.
+ */
 export async function startMfaSetup(): Promise<MfaState> {
   const viewer = await requireViewer();
-  const secret = new Secret({ size: 20 });
+
+  const existing = await db.user.findUnique({
+    where: { id: viewer.id },
+    select: { totpSecret: true, mfaEnabled: true },
+  });
+
+  const base32 =
+    existing?.totpSecret && !existing.mfaEnabled
+      ? decryptSecret(existing.totpSecret) // resume the pending enrolment
+      : null;
+
+  const secret = base32 ? Secret.fromBase32(base32) : new Secret({ size: 20 });
   const totp = new TOTP({
     issuer: "EduSentinel AI",
     label: viewer.email,
@@ -25,10 +45,14 @@ export async function startMfaSetup(): Promise<MfaState> {
     digits: 6,
     period: 30,
   });
-  await db.user.update({
-    where: { id: viewer.id },
-    data: { totpSecret: encryptSecret(secret.base32), mfaEnabled: false },
-  });
+
+  if (!base32) {
+    await db.user.update({
+      where: { id: viewer.id },
+      data: { totpSecret: encryptSecret(secret.base32), mfaEnabled: false },
+    });
+  }
+
   const otpauthUri = totp.toString();
   return {
     setup: {
