@@ -39,6 +39,14 @@ One website, one Sign In, **no separate admin portal** — `/app` dispatches on 
 - `FOUNDER_RESERVED` capabilities (release signing/revocation, role management, permission granting) are **non-delegable**: stripped in code on every check, so no grant row — forged or otherwise — can escalate. Proven by `npm run test:permissions` (runs in CI).
 - Enforcement is `src/lib/guard.ts` (`requireViewer`/`requireCapability`/`requireFounder`/`assertCapability`) on every page and action. The sidebar (`components/dashboard/nav-config.ts`) only *hides* what you can't use — it is never the boundary.
 - Founder bootstrap: `npm run db:seed`. Dev demo data: `npm run db:seed:workspace`.
+
+## Product catalogue (Phase 5.5)
+
+Products are **database records, not code**. The Founder adds/edits/publishes/archives them from `/app/products`; the public site (`/products`, home grid, `/products/<slug>`, sitemap) reads the same catalogue via `lib/catalog.ts`. Adding a product needs no code change — never hard-code one in a component again.
+- Lifecycle DRAFT → PUBLISHED → ARCHIVED. Only PUBLISHED rows are ever public.
+- `products.manage` (edit) and `products.publish` (go live) are grantable; `products.delete` is **founder-reserved** and refused while releases exist.
+- The catalogue renders publicly, so it is treated as untrusted: icons are **keys into the fixed set in `lib/product-icons.tsx`** (never raw SVG/HTML), text is sanitized on write and rendered as plain text, and CTA links are restricted to internal paths or `https://` (`safeHref`).
+- Migration seed for the original five products: `npm run db:seed:catalog`.
 - Prisma is pinned to v6 (v7 moved datasource URLs out of schema files — do not upgrade casually).
 
 ## Rules

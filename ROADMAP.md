@@ -185,13 +185,49 @@ workspace:
 `CO_FOUNDER` — introduced by this phase's role ladder — could have switched off
 its own mandatory MFA. It now uses the rank check (`isAdminRole`).
 
+### 5.5 — Product Management: the Founder's catalogue console ✅
+
+The Founder Dashboard is now the management centre of EduSentinel AI. A product
+is a database record, not a code constant: **any current or future product can be
+added, edited, published, archived or removed from the dashboard with no code
+change and no deploy.** What the Founder publishes is what the public site shows
+— `/products`, the home page grid, `/products/<slug>` (its own generated page)
+and the sitemap all read the same catalogue (`lib/catalog.ts`).
+
+Lifecycle **DRAFT → PUBLISHED → ARCHIVED**, plus permanent delete. New products
+always start as drafts; nothing reaches the public site without a deliberate
+publish. Capabilities:
+- `products.manage` — create and edit (grantable)
+- `products.publish` — make public / archive (grantable; leadership by default,
+  so the Founder can delegate catalogue publishing **without** delegating
+  release signing)
+- `products.delete` — **FOUNDER-RESERVED**, non-delegable: deletion is
+  irreversible. Refused outright while a product still has releases, because
+  that would orphan distributed artifacts and their audit trail — archive
+  instead. Requires typing the slug to confirm.
+
+🔒 **Catalogue is public-facing, so it is treated as untrusted content:**
+- Icons are **keys into a fixed set** (`lib/product-icons.tsx`) — the dashboard
+  never accepts raw SVG or HTML, which would be a markup-injection path onto
+  pages we serve to everyone. A new icon is a PR; a new *product* is not.
+- All text is sanitized on write and rendered as plain text.
+- CTA links are restricted to an internal path or an `https://` URL, closing
+  `javascript:`, `data:` and protocol-relative links at the point of write.
+- Reads are ownership-scoped (R12) and only PUBLISHED rows are ever public —
+  all covered by `npm run test:permissions`.
+
+The five products previously hard-coded in `components/products.tsx` were
+migrated into the catalogue by `npm run db:seed:catalog` (idempotent), so the
+public site is unchanged — but the Founder now owns them.
+
 🔒 **Security gates (blocking):**
 - ✅ Deny-by-default authorization: a capability check on **every** dashboard
   route and server action, server-side. Sidebar filtering is UX only — never the
   enforcement boundary (same rule as `src/middleware.ts`). Enforced by a static
-  sweep in `test:permissions`: every `/app` page and `actions.ts` must call a
+  sweep in `test:permissions`: every `/app` page and **every `"use server"`
+  module** (matched on the directive, not the filename) must call a
   `lib/guard.ts` helper, and nothing under `/app` may read the role off the
-  session — a new route added without a guard fails CI.
+  session — a new route or action added without a guard fails CI.
 - ✅ Founder-reserved capabilities provably non-delegable — `test:permissions`
   writes forged rows straight into `PermissionGrant`, bypassing every action and
   UI check, and asserts no reserved capability or FOUNDER role can be produced.

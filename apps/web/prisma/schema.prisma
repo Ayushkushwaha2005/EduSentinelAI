@@ -74,6 +74,15 @@ model AuditLog {
 
 // ---------- Phase 3: product registry & release pipeline ----------
 
+// A product is the catalogue record AND the release container. Phase 5.5 adds
+// the marketing fields so the Founder can add a new EduSentinel product from the
+// dashboard and have it appear across the public site with no code change.
+//
+// `icon` is a KEY into a fixed icon set (lib/product-icons.tsx) — never raw SVG
+// or HTML. Founder-authored text is sanitized on write and rendered as plain
+// text, exactly like public submissions: the dashboard is trusted, but the
+// public site is not the place to discover we were wrong about that.
+// `tags`/`features` are JSON string arrays (SQLite has no array type).
 model Product {
   id          String    @id @default(cuid())
   slug        String    @unique
@@ -82,6 +91,23 @@ model Product {
   ownerId     String // R12: every product has an owner; queries are ownership-scoped
   createdAt   DateTime  @default(now())
   releases    Release[]
+
+  // ---- catalogue / marketing (Phase 5.5) ----
+  status      String    @default("DRAFT") // DRAFT | PUBLISHED | ARCHIVED
+  tagline     String? // one-line summary for cards
+  icon        String    @default("shield") // key into the fixed icon set
+  pricing     String    @default("free") // free | paid | soon  (badge tone)
+  tags        String    @default("[]") // JSON string[]
+  features    String    @default("[]") // JSON string[]
+  ctaLabel    String    @default("Get notified")
+  ctaHref     String    @default("/contact") // internal path or https URL only
+  sortOrder   Int       @default(0)
+  featured    Boolean   @default(false)
+  publishedAt DateTime?
+  archivedAt  DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, sortOrder])
 }
 
 // Release lifecycle: QUARANTINED -> (scan/review) -> PUBLISHED | REJECTED -> REVOKED

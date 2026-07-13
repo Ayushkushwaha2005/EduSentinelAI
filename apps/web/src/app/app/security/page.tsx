@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { requireViewer } from "@/lib/guard";
 import { isAdminRole } from "@/lib/roles";
 import { MfaPanel } from "./mfa-panel";
+import { Breadcrumb } from "@/components/dashboard/widgets";
 import { revokeAllSessions, resendVerification } from "./actions";
 
 /*
@@ -17,9 +18,10 @@ export default async function SecurityPage() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <h1 className="text-3xl font-medium tracking-[-0.02em]">Security</h1>
-      <p className="mt-2 text-text-secondary">
+    <div className="mx-auto flex max-w-3xl flex-col gap-4">
+      <Breadcrumb trail={[{ label: "Dashboards", href: "/app" }, { label: "Security" }]} />
+      <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Security</h1>
+      <p className="text-[15px] text-text-secondary">
         Two-factor authentication and session controls for your account.
       </p>
 

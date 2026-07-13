@@ -25,6 +25,14 @@ import {
   listConversations,
   openConversation,
 } from "../src/lib/messages";
+import {
+  parseList,
+  publicProduct,
+  publicProducts,
+  safeHref,
+  serializeList,
+} from "../src/lib/catalog";
+import { isProductIconKey } from "../src/lib/product-icons";
 
 // ---------- role ladder ----------
 assert.deepEqual(
@@ -334,6 +342,86 @@ try {
   });
 }
 
+// ---------- 5.5: product catalogue ----------
+// The catalogue renders on the PUBLIC marketing site, so a product record must
+// not be able to carry markup, a hostile link, or a draft into public view.
+
+// CTA links: internal paths and https only. javascript:/data:/protocol-relative
+// all fall back rather than reaching an <a href>.
+assert.equal(safeHref("/downloads"), "/downloads", "internal path allowed");
+assert.equal(safeHref("https://edusentinel.ai"), "https://edusentinel.ai/", "https allowed");
+assert.equal(safeHref("javascript:alert(1)"), "/contact", "javascript: refused");
+assert.equal(safeHref("data:text/html;base64,PHNjcmlwdD4="), "/contact", "data: refused");
+assert.equal(safeHref("//evil.example.com"), "/contact", "protocol-relative refused");
+assert.equal(safeHref("http://insecure.example"), "/contact", "plain http refused");
+assert.equal(safeHref(""), "/contact", "empty falls back");
+
+// Icons are keys into a fixed set — never author-supplied markup.
+assert.ok(isProductIconKey("shield"), "known icon key accepted");
+assert.ok(!isProductIconKey("<svg onload=alert(1)>"), "markup is not an icon key");
+assert.ok(!isProductIconKey("../../etc/passwd"), "traversal is not an icon key");
+
+// List columns tolerate garbage without throwing, and strip markup.
+assert.deepEqual(parseList("not json"), [], "malformed JSON yields no tags");
+assert.deepEqual(parseList(null), [], "null yields no tags");
+assert.deepEqual(parseList('["a", 3, null]'), ["a"], "non-strings dropped");
+assert.ok(
+  !parseList('["<script>alert(1)</script>"]')[0]?.includes("<"),
+  "markup stripped from tags",
+);
+assert.ok(
+  !JSON.parse(serializeList("<img src=x onerror=1>, ok"))[0].includes("<"),
+  "markup stripped on write",
+);
+
+// Only PUBLISHED products are ever public.
+const pslug = `probe-${Date.now()}`;
+const owner = await db.user.findFirst({ where: { role: "FOUNDER" }, select: { id: true } });
+if (owner) {
+  const draft = await db.product.create({
+    data: {
+      slug: pslug,
+      name: "Probe",
+      description: "A draft that must never be public.",
+      ownerId: owner.id,
+      status: "DRAFT",
+    },
+  });
+  try {
+    assert.equal(await publicProduct(pslug), null, "a DRAFT product must not be public");
+    assert.ok(
+      !(await publicProducts()).some((p) => p.slug === pslug),
+      "a DRAFT product must not appear in the public list",
+    );
+
+    await db.product.update({ where: { id: draft.id }, data: { status: "ARCHIVED" } });
+    assert.equal(await publicProduct(pslug), null, "an ARCHIVED product must not be public");
+
+    await db.product.update({
+      where: { id: draft.id },
+      data: { status: "PUBLISHED", publishedAt: new Date() },
+    });
+    assert.ok(await publicProduct(pslug), "a PUBLISHED product is public");
+  } finally {
+    await db.product.delete({ where: { id: draft.id } }).catch(() => null);
+  }
+}
+
+// products.delete is founder-reserved: no grant hands it to a co-founder.
+assert.ok(isFounderReserved("products.delete"), "product deletion is founder-reserved");
+assert.ok(
+  !defaultCapabilities("CO_FOUNDER").includes("products.delete"),
+  "a co-founder cannot delete products",
+);
+assert.ok(
+  defaultCapabilities("CO_FOUNDER").includes("products.publish"),
+  "a co-founder can publish products (grantable, not reserved)",
+);
+assert.ok(
+  !defaultCapabilities("EMPLOYEE").includes("products.manage"),
+  "an employee cannot edit the catalogue by default",
+);
+
 // ---------- MFA is mandatory for every privileged role ----------
 // Regression: disableMfa named ADMIN and FOUNDER explicitly, so CO_FOUNDER —
 // added in this phase — could have switched off its own mandatory MFA. Rank
@@ -368,13 +456,15 @@ const guarded: string[] = [];
 const unguarded: string[] = [];
 
 for (const file of walk(APP_DIR)) {
-  const base = path.basename(file);
-  const isPage = base === "page.tsx";
-  const isActions = base === "actions.ts";
-  if (!isPage && !isActions) continue;
-
+  if (!/\.(ts|tsx)$/.test(file)) continue;
   const src = readFileSync(file, "utf8");
   const rel = path.relative(APP_DIR, file).replace(/\\/g, "/");
+
+  const isPage = path.basename(file) === "page.tsx";
+  // ANY server-action module, whatever it is called — matching on the filename
+  // would miss catalog-actions.ts and every future sibling.
+  const isActions = /^\s*["']use server["']/.test(src);
+  if (!isPage && !isActions) continue;
 
   // A page that only redirects (the retired /app/admin console) holds no data.
   const redirectOnly = isPage && /redirect\(/.test(src) && !/db\./.test(src);

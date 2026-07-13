@@ -10,14 +10,27 @@ import type { TeamCardData } from "@/components/dashboard/widgets";
  */
 
 export async function leadershipStats() {
-  const [products, releases, pendingCollab, staff, openTasks] = await Promise.all([
-    db.product.count(),
-    db.release.count({ where: { status: "PUBLISHED" } }),
-    db.collaborationRequest.count({ where: { status: "PENDING" } }),
-    db.user.count({ where: { role: { in: ["EMPLOYEE", "ADMIN", "CO_FOUNDER", "FOUNDER"] } } }),
-    db.task.count({ where: { status: { not: "DONE" } } }),
-  ]);
-  return { products, releases, pendingCollab, staff, openTasks };
+  const [products, liveProducts, draftProducts, releases, pendingCollab, staff, openTasks] =
+    await Promise.all([
+      db.product.count(),
+      db.product.count({ where: { status: "PUBLISHED" } }),
+      db.product.count({ where: { status: "DRAFT" } }),
+      db.release.count({ where: { status: "PUBLISHED" } }),
+      db.collaborationRequest.count({ where: { status: "PENDING" } }),
+      db.user.count({
+        where: { role: { in: ["EMPLOYEE", "ADMIN", "CO_FOUNDER", "FOUNDER"] } },
+      }),
+      db.task.count({ where: { status: { not: "DONE" } } }),
+    ]);
+  return {
+    products,
+    liveProducts,
+    draftProducts,
+    releases,
+    pendingCollab,
+    staff,
+    openTasks,
+  };
 }
 
 export async function teamCards(): Promise<TeamCardData[]> {

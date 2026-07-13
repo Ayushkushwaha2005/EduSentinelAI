@@ -17,7 +17,9 @@ import { isRole, rankOf, type Role } from "./roles";
 export const CAPABILITIES = [
   "dashboard.view", // reach /app at all
   "products.view",
-  "products.manage", // create/edit products
+  "products.manage", // create/edit products (draft state)
+  "products.publish", // make a product visible on the public site / archive it
+  "products.delete", // permanently remove a product  (founder-reserved)
   "releases.upload", // upload into quarantine
   "releases.review", // scan results, approve/reject
   "releases.publish", // sign + publish  (founder-reserved)
@@ -46,6 +48,7 @@ export function isCapability(value: unknown): value is Capability {
  * Founder Trust Model in the capability system.
  */
 export const FOUNDER_RESERVED: readonly Capability[] = [
+  "products.delete", // irreversible; the Founder alone destroys a product record
   "releases.publish",
   "releases.reject",
   "releases.revoke",
@@ -85,7 +88,11 @@ const BASE_ADMIN: Capability[] = [
   "audit.read",
 ];
 
-const BASE_CO_FOUNDER: Capability[] = [...BASE_ADMIN, "team.manage"];
+// Publishing to the public catalogue is a trust action (it speaks for the
+// company), so it sits with leadership by default — but it is grantable, unlike
+// the reserved set: the Founder can delegate it to one person without also
+// handing over release signing.
+const BASE_CO_FOUNDER: Capability[] = [...BASE_ADMIN, "team.manage", "products.publish"];
 
 // The Founder holds every capability, including the reserved ones.
 const BASE_FOUNDER: Capability[] = [...CAPABILITIES];

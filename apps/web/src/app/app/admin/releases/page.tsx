@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { requireCapability } from "@/lib/guard";
 import { publishBlockedByScan } from "@/lib/artifacts";
 import { ReviewControls, RevokeControl } from "./review-forms";
+import { Breadcrumb } from "@/components/dashboard/widgets";
 
 export default async function ReleaseReviewPage() {
   // Viewing the queue needs `releases.review`; acting on it needs the
@@ -23,9 +24,10 @@ export default async function ReleaseReviewPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <h1 className="text-3xl font-medium tracking-[-0.02em]">Release review</h1>
-      <p className="mt-2 text-text-secondary">
+    <div className="flex flex-col gap-4">
+      <Breadcrumb trail={[{ label: "Dashboards", href: "/app" }, { label: "Releases" }]} />
+      <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Release review</h1>
+      <p className="max-w-3xl text-[15px] text-text-secondary">
         Quarantined uploads await founder review. Publishing signs the
         artifact with the platform key; revocation pulls it globally.
         {!isFounder && " (You can view this queue; publish/reject/revoke are founder-only.)"}
