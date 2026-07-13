@@ -372,6 +372,63 @@ try {
   assert.equal(anon.status, 401, "an unauthenticated request for an avatar is refused");
 
   console.log("  ✓ Profiles are self-service for every role; analytics gates on capability");
+
+  // ---------- Phase 6.5: organization, company, collaboration ----------
+
+  // The org chart and the company's identity are FOUNDER-RESERVED. A Co-Founder
+  // runs the company operationally and still cannot say who its leadership is.
+  await canOpen(founder, "/app/organization", "Who EduSentinel is");
+  await canOpen(founder, "/app/company", "Company profile");
+  await cannotOpen(cofounder, "/app/organization", "Who EduSentinel is");
+  await cannotOpen(cofounder, "/app/company", "Company profile");
+  await cannotOpen(employee, "/app/organization", "Who EduSentinel is");
+
+  // The collaboration console is STAFF-ONLY. `collab.view` is the collaborator's
+  // own permission for their own thread — if this page ever gated on it, every
+  // external collaborator would receive the full list of everyone we work with.
+  await canOpen(founder, "/app/collaborations", "Who we are actually working with");
+  await cannotOpen(
+    collaborator,
+    "/app/collaborations",
+    "Who we are actually working with",
+  );
+
+  // The public company page renders the DATABASE, and only PUBLIC members.
+  const companyPage = await fetch(`${BASE}/company`).then((r) => r.text());
+  assert.ok(
+    companyPage.includes("Ayush Kushwaha"),
+    "the public company page renders the roster from the database",
+  );
+
+  // An org member the Founder marks HIDDEN disappears from the public site.
+  const hidden = await db.orgMember.create({
+    data: {
+      name: `${tag} Secret Advisor`,
+      designation: "Advisor",
+      visibility: "HIDDEN",
+    },
+  });
+  try {
+    const again = await fetch(`${BASE}/company`, { cache: "no-store" as RequestCache }).then(
+      (r) => r.text(),
+    );
+    assert.ok(
+      !again.includes("Secret Advisor"),
+      "a HIDDEN org member must never reach the public site",
+    );
+    // …but the Founder sees them on the org chart.
+    const chart = await get(founder, "/app/organization");
+    assert.ok(
+      chart.html.includes("Secret Advisor"),
+      "the Founder sees every member on the org chart, whatever their visibility",
+    );
+  } finally {
+    await db.orgMember.delete({ where: { id: hidden.id } }).catch(() => null);
+  }
+
+  console.log(
+    "  ✓ Organization & company are Founder-only; collaboration console is staff-only",
+  );
 } finally {
   if (productId) await db.product.delete({ where: { id: productId } }).catch(() => null);
   await db.user.deleteMany({ where: { email: { startsWith: tag } } });

@@ -3,19 +3,31 @@
 import { useRef } from "react";
 import { Stagger, Item } from "./motion";
 import { TeamPhoto } from "./team-photo";
-import type { TeamMember } from "@/lib/team";
 
 /*
  * Reference "Hear it from our users" pattern: heading row with square
- * prev/next controls, cards in a horizontal rail. Cards carry the full
- * member record: photo, name, position, complete technical designation.
+ * prev/next controls, cards in a horizontal rail.
+ *
+ * Phase 6.5: the members come from the DATABASE (lib/org.ts), not from a constant
+ * — the same records the Founder edits on /app/organization and the same ones the
+ * company page renders. This component is deliberately given only what it needs
+ * (a plain shape, already resolved and sanitized), so it cannot reach for a field
+ * that would have to be kept in step somewhere else.
  */
+export type RailMember = {
+  id: string;
+  name: string;
+  designation: string;
+  photoUrl: string | null;
+  bio: string | null;
+};
+
 export function CardRail({
   title,
   members,
 }: {
   title: string;
-  members: TeamMember[];
+  members: RailMember[];
 }) {
   const rail = useRef<HTMLDivElement>(null);
 
@@ -59,13 +71,13 @@ export function CardRail({
         >
           {members.map((m) => (
             <Item
-              key={m.name}
+              key={m.id}
               className="flex w-[85vw] max-w-[400px] shrink-0 snap-start flex-col rounded-card border border-border-subtle bg-surface-overlay/50 p-7"
             >
               <div className="flex items-start gap-4">
                 <TeamPhoto
                   name={m.name}
-                  photo={m.photo}
+                  photo={m.photoUrl}
                   sizes="80px"
                   className="h-20 w-20 shrink-0 rounded-xl"
                 />
@@ -74,23 +86,13 @@ export function CardRail({
                     {m.name}
                   </h3>
                   <p className="mt-0.5 text-sm font-medium text-brand-teal">
-                    {m.position}
+                    {m.designation}
                   </p>
-                  <ul className="mt-2 space-y-0.5">
-                    {m.roles.map((r) => (
-                      <li key={r} className="text-sm leading-snug text-text-secondary">
-                        {r}
-                      </li>
-                    ))}
-                  </ul>
                 </div>
               </div>
-              <p className="mt-7 border-t border-border-subtle pt-6 text-[15px] leading-relaxed text-text-primary">
-                “{m.statement}”
-              </p>
-              {m.motto && (
-                <p className="mt-3 text-sm font-medium italic text-brand-teal">
-                  {m.motto}
+              {m.bio && (
+                <p className="mt-7 border-t border-border-subtle pt-6 text-[15px] leading-relaxed text-text-primary">
+                  “{m.bio}”
                 </p>
               )}
             </Item>

@@ -57,6 +57,15 @@ Products are **database records, not code**. The Founder adds/edits/publishes/ar
 - **Avatars go through `lib/images.ts`, always.** Magic-byte validated (never the filename or claimed MIME), PNG/JPEG only — **SVG is script and is refused** — capped at 2 MB, metadata/EXIF stripped (a phone photo carries GPS), stored in `storage/avatars` under a generated name, served only by `/api/avatar` with a session. Persist the bytes the stripper *returns*, never the bytes you were handed.
 - **Analytics are computed server-side from our own records** (`lib/analytics.ts`), gated on the grantable `analytics.read`. No third-party analytics SDK, ever — `npm run check:trackers` is the machine-enforced version of that promise. A metric that cannot be measured is reported as unmeasured, **never as zero**.
 
+## Organization & company (Phase 6.5)
+
+- **The organization is data.** The org chart (`OrgMember`), departments, the company profile and collaborations are database records the Founder edits at `/app/organization`, `/app/company` and `/app/collaborations`. `lib/team.ts` is **deleted** — never reintroduce a hard-coded roster. Migration seed: `npm run db:seed:org`.
+- **`org.manage` and `company.manage` are FOUNDER-RESERVED.** Someone who can edit the org chart can publish themselves as CTO; someone who can edit the company profile can change the security contact address. Not delegable, ever.
+- **One person, one record.** When an `OrgMember`/`Collaboration` is linked to a `User`, name/email/photo/bio **resolve from that account** (`lib/org.ts`, `lib/collaborations.ts`) — the row's own columns are ignored, not merged. Never add a second copy of a person's identity to any table.
+- **`collab.view` ≠ `collab.manage`.** `collab.view` is the *collaborator's own* permission for their own thread. The staff console gates on `collab.manage`. Gating a staff surface on `collab.view` hands external collaborators the full partner list.
+- **Client components must not import from `lib/org.ts` / `lib/collaborations.ts` / `lib/company.ts`** — those import `db`. Pure constants and types live in `lib/org-types.ts`.
+- Org/company text is sanitized on write and rendered as plain text; social links go through `safeHref` (https or internal path only); photos and logos go through `lib/images.ts` (no SVG). The public roster shows `PUBLIC` members only and never a phone number.
+
 ## Rules
 
 - All colors/type/spacing/motion come from `packages/ui/src/tokens.css`; never hard-code hex values or durations in app code. Brand cyan/teal is for accents and large text only (fails AA at body size on dark).

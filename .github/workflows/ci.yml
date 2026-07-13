@@ -54,6 +54,11 @@ jobs:
       # report unmeasurable metrics as unmeasured rather than as zero.
       - run: npx tsx scripts/test-phase6.mts
         working-directory: apps/web
+      # Phase 6.5 gates: the org chart and company profile are founder-reserved, a
+      # person's identity is stored exactly once, the public roster leaks no
+      # internal member, and People/Collaboration cannot diverge again.
+      - run: npx tsx scripts/test-phase65.mts
+        working-directory: apps/web
       # audit hash chain must verify (tamper-evidence)
       - run: npx tsx scripts/verify-audit.mts
         working-directory: apps/web

@@ -488,7 +488,111 @@ hand someone the numbers without also handing them the account directory.
   instead of reaching a query, and an unauthenticated avatar request gets 401.
 - ⏳ **Two-person review before merge** (founder action).
 
-## Phase 7 — People: Invitations, Access Management & the Real Permission System ⏳ (next)
+## Phase 6.5 — Organization & Company Management ✅
+### (built + tested 2026-07-14; exit pending second-person review)
+
+*The company itself is still code.* Phase 6 made every **account** a real record,
+but who EduSentinel *is* — the leadership, the departments, the teams, the company
+name, logo and contact details — still lives in `lib/team.ts` and in strings
+scattered through the layout and footer. The Founder cannot change any of it
+without a deploy. This milestone finishes what Phase 5.5 started for products and
+Phase 6 started for people: **the organization becomes data.**
+
+Founder-controlled, and only Founder-controlled: `org.manage` and `company.manage`
+are added to **`FOUNDER_RESERVED`** — non-delegable, like release signing. The
+company's identity is not an operational chore to hand out.
+
+### 6.5.1 — Organization roster (`/app/organization`)
+
+- The Founder adds, edits, reorders and removes people in the organization:
+  Founder, Co-Founder, CTO, CEO, COO, CISO, HR, Product Manager, Engineering Lead,
+  Designer, Marketing Lead, Advisor, Investor — and **any custom designation**,
+  because a fixed enum of job titles is a guess about a company that does not
+  exist yet.
+- Editable: name, title/designation, bio, department, team, email, phone, social
+  links, photo, display order, visibility (public / internal / hidden).
+- **One source of truth, no duplicate data.** An org member may be *linked to a
+  user account*. When it is, name, email and photo **resolve from that person's
+  Phase 6.2 profile** — the org row never keeps a second copy to drift out of
+  date. Unlinked members (an advisor, an investor, someone with no login) carry
+  their own details on the org row. `lib/org.ts` is the single resolution point,
+  and every surface reads it.
+- Departments and teams are records too, with the org directory rendering
+  leadership → departments → teams → members from one query.
+
+### 6.5.2 — Company profile (`/app/company`)
+
+- Name, legal name, tagline, description, logo, contact email, phone, address,
+  social links — edited by the Founder, read by the marketing site, the footer,
+  the metadata and the org directory. A change appears everywhere at once because
+  there is only one place it is stored.
+- 🔒 The logo is an upload, so it goes through the Phase 6.2 pipeline
+  (`lib/images.ts`): magic bytes, size cap, metadata stripped, **no SVG**.
+
+### 6.5.3 — People module completion
+
+The directory (Phase 5.7) is read-only by design and stays that way. What the
+Founder gains is the **link** between a person's account and their place in the
+organization, managed from `/app/organization` — so one edit updates the
+dashboard, the directory, the public company page and the org chart together.
+Role and capability changes remain in Access Control, founder-reserved. The
+directory does not become a second, weaker path to privilege.
+
+### 6.5.4 — Collaboration, fixed (`/app/collaborations`)
+
+**This is a real bug, and it is worth naming precisely.** The People page lists
+*accounts* with the `COLLABORATOR` role (`User`); the Collaboration page lists
+*public submissions* (`CollaborationRequest`). They are different tables and
+nothing ever joined them, so a collaborator could exist in People while the
+Collaboration page sat empty. Two views of "our collaborators" that cannot agree
+is not a display problem — it is a missing model.
+
+- A new `Collaboration` record is the missing join: it is the relationship itself,
+  optionally linked to a collaborator's **account** and to the **request** it grew
+  out of.
+- The Founder can create, edit, pause, end and remove a collaboration directly —
+  a partnership that began over a call does not require someone to first fill in
+  the public form.
+- Approving a request **creates the collaboration**, so the inbox and the
+  relationship list can no longer diverge. Every collaborator account without a
+  collaboration record is surfaced on the page rather than silently omitted.
+
+🔒 **Delivered.** `npm run test:org` (`scripts/test-phase65.mts`, runs in CI):
+- `org.manage` / `company.manage` provably non-delegable — forged grant rows
+  written straight into `PermissionGrant` still yield neither.
+- **No duplicate data, proven:** the test writes a *deliberately stale* name,
+  email, phone and bio onto a linked org row, then renames the account and asserts
+  the roster follows the account. The stale copies are never consulted.
+- The public roster leaks nothing: `INTERNAL`/`HIDDEN` members never reach the
+  marketing site (asserted over real HTTP in the E2E too), and a phone number
+  never leaves the building whatever the row says.
+- Hostile links (`javascript:`, `data:`, protocol-relative) never reach an
+  `<a href>` on a public page; markup is stripped from link labels.
+- **The collaboration bug stays fixed:** a `COLLABORATOR` account with no
+  collaboration record is *surfaced* as unreconciled — never silently omitted, and
+  never silently invented. Approving a request now creates the relationship.
+
+**Two real bugs were found and fixed while building this:**
+1. 🔒 The collaboration console was first gated on `collab.view` — which is the
+   **collaborator's own** capability for their own thread. That would have handed
+   every external collaborator the full list of everyone we work with: the exact
+   tenant-isolation failure Phase 5 exists to prevent. It gates on `collab.manage`,
+   and the E2E asserts a collaborator is refused.
+2. The client forms imported values from `lib/org.ts`, which imports `db` — pulling
+   Prisma into the browser bundle and 500-ing the site. The pure constants and
+   types now live in `lib/org-types.ts`; anything touching the database stays
+   server-side.
+
+Migration seed: `npm run db:seed:org` (idempotent) imports the team that was
+hard-coded in `src/lib/team.ts` — **now deleted** — plus the company defaults, so
+the public site renders exactly as before, but the Founder owns it.
+
+Full regression: `test:security`, `test:pipeline`, `test:content`,
+`test:permissions` (31 guarded surfaces), `test:data`, `audit:verify`,
+`check:trackers` and the 12-group E2E all green.
+⏳ **Two-person review before merge — this milestone touches authorization.**
+
+## Phase 7 — People: Invitations, Access Management & the Real Permission System ⏳
 
 *How a person joins EduSentinel, what they can do, and how they leave.* Today
 accounts appear only by public signup or a seed script; the Founder cannot bring
