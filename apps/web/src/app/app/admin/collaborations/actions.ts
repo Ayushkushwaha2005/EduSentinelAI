@@ -47,12 +47,53 @@ export async function moderateCollaborationAction(
       reviewNote: note || null,
     },
   });
+  /*
+   * Approving a request CREATES THE COLLABORATION (Phase 6.5).
+   *
+   * This is the seam where the two lists used to diverge. A request was approved,
+   * the row's status changed — and nothing anywhere recorded that a collaboration
+   * now existed. The People page (accounts) and the Collaboration page (requests)
+   * were left describing different populations, and the relationship itself had no
+   * home in the schema at all.
+   *
+   * The record is linked to the request it came from, and to the person's account
+   * if they already have one (matched on the verified email they submitted).
+   * Idempotent: re-approving does not mint a second collaboration.
+   */
+  if (status === "APPROVED") {
+    const account = await db.user.findUnique({
+      where: { email: request.email.toLowerCase() },
+      select: { id: true, collaboration: { select: { id: true } } },
+    });
+    const alreadyLinked = account?.collaboration || (await db.collaboration.findUnique({
+      where: { requestId: request.id },
+      select: { id: true },
+    }));
+
+    if (!alreadyLinked) {
+      await db.collaboration.create({
+        data: {
+          requestId: request.id,
+          userId: account?.id ?? null,
+          name: request.name,
+          org: request.org,
+          email: request.email,
+          kind: request.kind,
+          status: "ACTIVE",
+          summary: request.message.slice(0, 300),
+          createdBy: moderatorId,
+        },
+      });
+    }
+  }
+
   const ctx = await requestContext();
   await audit("collaboration.moderated", {
     actorId: moderatorId,
     detail: `${request.email} -> ${status}`,
     ...ctx,
   });
+  revalidatePath("/app/collaborations");
   revalidatePath("/app/admin/collaborations");
   return { ok: true };
 }
@@ -81,6 +122,7 @@ export async function handleAbuseReportAction(
     detail: `${report.targetType} -> ${status}`,
     ...ctx,
   });
+  revalidatePath("/app/collaborations");
   revalidatePath("/app/admin/collaborations");
   return { ok: true };
 }

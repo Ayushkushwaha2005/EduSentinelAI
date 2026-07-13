@@ -2,7 +2,7 @@ import { Hero } from "@/components/hero";
 import { SplitHeading } from "@/components/section";
 import { Stagger, Item, Reveal } from "@/components/motion";
 import { CardRail } from "@/components/card-rail";
-import { TEAM } from "@/lib/team";
+import { publicRoster } from "@/lib/org";
 import { Button } from "@/components/button";
 import { LogoMark } from "@/components/logo";
 
@@ -44,7 +44,12 @@ const showcases = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  // The team rail renders the database (Phase 6.5) — the same records the Founder
+  // edits on /app/organization. Only members with something to say are shown: a
+  // card with an empty quote is a card that should not exist.
+  const team = (await publicRoster()).filter((m) => m.bio);
+
   return (
     <main>
       <Hero />
@@ -120,7 +125,9 @@ export default function Home() {
 
       {/* voices rail (reference testimonial layout, honest content) */}
       <section className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32">
-        <CardRail title="Hear it from the team" members={TEAM} />
+        {team.length > 0 && (
+          <CardRail title="Hear it from the team" members={team} />
+        )}
       </section>
 
       {/* brand statement band */}

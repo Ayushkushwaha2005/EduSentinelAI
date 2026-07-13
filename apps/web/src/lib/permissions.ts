@@ -35,6 +35,9 @@ export const CAPABILITIES = [
   "audit.read",
   "messages.use",
   "analytics.read", // account growth & posture  (Phase 6.3; grantable)
+  "org.manage", // the org chart: who we are  (founder-reserved)
+  "company.manage", // company identity & branding  (founder-reserved)
+  "collab.manage", // create/edit collaborations (Phase 6.5; grantable)
 ] as const;
 export type Capability = (typeof CAPABILITIES)[number];
 
@@ -55,6 +58,13 @@ export const FOUNDER_RESERVED: readonly Capability[] = [
   "releases.revoke",
   "users.manage_roles",
   "permissions.grant",
+  // Phase 6.5. Who the company says it is — its leadership, its name, its logo —
+  // is not an operational chore to delegate. Someone who could edit the org chart
+  // could add themselves to it as CTO and put that on the public site; someone who
+  // could edit the company profile could change the security contact address. Both
+  // stay with the Founder.
+  "org.manage",
+  "company.manage",
 ];
 
 export function isFounderReserved(cap: Capability): boolean {
@@ -85,6 +95,7 @@ const BASE_ADMIN: Capability[] = [
   "releases.review",
   "collab.view",
   "collab.moderate",
+  "collab.manage", // the relationship console — staff only, never a collaborator
   "users.view",
   "audit.read",
   // Who signed up, who is active, who has MFA. Operational, not privileged —
@@ -97,7 +108,11 @@ const BASE_ADMIN: Capability[] = [
 // company), so it sits with leadership by default — but it is grantable, unlike
 // the reserved set: the Founder can delegate it to one person without also
 // handing over release signing.
-const BASE_CO_FOUNDER: Capability[] = [...BASE_ADMIN, "team.manage", "products.publish"];
+const BASE_CO_FOUNDER: Capability[] = [
+  ...BASE_ADMIN,
+  "team.manage",
+  "products.publish",
+];
 
 // The Founder holds every capability, including the reserved ones.
 const BASE_FOUNDER: Capability[] = [...CAPABILITIES];

@@ -58,14 +58,36 @@ export default async function PeoplePage({
             {canManage && " Roles and permissions are assigned in Access Control."}
           </p>
         </div>
-        {canManage && (
-          <Link
-            href="/app/access"
-            className="inline-flex h-10 items-center rounded-control bg-ink px-5 text-sm font-medium text-surface-raised transition-colors duration-[--duration-fast] hover:bg-ink-hover"
-          >
-            Access Control
-          </Link>
-        )}
+        {/* Three surfaces, three different powers — kept apart on purpose. The
+            directory reads; Organization decides who someone IS on the org chart;
+            Access Control decides what they may DO. Merging them would make the
+            weakest of the three a path to the strongest. */}
+        <div className="flex flex-wrap items-center gap-3">
+          {viewer.can("org.manage") && (
+            <Link
+              href="/app/organization"
+              className="inline-flex h-10 items-center rounded-control border border-border-subtle px-5 text-sm font-medium transition-colors duration-[--duration-fast] hover:bg-surface-overlay"
+            >
+              Organization
+            </Link>
+          )}
+          {viewer.can("collab.manage") && (
+            <Link
+              href="/app/collaborations"
+              className="inline-flex h-10 items-center rounded-control border border-border-subtle px-5 text-sm font-medium transition-colors duration-[--duration-fast] hover:bg-surface-overlay"
+            >
+              Collaboration
+            </Link>
+          )}
+          {canManage && (
+            <Link
+              href="/app/access"
+              className="inline-flex h-10 items-center rounded-control bg-ink px-5 text-sm font-medium text-surface-raised transition-colors duration-[--duration-fast] hover:bg-ink-hover"
+            >
+              Access Control
+            </Link>
+          )}
+        </div>
       </div>
 
       <Panel>

@@ -66,6 +66,11 @@ model User {
   // Phase 5.3
   conversations  ConversationParticipant[] @relation("participant")
   messages       Message[]                 @relation("author")
+  // Phase 6.5 — the org chart and the collaboration relationship, if any.
+  // Both are optional: an account is not an org member, and an org member is not
+  // necessarily an account.
+  orgMember      OrgMember?
+  collaboration  Collaboration?
 }
 
 // Single-use expiring tokens for email verification and password reset.
@@ -227,12 +232,16 @@ model PermissionGrant {
 }
 
 model Team {
-  id          String       @id @default(cuid())
-  name        String       @unique
-  description String?
-  createdAt   DateTime     @default(now())
-  members     TeamMember[]
-  projects    Project[]
+  id           String       @id @default(cuid())
+  name         String       @unique
+  description  String?
+  createdAt    DateTime     @default(now())
+  members      TeamMember[]
+  projects     Project[]
+  // Phase 6.5: teams sit inside departments on the org chart.
+  departmentId String?
+  department   Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  orgMembers   OrgMember[]
 }
 
 model TeamMember {
@@ -320,6 +329,121 @@ model Message {
   createdAt      DateTime     @default(now())
 
   @@index([conversationId, createdAt])
+}
+
+// ---------- Phase 6.5: organization & company ----------
+
+// The company itself, as a record. Exactly one row (id = "company"): a singleton
+// rather than a settings key-value bag, so the shape is typed and a typo cannot
+// invent a new setting. Read by the marketing site, the footer and the page
+// metadata — change it here and it changes everywhere, because there is nowhere
+// else it is stored.
+//
+// The logo is an UPLOAD, so it goes through lib/images.ts like every other file a
+// human hands us: magic-byte validated, size-capped, metadata-stripped, no SVG.
+model CompanyProfile {
+  id          String   @id @default("company")
+  name        String   @default("EduSentinel AI")
+  legalName   String?
+  tagline     String?
+  description String?
+  email       String?
+  phone       String?
+  address     String?
+  website     String?
+  founded     String?
+  links       String   @default("[]") // JSON [{label, href}] — href is https-only (safeHref)
+  logoName    String? // generated name in storage/brand
+  logoMime    String?
+  logoAt      DateTime?
+  updatedAt   DateTime @updatedAt
+}
+
+model Department {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  slug        String      @unique
+  description String?
+  sortOrder   Int         @default(0)
+  createdAt   DateTime    @default(now())
+  members     OrgMember[]
+  teams       Team[]
+}
+
+// A person's place in the ORGANIZATION — which is not the same thing as their
+// account, and must not be confused with it:
+//
+//   User       = who can sign in, and what they may do (Phases 2, 5, 6).
+//   OrgMember  = who they are ON THE ORG CHART: designation, department, order,
+//                whether the public sees them.
+//
+// An advisor or investor has an OrgMember row and no account at all. An engineer
+// has both.
+//
+// SINGLE SOURCE OF TRUTH: when `userId` is set, the person's name, email and photo
+// RESOLVE FROM THE USER PROFILE (lib/org.ts) — this row does not keep a second
+// copy, because two copies of a name is one name that will be wrong. The `name`,
+// `email`, `phone` and photo columns here are used only for members with no
+// account, and are ignored when a link exists.
+//
+// `designation` is free text, not an enum: a fixed list of job titles is a guess
+// about a company that does not exist yet. Suggestions are offered in the UI.
+model OrgMember {
+  id           String      @id @default(cuid())
+  userId       String?     @unique // linked account, if this person has one
+  user         User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name         String // fallback identity for unlinked members (advisors, investors)
+  email        String?
+  phone        String?
+  designation  String // "Founder", "CISO", "Investor", or anything the Founder types
+  bio          String?
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  teamId       String?
+  team         Team?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  links        String      @default("[]") // JSON [{label, href}] — https only
+  photoName    String? // uploaded photo; used only when there is no linked account
+  photoMime    String?
+  photoAt      DateTime?
+  // A photo that ships in public/ as a build asset (the team portraits the site
+  // launched with). Not an upload, so it is not in storage/ and does not go
+  // through /api/photo — it is served straight from the public folder. Lowest
+  // precedence: a linked account's avatar wins, then an upload, then this.
+  photoPath    String?
+  sortOrder    Int         @default(0)
+  visibility   String      @default("INTERNAL") // PUBLIC | INTERNAL | HIDDEN
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([visibility, sortOrder])
+}
+
+// The missing model, and the reason the Collaboration page could be empty while
+// People listed collaborators.
+//
+// `User(role: COLLABORATOR)` is an ACCOUNT. `CollaborationRequest` is a public
+// SUBMISSION. Neither of them is the relationship — and it was the relationship
+// the Founder wanted to manage. This row is that relationship: it may be linked to
+// the account, to the request it grew out of, both, or neither (a partnership that
+// started over a call and never touched the public form).
+model Collaboration {
+  id        String    @id @default(cuid())
+  userId    String?   @unique // the collaborator's account, when they have one
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  requestId String?   @unique // the public request it came from, when it did
+  name      String
+  org       String?
+  email     String?
+  kind      String    @default("partnership") // partnership | contributor | research | other
+  status    String    @default("ACTIVE") // ACTIVE | PAUSED | ENDED
+  summary   String?
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  createdBy String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([status, startedAt])
 }
 
 model Artifact {

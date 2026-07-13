@@ -79,9 +79,28 @@ export const NAV: NavItem[] = [
   { label: "Analytics", href: "/app/analytics", icon: "report", cap: "analytics.read" },
   {
     label: "Collaboration",
-    href: "/app/admin/collaborations",
+    href: "/app/collaborations",
     icon: "chat",
-    cap: "collab.moderate",
+    // collab.MANAGE, not collab.view: `collab.view` is the collaborator's own
+    // permission to see their own thread. It must never open the staff console.
+    cap: "collab.manage",
+    children: [
+      { label: "Collaborations", href: "/app/collaborations", cap: "collab.manage" },
+      { label: "Request inbox", href: "/app/admin/collaborations", cap: "collab.moderate" },
+    ],
+  },
+  // The org chart and the company's identity. Both capabilities are
+  // founder-reserved, so these never render for anyone else — and the pages behind
+  // them refuse anyway (lib/guard.ts), because the sidebar is not the boundary.
+  {
+    label: "Organization",
+    href: "/app/organization",
+    icon: "users",
+    cap: "org.manage",
+    children: [
+      { label: "Org chart", href: "/app/organization", cap: "org.manage" },
+      { label: "Company profile", href: "/app/company", cap: "company.manage" },
+    ],
   },
   { label: "Messages", href: "/app/messages", icon: "chat", cap: "messages.use" },
   { label: "Audit", href: "/app/audit", icon: "report", cap: "audit.read" },
