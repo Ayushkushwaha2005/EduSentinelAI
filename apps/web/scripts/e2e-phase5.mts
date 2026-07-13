@@ -265,6 +265,55 @@ try {
   // and their controls are not even rendered for them.
   await sees(cofounder, "/app/admin/releases", "Revoke", false);
   console.log("  ✓ Release signing controls are Founder-only");
+
+  // ---------- every link the Founder is shown must resolve ----------
+  // A dashboard that links to a 404 is broken however well it is gated. Crawl
+  // the real rendered pages rather than a hand-kept list, so a link added later
+  // to a route that does not exist fails here.
+  const pages = [
+    "/app",
+    "/app/products",
+    "/app/people",
+    "/app/teams",
+    "/app/tasks",
+    "/app/access",
+    "/app/audit",
+    "/app/messages",
+    "/app/admin/releases",
+    "/app/admin/collaborations",
+    "/app/security",
+  ];
+
+  const links = new Set<string>();
+  for (const p of pages) {
+    const { html } = await get(founder, p);
+    for (const m of html.matchAll(/href="(\/[^"#?]*)/g)) links.add(m[1]);
+  }
+
+  const broken: string[] = [];
+  for (const link of links) {
+    const res = await fetch(`${BASE}${link}`, {
+      headers: { cookie: founder.cookie },
+      redirect: "follow",
+    });
+    if (res.status !== 200) broken.push(`${res.status} ${link}`);
+  }
+  assert.deepEqual(broken, [], `the Founder is shown links that do not resolve: ${broken.join(", ")}`);
+  console.log(`  ✓ all ${links.size} links shown to the Founder resolve (no 404s)`);
+
+  // ---------- dashboard widgets carry real data ----------
+  const { html: dash } = await get(founder, "/app");
+  assert.ok(dash.includes("Account Growth"), "the growth chart renders");
+  assert.ok(
+    !dash.includes("No accounts yet"),
+    "the People table must not be empty — it is the Founder's directory",
+  );
+  assert.ok(
+    !dash.includes("No releases yet"),
+    "the release pipeline must show the seeded quarantined build",
+  );
+  assert.ok(!dash.includes("No staff yet"), "the staff panel must list staff");
+  console.log("  ✓ Dashboard widgets render real data, not empty placeholders");
 } finally {
   if (productId) await db.product.delete({ where: { id: productId } }).catch(() => null);
   await db.user.deleteMany({ where: { email: { startsWith: tag } } });

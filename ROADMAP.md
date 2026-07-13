@@ -263,6 +263,53 @@ foreign key** to `User` and snapshots the actor (id + email as they were), which
 is what an audit record should store anyway. Regression-tested in
 `test:permissions`: an account is deleted and the chain still verifies.
 
+### 5.7 — Founder dashboard completion: navigation, people management, live data ✅
+
+**The "broken navigation" was two different things, and only one was a bug.**
+- *Not a bug:* every privileged route bounced the Founder to `/app/security`
+  because the Founder account had `mfaEnabled: false`. MFA is mandatory for
+  FOUNDER, so the guard was working exactly as designed. Enrolment itself was
+  verified working end-to-end over real HTTP (secret issued → stored encrypted →
+  live code accepted). It had simply never been completed.
+- *A real bug:* `/app/teams/<id>` did not exist, so every team card's "View All"
+  — on the dashboard and the Teams list — linked to a **404**.
+
+**Founder MFA bootstrap** (`npm run mfa:enroll -- <email> [code]`). The web flow
+at `/app/security` remains the normal path; this exists for the same reason
+`db:seed` does — the Founder is the one account that must be able to get itself
+into a working state from the command line, and MFA is mandatory for FOUNDER, so
+a founder who cannot finish enrolment in a browser is locked out of their own
+platform. Deliberately narrow: it can only *enable* MFA (never disable), cannot
+touch roles or permissions, refuses to switch MFA on without a valid live code
+(exactly like the UI), and writes both steps to the audit chain.
+
+**Missing routes and wiring restored:**
+- `/app/teams/[id]` — team detail (members, projects, work). Fixes the 404.
+- `/app/people` — the reference's "Clients List" screen: the full directory with
+  role tabs (Leadership / Employees / Collaborators / Members), search, export.
+  **Read-only by design** — every "Manage" link goes to Access Control, so the
+  directory never becomes a second, weaker role-management path.
+- The dashboard is now laid out from the reference: summary cards → directory
+  table → growth chart beside the staff panel → release pipeline → activity →
+  team grid.
+
+**Widgets show real data, not placeholders.** Account Growth is now *cumulative*
+(total accounts per day) rather than per-day signups: per-day was honest but
+rendered as six empty bars and one spike on a young platform, which read as
+broken. The release pipeline was empty because there were no releases at all —
+`db:seed:workspace` now seeds a genuine quarantined build (a real zip in
+`storage/quarantine`) so the Founder can exercise sign-and-publish.
+
+**HR:** managed as a *function*, not a rung on the ladder — an HR lead is an
+`EMPLOYEE` with an HR title on the People & Culture team, visible and manageable
+in the directory. Adding an `HR` **role** would change the authorization ladder,
+which needs founder approval and is not in this phase.
+
+🔒 The E2E now **crawls every link the Founder is actually shown** (26 of them)
+and fails on any non-200, so a link to a route that does not exist is caught by
+the tests rather than by you. It also asserts the dashboard widgets are not
+rendering their empty states.
+
 🔒 **Security gates (blocking):**
 - ✅ Deny-by-default authorization: a capability check on **every** dashboard
   route and server action, server-side. Sidebar filtering is UX only — never the
@@ -283,10 +330,8 @@ is what an audit record should store anyway. Regression-tested in
 - ⏳ **Two-person review before merge — this phase touches authorization.**
   (The one remaining exit criterion; founder action.)
 
-⏳ **Founder action required:** enrol TOTP at `/app/security`. MFA is mandatory
-for FOUNDER, so the console, Access Control and release signing stay closed until
-you do — the onboarding flow now walks you through it and returns you to the page
-you were trying to reach.
+✅ **Founder MFA enrolled.** Every privileged surface (product console, Access
+Control, release signing, audit) is open and verified working.
 
 ## Pre-Launch Gate 🔒 (MEDIUM tier — before public exposure, any phase)
 
