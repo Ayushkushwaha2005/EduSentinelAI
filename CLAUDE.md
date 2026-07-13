@@ -31,6 +31,14 @@ Upload (admin+MFA, own products only) → **quarantine** + magic-byte validation
 - Route groups: `(marketing)` has Nav/Footer; `(auth)` is bare (login/signup); `/app` is the authenticated shell.
 - `src/middleware.ts` is only a cookie-presence UX gate — real enforcement is `auth()` in `app/app/layout.tsx` and per-page role checks (`isAdminRole`). Keep it that way: argon2 is Node-only and must not enter the Edge bundle.
 - Roles are strings (SQLite has no enums) validated by `src/lib/roles.ts`. Audit via `src/lib/audit.ts` on all security-relevant actions.
+
+## Workspace & permissions (Phase 5)
+
+One website, one Sign In, **no separate admin portal** — `/app` dispatches on role (`src/app/app/page.tsx`) to the Founder/Co-Founder, Employee, Collaborator or Member dashboard. Role ladder (low→high): `USER · COLLABORATOR · EMPLOYEE · ADMIN · CO_FOUNDER · FOUNDER`; compare with `rankOf`/`outranks`, never string equality.
+- Roles set *default* capabilities; the Founder grants/revokes them **per person** (`PermissionGrant`). Effective set comes from `effectiveCapabilities()` in `lib/permissions.ts` — the only answer to "what can this person do?".
+- `FOUNDER_RESERVED` capabilities (release signing/revocation, role management, permission granting) are **non-delegable**: stripped in code on every check, so no grant row — forged or otherwise — can escalate. Proven by `npm run test:permissions` (runs in CI).
+- Enforcement is `src/lib/guard.ts` (`requireViewer`/`requireCapability`/`requireFounder`/`assertCapability`) on every page and action. The sidebar (`components/dashboard/nav-config.ts`) only *hides* what you can't use — it is never the boundary.
+- Founder bootstrap: `npm run db:seed`. Dev demo data: `npm run db:seed:workspace`.
 - Prisma is pinned to v6 (v7 moved datasource URLs out of schema files — do not upgrade casually).
 
 ## Rules

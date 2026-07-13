@@ -25,10 +25,14 @@ assert(roleChangeError({ ...A, targetId: "u1", targetRole: "USER", newRole: "ADM
 assert(roleChangeError({ ...A, targetId: "a2", targetRole: "ADMIN", newRole: "USER" }));
 // USER/EMPLOYEE can never grant
 assert(roleChangeError({ actorId: "u9", actorRole: "USER", targetId: "u1", targetRole: "USER", newRole: "EMPLOYEE" }));
-// Allowed paths
+// Phase 5 tightening: role assignment is founder-reserved. An ADMIN granting
+// EMPLOYEE was permitted in Phase 2.1; it is now denied, because any delegated
+// grant path is an indirect route up the ladder. The Founder decides access.
+assert(roleChangeError({ ...A, targetId: "u1", targetRole: "USER", newRole: "EMPLOYEE" }));
+// Allowed paths — the Founder, and only the Founder
 assert.equal(roleChangeError({ ...F, targetId: "u1", targetRole: "USER", newRole: "ADMIN" }), null);
 assert.equal(roleChangeError({ ...F, targetId: "a2", targetRole: "ADMIN", newRole: "USER" }), null);
-assert.equal(roleChangeError({ ...A, targetId: "u1", targetRole: "USER", newRole: "EMPLOYEE" }), null);
+assert.equal(roleChangeError({ ...F, targetId: "u1", targetRole: "USER", newRole: "EMPLOYEE" }), null);
 console.log("authz: Founder Trust Model rules OK");
 
 // --- crypto ---

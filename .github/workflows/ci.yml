@@ -45,6 +45,10 @@ jobs:
       # Phase 4 gates (output sanitization, bot defense, moderation)
       - run: npx tsx scripts/test-phase4.mts
         working-directory: apps/web
+      # Phase 5 gates: no path — not even a forged row in PermissionGrant —
+      # yields a founder-reserved capability or the FOUNDER role.
+      - run: npx tsx scripts/test-phase5.mts
+        working-directory: apps/web
       # audit hash chain must verify (tamper-evidence)
       - run: npx tsx scripts/verify-audit.mts
         working-directory: apps/web

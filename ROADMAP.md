@@ -86,6 +86,96 @@ Blog (MDX), docs, collaboration-request flow, community guidelines.
 explicit CORS policy before any external API consumer · signup bot defense ·
 moderation + abuse-report path for collaboration requests.
 
+## Phase 5 — Role-Based Workspace & Permission System ✅
+### (built + tested 2026-07-13; exit pending second-person auth review)
+
+*One website, one Sign In page, one identity system.* There is **no separate
+admin portal** and none may ever be introduced. After login every user lands on
+`/app`; the shell reads the session role plus the user's granted permissions and
+renders the dashboard that role is entitled to. The Founder is the highest
+authority and the sole source of access.
+
+Dashboard layout is a close recreation of the approved reference set
+(`EduSentinel AI pics/EMPLOYEE & FOUNDER`), re-skinned with EduSentinel brand
+tokens, logo and typography. **Layout is not being redesigned in this phase** —
+it is reproduced as shown, then customised later.
+
+### 5.0 — Permission architecture (foundation, lands first)
+
+- **Role ladder** extends to: `USER` · `COLLABORATOR` · `EMPLOYEE` ·
+  `CO_FOUNDER` · `FOUNDER`. `ADMIN` is retained as an operational tier between
+  EMPLOYEE and CO_FOUNDER so nothing already shipped breaks. Ranks live in
+  `lib/roles.ts`; every comparison goes through them (no string equality checks
+  scattered in pages).
+- **Capability layer** (`lib/permissions.ts`): a fixed catalogue of capability
+  keys (`products.manage`, `releases.upload`, `releases.publish`,
+  `collab.moderate`, `team.manage`, `audit.read`, …). Each role has a *default*
+  capability set; the Founder can additionally **grant or revoke individual
+  capabilities per person**, stored in a new `PermissionGrant` table
+  (`userId`, `capability`, `allow`, `grantedBy`, `grantedAt`, `expiresAt?`).
+  Effective set = role defaults ± explicit grants. All future management flows
+  build on this one primitive.
+- **Founder Trust Model preserved (non-negotiable):** FOUNDER remains
+  ungrantable and undemotable. A small set of capabilities is **founder-reserved
+  and non-delegable** (release signing, role management, permission granting,
+  audit-chain verification) — no grant can hand them to anyone else, enforced in
+  `lib/permissions.ts`, not in the UI.
+- Every grant/revoke and role change is audited (`admin.permission_grant`,
+  `admin.permission_revoke`) through the existing hash-chained audit log.
+
+### 5.1 — Dashboard shell (reference recreation)
+
+Shared shell for all roles, built once from the reference:
+sidebar (EduSentinel wordmark, grouped/collapsible nav, presence list) ·
+top bar (date, global search, messages, notifications, identity chip with role) ·
+content area (breadcrumb, stat cards with avatar stacks, data table with search /
+add / export / pagination, bar chart, team cards with progress bars).
+Nav items are **derived from the viewer's effective capabilities** — an item the
+user cannot use is never rendered, and the page behind it re-checks server-side.
+
+### 5.2 — Per-role dashboards
+
+- **Founder** — full operational view plus the exclusive **Access Control**
+  surface: directory of every account, role assignment, per-person capability
+  grants, session revocation, audit trail.
+- **Co-Founder** — same operational view, minus founder-reserved actions
+  (cannot sign releases, cannot manage roles or permissions).
+- **Employee** — scoped to assigned work: tasks, own products, team, messages.
+- **Collaborator** — external-facing: own collaboration threads and shared
+  resources only. Structurally isolated from internal data.
+
+### 5.3 — Message Center & workload management ✅
+
+Message Center (reference screens 2–3): Team/Client threads, top-bar message
+dropdown with "View in message center", composer, unread state. A conversation
+is readable **only by its participants** (`lib/messages.ts` — there is no
+unscoped "get by id" helper); a collaborator may reach staff but never another
+collaborator, so we never become a channel between external parties. Bodies are
+sanitized on write and rendered as plain text only, exactly like public
+submissions.
+
+Workload management: teams, members, projects and task assignment from the UI,
+gated on the `team.manage` capability. Task status may be moved by the assignee
+(their own work) or by a `team.manage` holder — nobody else.
+
+**Fixed in passing:** `prisma/seed.mjs` wrote its audit row directly instead of
+through `lib/audit.ts`, leaving a null hash that broke the R7b chain for every
+row after it. It now chains correctly; `npm run audit:verify` passes across a
+bootstrap.
+
+🔒 **Security gates (blocking):**
+- Deny-by-default authorization: a capability check on **every** dashboard route
+  and server action, server-side. Sidebar filtering is UX only — never the
+  enforcement boundary (same rule as `src/middleware.ts`).
+- Founder-reserved capabilities provably non-delegable — covered by
+  `npm run test:security`, extended with permission-escalation cases
+  (no grant path yields FOUNDER; no ADMIN/CO_FOUNDER can self-grant).
+- MFA continues to be mandatory for every privileged surface (ADMIN,
+  CO_FOUNDER, FOUNDER).
+- Collaborator tenant isolation: collaborators reach only their own records,
+  via ownership-scoped query helpers (the `lib/products.ts` pattern).
+- Two-person review before merge — this phase touches authorization.
+
 ## Pre-Launch Gate 🔒 (MEDIUM tier — before public exposure, any phase)
 
 Full checklist in [SECURITY-ROADMAP.md §7](./SECURITY-ROADMAP.md#7-pre-public-launch-security-checklist).
@@ -95,12 +185,12 @@ Cloudflare proxy + rate rules + bot mode · monitoring/alerting reaching a
 human · incident-response runbook matching the published disclosure SLAs ·
 breached-password checking.
 
-## Phase 5 — Expansion ⏳ (per-product, post-launch)
+## Phase 6 — Expansion ⏳ (per-product, post-launch)
 
 Browser extension, desktop, mobile clients — all authenticating against the
 Phase 2 identity service and distributing via the Phase 3 download center.
-Employee portal when headcount demands it. Collaboration portal opens to the
-public.
+Collaboration portal opens to the public. (The employee workspace itself is no
+longer deferred here — it ships as part of Phase 5's role-based dashboards.)
 
 🔒 Security gates per product:
 - Extension/store publisher accounts: hardware-key MFA, founder-gated releases
