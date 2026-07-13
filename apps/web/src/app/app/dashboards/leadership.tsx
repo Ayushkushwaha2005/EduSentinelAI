@@ -71,7 +71,7 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
         <StatCard
           icon={<BoxIcon size={26} />}
           title="Products"
-          subtitle={`Registered products (${stats.products})`}
+          subtitle={`${stats.liveProducts} live · ${stats.draftProducts} draft`}
           people={staffNames}
           href="/app/products"
         />

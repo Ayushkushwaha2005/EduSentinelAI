@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { createProductAction, uploadReleaseAction, type PublishState } from "./actions";
+import { uploadReleaseAction, type PublishState } from "./actions";
 
 const inputClass =
   "h-11 w-full rounded-control border border-border-subtle bg-surface-raised px-3.5 text-[15px] placeholder:text-text-muted focus:border-ink focus:outline-none";
@@ -17,27 +17,6 @@ function Feedback({ state }: { state: PublishState }) {
     );
   if (state.ok) return <p className="text-sm text-success">{state.ok}</p>;
   return null;
-}
-
-export function CreateProductForm() {
-  const [state, action, pending] = useActionState(createProductAction, {});
-  return (
-    <form action={action} className="space-y-3">
-      <input name="name" placeholder="Product name" required className={inputClass} />
-      <input name="slug" placeholder="slug (e.g. edusentinel-extension)" required className={inputClass} />
-      <textarea
-        name="description"
-        placeholder="Short description (min. 10 characters)"
-        required
-        rows={3}
-        className="w-full rounded-control border border-border-subtle bg-surface-raised px-3.5 py-2.5 text-[15px] placeholder:text-text-muted focus:border-ink focus:outline-none"
-      />
-      <Feedback state={state} />
-      <button type="submit" disabled={pending} className={buttonClass}>
-        {pending ? "Creating…" : "Create product"}
-      </button>
-    </form>
-  );
 }
 
 export function UploadReleaseForm({ productId }: { productId: string }) {

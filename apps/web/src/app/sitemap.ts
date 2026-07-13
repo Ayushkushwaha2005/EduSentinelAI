@@ -1,12 +1,16 @@
 import type { MetadataRoute } from "next";
 import { listContent } from "@/lib/content";
+import { publicProductSlugs } from "@/lib/catalog";
 
 const base = "https://edusentinel.ai";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [posts, docs] = await Promise.all([
+  // Products come from the catalogue, so one the Founder publishes from the
+  // dashboard is indexed without a code change.
+  const [posts, docs, products] = await Promise.all([
     listContent("blog"),
     listContent("docs"),
+    publicProductSlugs(),
   ]);
 
   const paths = [
@@ -26,6 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/legal/community",
     ...posts.map((p) => `/blog/${p.slug}`),
     ...docs.map((d) => `/docs/${d.slug}`),
+    ...products.map((p) => `/products/${p.slug}`),
   ];
 
   return paths.map((path) => ({

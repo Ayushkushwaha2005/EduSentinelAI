@@ -4,7 +4,6 @@ import { createHash, randomBytes } from "crypto";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { db } from "@/lib/db";
 import { audit, requestContext } from "@/lib/audit";
 import { ownedProduct } from "@/lib/products";
@@ -32,45 +31,11 @@ async function publisher(cap: Capability): Promise<{ id: string; role: string } 
   }
 }
 
-const productSchema = z.object({
-  name: z.string().trim().min(2).max(80),
-  slug: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .regex(/^[a-z0-9][a-z0-9-]{1,60}$/, "Slug: lowercase letters, digits, hyphens"),
-  description: z.string().trim().min(10).max(500),
-});
-
-export async function createProductAction(
-  _prev: PublishState,
-  formData: FormData,
-): Promise<PublishState> {
-  const actor = await publisher("products.manage");
-  if (!actor) return { error: "Creating a product requires the products.manage permission and MFA." };
-
-  const parsed = productSchema.safeParse({
-    name: formData.get("name"),
-    slug: formData.get("slug"),
-    description: formData.get("description"),
-  });
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
-
-  const existing = await db.product.findUnique({ where: { slug: parsed.data.slug } });
-  if (existing) return { error: "That slug is already in use." };
-
-  const product = await db.product.create({
-    data: { ...parsed.data, ownerId: actor.id },
-  });
-  const ctx = await requestContext();
-  await audit("product.created", {
-    actorId: actor.id,
-    detail: `${product.slug} (${product.id})`,
-    ...ctx,
-  });
-  revalidatePath("/app/products");
-  return { ok: `Product "${product.name}" created.` };
-}
+/*
+ * Product creation now lives in catalog-actions.ts, which owns the full
+ * catalogue record (marketing fields + lifecycle). Keeping a second, thinner
+ * create path here would let the two drift.
+ */
 
 export async function uploadReleaseAction(
   _prev: PublishState,

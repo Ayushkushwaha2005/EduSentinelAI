@@ -11,6 +11,7 @@
     "db:push": "prisma db push",
     "db:seed": "node --env-file=.env prisma/seed.mjs",
     "db:seed:workspace": "node --env-file=.env prisma/seed-workspace.mjs",
+    "db:seed:catalog": "node --env-file=.env prisma/seed-catalog.mjs",
     "postinstall": "prisma generate",
     "test:security": "tsx --env-file=.env scripts/test-phase21.mts",
     "audit:verify": "tsx --env-file=.env scripts/verify-audit.mts",
