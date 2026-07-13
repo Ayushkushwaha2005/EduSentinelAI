@@ -1,65 +1,31 @@
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { requireViewer } from "@/lib/guard";
+import LeadershipDashboard from "./dashboards/leadership";
+import EmployeeDashboard from "./dashboards/employee";
+import CollaboratorDashboard from "./dashboards/collaborator";
+import MemberDashboard from "./dashboards/member";
 
-export default async function AppOverview() {
-  const session = await auth();
-  const user = session?.user;
-  const account = user
-    ? await db.user.findUnique({ where: { id: user.id } })
-    : null;
+/*
+ * One entry point for every signed-in user. The same /login leads here; the
+ * role on the session decides which dashboard renders. This dispatch is
+ * exhaustive over the role ladder — a new role must be handled explicitly
+ * rather than falling through to a privileged view.
+ */
+export default async function AppDashboard() {
+  const viewer = await requireViewer();
 
-  return (
-    <div className="mx-auto max-w-4xl">
-      <h1 className="text-3xl font-medium tracking-[-0.02em]">
-        Welcome, {user?.name?.split(" ")[0]}
-      </h1>
-      <p className="mt-2 text-text-secondary">
-        Your EduSentinel AI account — one identity for the whole ecosystem.
-      </p>
-
-      <div className="mt-10 grid gap-5 sm:grid-cols-2">
-        <div className="rounded-card border border-border-subtle bg-surface-raised p-7">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.08em] text-text-muted">
-            Account
-          </h2>
-          <dl className="mt-4 space-y-2 text-[15px]">
-            <div className="flex justify-between gap-4">
-              <dt className="text-text-secondary">Email</dt>
-              <dd className="truncate font-medium">{user?.email}</dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-text-secondary">Role</dt>
-              <dd className="font-medium">{user?.role}</dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-text-secondary">Member since</dt>
-              <dd className="font-medium">
-                {account?.createdAt.toLocaleDateString("en-GB", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-text-secondary">Two-factor auth</dt>
-              <dd className="font-medium">
-                {account?.mfaEnabled ? "Enabled" : "Coming soon"}
-              </dd>
-            </div>
-          </dl>
-        </div>
-        <div className="rounded-card border border-border-subtle bg-surface-raised p-7">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.08em] text-text-muted">
-            What’s next
-          </h2>
-          <p className="mt-4 text-[15px] leading-relaxed text-text-secondary">
-            The product registry and signed download center arrive in Phase 3.
-            Your account will give you access to every EduSentinel product as
-            it launches — no separate sign-ups.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+  switch (viewer.role) {
+    case "FOUNDER":
+    case "CO_FOUNDER":
+    case "ADMIN":
+      return <LeadershipDashboard viewer={viewer} />;
+    case "EMPLOYEE":
+      return <EmployeeDashboard viewer={viewer} />;
+    case "COLLABORATOR":
+      return <CollaboratorDashboard viewer={viewer} />;
+    case "USER":
+      return <MemberDashboard viewer={viewer} />;
+    default:
+      // Unknown role = least privilege, never leadership.
+      return <MemberDashboard viewer={viewer} />;
+  }
 }

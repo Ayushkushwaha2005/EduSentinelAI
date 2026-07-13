@@ -1,99 +1,75 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { auth, signOut } from "@/lib/auth";
-import { isAdminRole } from "@/lib/roles";
-import { LogoWordmark } from "@/components/logo";
+import { db } from "@/lib/db";
+import { requireViewer } from "@/lib/guard";
+import { Sidebar } from "@/components/dashboard/sidebar";
+import { Topbar } from "@/components/dashboard/topbar";
+import { navFor } from "@/components/dashboard/nav-config";
+import { listConversations } from "@/lib/messages";
+import type { Role } from "@/lib/roles";
 
 export const metadata = { robots: { index: false } };
 
+/*
+ * The single workspace shell. Everyone — Founder, Co-Founder, Employee,
+ * Collaborator — signs in at the same /login and lands here; the shell adapts
+ * to the viewer's role and effective capabilities. There is no separate admin
+ * portal, and none may be added (see ROADMAP Phase 5).
+ *
+ * The nav below is filtered for UX only. Enforcement lives in lib/guard.ts,
+ * which every page and server action calls independently.
+ */
 export default async function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const session = await auth();
-  if (!session?.user) redirect("/login?next=/app"); // middleware backstop
+  const viewer = await requireViewer();
 
-  const admin = isAdminRole(session.user.role);
+  const items = navFor(viewer.caps as Set<string>, viewer.role);
+
+  // Presence rail: internal staff only. External collaborators must not be
+  // able to enumerate the team, so they never receive this list.
+  const presence = viewer.can("team.view")
+    ? await db.user.findMany({
+        where: { role: { in: ["EMPLOYEE", "ADMIN", "CO_FOUNDER", "FOUNDER"] } },
+        orderBy: { createdAt: "asc" },
+        take: 5,
+        select: { name: true, memberships: { take: 1, select: { title: true } } },
+      })
+    : [];
+
+  // Message peek in the top bar. listConversations is participant-scoped, so
+  // this can only ever surface threads the viewer belongs to.
+  const canMessage = viewer.can("messages.use");
+  const recent = canMessage ? (await listConversations(viewer.id)).slice(0, 4) : [];
+  const unread = recent.filter((c) => c.unread).length;
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-border-subtle bg-surface-raised/60 p-6 md:flex">
-        <Link href="/app">
-          <LogoWordmark />
-        </Link>
-        <nav aria-label="App" className="mt-10 flex flex-col gap-1">
-          <Link
-            href="/app"
-            className="rounded-control px-3 py-2 text-[15px] font-medium text-text-primary hover:bg-surface-overlay"
-          >
-            Overview
-          </Link>
-          {admin && (
-            <Link
-              href="/app/products"
-              className="rounded-control px-3 py-2 text-[15px] font-medium text-text-primary hover:bg-surface-overlay"
-            >
-              Products
-            </Link>
-          )}
-          {admin && (
-            <Link
-              href="/app/admin/releases"
-              className="rounded-control px-3 py-2 text-[15px] font-medium text-text-primary hover:bg-surface-overlay"
-            >
-              Releases
-            </Link>
-          )}
-          {admin && (
-            <Link
-              href="/app/admin/collaborations"
-              className="rounded-control px-3 py-2 text-[15px] font-medium text-text-primary hover:bg-surface-overlay"
-            >
-              Inbox
-            </Link>
-          )}
-          <Link
-            href="/app/security"
-            className="rounded-control px-3 py-2 text-[15px] font-medium text-text-primary hover:bg-surface-overlay"
-          >
-            Security
-          </Link>
-          {admin && (
-            <Link
-              href="/app/admin"
-              className="rounded-control px-3 py-2 text-[15px] font-medium text-text-primary hover:bg-surface-overlay"
-            >
-              Admin
-            </Link>
-          )}
-        </nav>
-        <div className="mt-auto border-t border-border-subtle pt-5">
-          <p className="truncate text-sm font-medium">{session.user.name}</p>
-          <p className="truncate text-sm text-text-muted">{session.user.email}</p>
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/" });
-            }}
-          >
-            <button
-              type="submit"
-              className="mt-4 h-10 w-full rounded-control bg-surface-overlay text-sm font-medium transition-colors hover:bg-border-subtle"
-            >
-              Sign out
-            </button>
-          </form>
+    <div className="min-h-screen bg-surface-base p-3 md:p-4">
+      <div className="flex gap-4">
+        <Sidebar
+          items={items}
+          presence={presence.map((p) => ({
+            name: p.name,
+            title: p.memberships[0]?.title ?? null,
+          }))}
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <Topbar
+            name={viewer.name}
+            role={viewer.role as Role}
+            showMessages={canMessage}
+            unread={unread}
+            messages={recent.map((c) => ({
+              id: c.id,
+              title: c.title,
+              preview: c.preview,
+              time: c.lastAt.toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              unread: c.unread,
+            }))}
+          />
+          <main className="min-w-0">{children}</main>
         </div>
-      </aside>
-      <div className="flex-1">
-        <header className="flex h-[64px] items-center justify-between border-b border-border-subtle px-6 md:justify-end">
-          <Link href="/app" className="md:hidden">
-            <LogoWordmark />
-          </Link>
-          <span className="rounded-control bg-surface-overlay px-2.5 py-1 text-xs font-medium text-text-secondary">
-            {session.user.role}
-          </span>
-        </header>
-        <main className="p-6 md:p-10">{children}</main>
       </div>
     </div>
   );

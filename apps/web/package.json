@@ -10,12 +10,14 @@
     "typecheck": "tsc --noEmit",
     "db:push": "prisma db push",
     "db:seed": "node --env-file=.env prisma/seed.mjs",
+    "db:seed:workspace": "node --env-file=.env prisma/seed-workspace.mjs",
     "postinstall": "prisma generate",
     "test:security": "tsx --env-file=.env scripts/test-phase21.mts",
     "audit:verify": "tsx --env-file=.env scripts/verify-audit.mts",
     "test:pipeline": "tsx --env-file=.env scripts/test-phase3.mts",
     "gen:signing-key": "node scripts/gen-signing-key.mjs",
-    "test:content": "tsx --env-file=.env scripts/test-phase4.mts"
+    "test:content": "tsx --env-file=.env scripts/test-phase4.mts",
+    "test:permissions": "tsx --env-file=.env scripts/test-phase5.mts"
   },
   "dependencies": {
     "@edusentinel/ui": "*",
