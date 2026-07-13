@@ -134,7 +134,6 @@ export async function recentAudit(take = 8) {
   return db.auditLog.findMany({
     orderBy: { createdAt: "desc" },
     take,
-    include: { actor: { select: { name: true, email: true } } },
   });
 }
 

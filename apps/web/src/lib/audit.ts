@@ -39,6 +39,19 @@ export async function audit(
   opts: { actorId?: string; detail?: string } & AuditContext = {},
 ) {
   try {
+    // Snapshot the actor's email as it is right now. The audit log holds no
+    // foreign key to User (see schema): it must outlive the account and must
+    // never be rewritten when that account is deleted, because the hash commits
+    // to actorId and any such rewrite would break the chain and read as tampering.
+    const actorEmail = opts.actorId
+      ? (
+          await db.user.findUnique({
+            where: { id: opts.actorId },
+            select: { email: true },
+          })
+        )?.email
+      : undefined;
+
     await db.$transaction(async (tx) => {
       const prev = await tx.auditLog.findFirst({
         orderBy: { createdAt: "desc" },
@@ -61,6 +74,10 @@ export async function audit(
         data: {
           action,
           actorId: opts.actorId,
+          // Display-only snapshot. Deliberately NOT part of the hash: the chain
+          // already commits to actorId, and adding a field would invalidate
+          // every hash written before this change.
+          actorEmail,
           detail: opts.detail,
           ip: opts.ip,
           userAgent: opts.userAgent,

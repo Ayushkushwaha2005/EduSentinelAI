@@ -220,6 +220,49 @@ The five products previously hard-coded in `components/products.tsx` were
 migrated into the catalogue by `npm run db:seed:catalog` (idempotent), so the
 public site is unchanged — but the Founder now owns them.
 
+### 5.6 — MFA onboarding, shell polish & end-to-end verification ✅
+
+**Founder MFA onboarding.** A privileged account without MFA was silently
+redirected to `/app/security` with no explanation and no way back. The gate now
+carries its reason and the page it interrupted (`?mfa=required&next=…`), the
+security page explains *why* access is held, and enrolment returns the viewer to
+where they were going. The return path is validated as a relative `/app` route on
+both sides, so it can never become an open redirect. After enrolling, every
+Founder-only surface opens — proven end-to-end, not asserted.
+
+**Shell polish (production-ready, not merely reference-shaped):**
+- **Mobile navigation** — the sidebar is desktop-only, so the workspace had *no
+  navigation at all* on a phone. A drawer now carries the same
+  capability-filtered items.
+- **Honest controls.** The reference's decorative widgets were doing nothing:
+  Export now writes a real CSV (client-side, over rows the server already
+  authorized — no new endpoint, no new auth boundary; formula-prefixed cells are
+  escaped against CSV injection), search is a real GET form, and pagination shows
+  the *real* page instead of a hard-coded "01". Controls a page does not
+  implement are no longer rendered at all — a button that does nothing is worse
+  than no button.
+- **Workspace search** (`/app/search`, the shell's global search from 5.1) —
+  results are assembled from the same scoped helpers as the pages they link to,
+  so search can never surface a record the viewer could not already open.
+- **`prefers-reduced-motion`** is finally honoured. It was a standing project
+  rule and a comment in `tokens.css`; no media query ever implemented it.
+
+**End-to-end test** (`npm run test:e2e`, needs a live server, not in CI): signs in
+over HTTP as Founder, Co-Founder, Employee, Collaborator and an unenrolled
+Founder — with real TOTP codes for MFA accounts — and asserts what each may and
+may not open, the MFA gate, the product lifecycle (a DRAFT 404s publicly, a
+PUBLISHED product is live) and that release-signing controls are Founder-only.
+Probe accounts are ephemeral; the real Founder account is never touched.
+
+🔒 **Fixed: the audit log was mutable as a side effect of deleting a user.**
+`AuditLog.actor` was an optional FK to `User`, so Prisma's default `SetNull`
+rewrote `actorId` to null on that account's rows when it was deleted. The R7b
+hash commits to `actorId` — so ordinary offboarding (or a GDPR erasure) silently
+broke the chain and would have read as **tampering**. The log now holds **no
+foreign key** to `User` and snapshots the actor (id + email as they were), which
+is what an audit record should store anyway. Regression-tested in
+`test:permissions`: an account is deleted and the chain still verifies.
+
 🔒 **Security gates (blocking):**
 - ✅ Deny-by-default authorization: a capability check on **every** dashboard
   route and server action, server-side. Sidebar filtering is UX only — never the
@@ -235,8 +278,15 @@ public site is unchanged — but the Founder now owns them.
   enforced inside `requireCapability`/`assertCapability` and regression-tested.
 - ✅ Collaborator tenant isolation: collaborators reach only their own records,
   via participant-scoped and ownership-scoped query helpers.
+- ✅ All four role journeys verified end-to-end against the running app
+  (`npm run test:e2e`), including TOTP sign-in and the MFA gate.
 - ⏳ **Two-person review before merge — this phase touches authorization.**
   (The one remaining exit criterion; founder action.)
+
+⏳ **Founder action required:** enrol TOTP at `/app/security`. MFA is mandatory
+for FOUNDER, so the console, Access Control and release signing stay closed until
+you do — the onboarding flow now walks you through it and returns you to the page
+you were trying to reach.
 
 ## Pre-Launch Gate 🔒 (MEDIUM tier — before public exposure, any phase)
 

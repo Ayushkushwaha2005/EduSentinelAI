@@ -1,6 +1,7 @@
 import { requireViewer } from "@/lib/guard";
 import { myTasks } from "@/lib/dashboard";
 import { db } from "@/lib/db";
+import { sanitizeLine } from "@/lib/sanitize";
 import {
   Breadcrumb,
   Pagination,
@@ -16,14 +17,20 @@ import { StatusControl, TaskCreator } from "./manage";
  * widens with capability: team.manage sees and assigns all tasks, everyone else
  * sees only the tasks assigned to them and may only move those.
  */
-export default async function TasksPage() {
+export default async function TasksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   const viewer = await requireViewer();
   const canManage = viewer.can("team.manage");
+  const { q } = await searchParams;
+  const query = sanitizeLine(q, 80).trim();
 
-  const tasks = canManage
+  const all = canManage
     ? await db.task.findMany({
         orderBy: [{ status: "asc" }, { dueAt: "asc" }],
-        take: 50,
+        take: 200,
         include: {
           project: { select: { name: true } },
           assignee: { select: { id: true, name: true } },
@@ -33,6 +40,17 @@ export default async function TasksPage() {
         ...t,
         assignee: { id: viewer.id, name: viewer.name },
       }));
+
+  // Filtering happens after scoping, never instead of it.
+  const needle = query.toLowerCase();
+  const tasks = query
+    ? all.filter(
+        (t) =>
+          t.title.toLowerCase().includes(needle) ||
+          (t.project?.name ?? "").toLowerCase().includes(needle) ||
+          (t.assignee?.name ?? "").toLowerCase().includes(needle),
+      )
+    : all;
 
   const [projects, staff] = canManage
     ? await Promise.all([
@@ -63,7 +81,21 @@ export default async function TasksPage() {
       {canManage && <TaskCreator projects={projects} staff={staff} />}
 
       <Panel>
-        <TableToolbar title={canManage ? "All Tasks" : "My Tasks"} />
+        <TableToolbar
+          title={canManage ? "All Tasks" : "My Tasks"}
+          searchPath="/app/tasks"
+          query={query}
+          exportName="edusentinel-tasks"
+          exportRows={tasks.map((t) => ({
+            task: t.title,
+            project: t.project?.name ?? "",
+            assignee: t.assignee?.name ?? "Unassigned",
+            priority: t.priority,
+            status: t.status,
+            due: t.dueAt ? t.dueAt.toISOString().slice(0, 10) : "",
+          }))}
+        />
+
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[860px] text-left">
             <thead>
@@ -127,14 +159,15 @@ export default async function TasksPage() {
               {tasks.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-5 py-10 text-center text-text-muted">
-                    No tasks.
+                    {query ? `Nothing matched “${query}”.` : "No tasks."}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        <Pagination shown={tasks.length} total={tasks.length} />
+
+        <Pagination shown={tasks.length} total={all.length} />
       </Panel>
     </div>
   );

@@ -1,22 +1,60 @@
 import { requireCapability } from "@/lib/guard";
 import { db } from "@/lib/db";
-import { Breadcrumb, Pagination, Panel, TableToolbar } from "@/components/dashboard/widgets";
+import { sanitizeLine } from "@/lib/sanitize";
+import {
+  Breadcrumb,
+  Pagination,
+  Panel,
+  TableToolbar,
+} from "@/components/dashboard/widgets";
+
+const PAGE_SIZE = 25;
 
 /*
  * Audit trail. Read-only by construction — the hash chain is verified out of
- * band (`npm run audit:verify`), never mutated from the UI.
+ * band (`npm run audit:verify`), never mutated from the UI. Paging is real
+ * (server-side, in the URL) because an operator reading an audit log needs to
+ * know they are seeing all of it.
  */
-export default async function AuditPage() {
+export default async function AuditPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
   await requireCapability("audit.read");
+
+  const { q, page: rawPage } = await searchParams;
+  const query = sanitizeLine(q, 80).trim();
+  const page = Math.max(1, Number(rawPage) || 1);
+
+  // Filter on action / detail / actor email.
+  //
+  // Case handling is provider-specific: SQLite's LIKE is case-insensitive for
+  // ASCII, so this matches regardless of case today. Postgres LIKE is NOT — when
+  // the datasource switches (Pre-Launch Gate), add `mode: "insensitive"` to each
+  // clause, which Prisma supports there but rejects on SQLite.
+  const where = query
+    ? {
+        OR: [
+          { action: { contains: query } },
+          { detail: { contains: query } },
+          { actorEmail: { contains: query } },
+        ],
+      }
+    : {};
 
   const [events, total] = await Promise.all([
     db.auditLog.findMany({
+      where,
       orderBy: { createdAt: "desc" },
-      take: 50,
-      include: { actor: { select: { name: true, email: true } } },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
     }),
-    db.auditLog.count(),
+    db.auditLog.count({ where }),
   ]);
+
+  const hrefFor = (p: number) =>
+    `/app/audit?${new URLSearchParams({ ...(query ? { q: query } : {}), page: String(p) })}`;
 
   return (
     <div className="flex flex-col gap-4">
@@ -25,13 +63,27 @@ export default async function AuditPage() {
       <div>
         <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Audit Trail</h1>
         <p className="mt-1 max-w-3xl text-[15px] text-text-secondary">
-          Every security-relevant action, hash-chained so tampering is
-          detectable. Verify the chain with <code className="font-mono text-sm">npm run audit:verify</code>.
+          Every security-relevant action, hash-chained so tampering is detectable.
+          Verify the chain with{" "}
+          <code className="font-mono text-sm">npm run audit:verify</code>.
         </p>
       </div>
 
       <Panel>
-        <TableToolbar title="Events" />
+        <TableToolbar
+          title="Events"
+          searchPath="/app/audit"
+          query={query}
+          exportName="edusentinel-audit"
+          exportRows={events.map((e) => ({
+            time: e.createdAt.toISOString(),
+            action: e.action,
+            actor: e.actorEmail ?? "system",
+            detail: e.detail ?? "",
+            ip: e.ip ?? "",
+          }))}
+        />
+
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[820px] text-left">
             <thead>
@@ -56,7 +108,7 @@ export default async function AuditPage() {
                   </td>
                   <td className="px-5 py-3.5 font-mono text-sm font-medium">{e.action}</td>
                   <td className="px-5 py-3.5 text-text-secondary">
-                    {e.actor?.email ?? "system"}
+                    {e.actorEmail ?? "system"}
                   </td>
                   <td className="max-w-[280px] truncate px-5 py-3.5 text-text-secondary">
                     {e.detail ?? "—"}
@@ -69,14 +121,21 @@ export default async function AuditPage() {
               {events.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-5 py-10 text-center text-text-muted">
-                    No events recorded.
+                    {query ? `Nothing matched “${query}”.` : "No events recorded."}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        <Pagination shown={events.length} total={total} />
+
+        <Pagination
+          shown={events.length}
+          total={total}
+          page={page}
+          pageSize={PAGE_SIZE}
+          hrefFor={hrefFor}
+        />
       </Panel>
     </div>
   );

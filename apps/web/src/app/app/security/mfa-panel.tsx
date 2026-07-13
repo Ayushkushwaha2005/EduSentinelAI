@@ -1,6 +1,8 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState, useTransition } from "react";
 /* eslint-disable @next/next/no-img-element -- QR code is a generated data URL */
 import {
   startMfaSetup,
@@ -18,10 +20,14 @@ const buttonClass =
 export function MfaPanel({
   mfaEnabled,
   mandatory,
+  returnTo = "/app",
 }: {
   mfaEnabled: boolean;
   mandatory: boolean;
+  /** Where the viewer was headed when the MFA gate stopped them. */
+  returnTo?: string;
 }) {
+  const router = useRouter();
   const [setup, setSetup] = useState<MfaSetup | null>(null);
   const [starting, startTransition] = useTransition();
   const [confirmState, confirmAction, confirming] = useActionState<MfaState, FormData>(
@@ -32,6 +38,12 @@ export function MfaPanel({
     disableMfa,
     {},
   );
+
+  // Enrolling changes what this account may reach, so re-render the server
+  // components (sidebar, guards) instead of leaving a stale shell on screen.
+  useEffect(() => {
+    if (confirmState.done) router.refresh();
+  }, [confirmState.done, router]);
 
   if (mfaEnabled && !disableState.done) {
     return (
@@ -68,10 +80,18 @@ export function MfaPanel({
 
   if (confirmState.done) {
     return (
-      <p className="text-[15px] text-success">
-        Two-factor authentication is now enabled. You&apos;ll be asked for a code at
-        every sign-in.
-      </p>
+      <div>
+        <p className="text-[15px] text-success">
+          Two-factor authentication is now enabled. You&apos;ll be asked for a code
+          at every sign-in — and every privileged surface is now open to you.
+        </p>
+        <Link
+          href={returnTo}
+          className={`mt-4 inline-flex items-center ${buttonClass}`}
+        >
+          Continue to {returnTo}
+        </Link>
+      </div>
     );
   }
 

@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
 import { db } from "./db";
@@ -42,12 +43,27 @@ export async function requireViewer(): Promise<Viewer> {
 }
 
 /**
+ * Where to send a privileged account that has not enrolled MFA yet: to
+ * enrolment, carrying the reason and the page they were trying to reach, so the
+ * block explains itself and they land back where they meant to go.
+ *
+ * `next` comes from a request header, so it is attacker-controllable. It is only
+ * ever used as a same-origin redirect target — validated as a relative /app path
+ * so it can never become an open redirect — and never as an authorization input.
+ */
+async function mfaEnrolmentPath(): Promise<string> {
+  const path = (await headers()).get("x-pathname") ?? "";
+  const safe = /^\/app(\/[\w\-/]*)?$/.test(path) && !path.startsWith("//") ? path : "/app";
+  return `/app/security?mfa=required&next=${encodeURIComponent(safe)}`;
+}
+
+/**
  * Require a capability. Privileged surfaces additionally require MFA (R6) —
  * a leadership account without MFA is bounced to enrolment, not to the page.
  */
 export async function requireCapability(cap: Capability): Promise<Viewer> {
   const viewer = await requireViewer();
-  if (isAdminRole(viewer.role) && !viewer.mfaEnabled) redirect("/app/security");
+  if (isAdminRole(viewer.role) && !viewer.mfaEnabled) redirect(await mfaEnrolmentPath());
   if (!viewer.can(cap)) redirect("/app");
   return viewer;
 }
@@ -56,7 +72,7 @@ export async function requireCapability(cap: Capability): Promise<Viewer> {
 export async function requireFounder(): Promise<Viewer> {
   const viewer = await requireViewer();
   if (viewer.role !== "FOUNDER") redirect("/app");
-  if (!viewer.mfaEnabled) redirect("/app/security");
+  if (!viewer.mfaEnabled) redirect(await mfaEnrolmentPath());
   return viewer;
 }
 

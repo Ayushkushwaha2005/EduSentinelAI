@@ -96,6 +96,11 @@ export function middleware(req: NextRequest) {
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set("x-nonce", nonce);
     requestHeaders.set("content-security-policy", csp);
+    // The path the viewer actually asked for. lib/guard.ts uses it to send a
+    // privileged user back where they were going once they finish enrolling MFA.
+    // Never used for authorization — it is a request header, so it is attacker
+    // controllable; it only ever becomes a same-origin redirect target.
+    requestHeaders.set("x-pathname", pathname);
     res = NextResponse.next({ request: { headers: requestHeaders } });
   } else {
     csp = `${SHARED}; script-src 'self' 'unsafe-inline'`;

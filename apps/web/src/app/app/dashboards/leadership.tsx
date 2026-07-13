@@ -94,8 +94,16 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
       <Panel>
         <TableToolbar
           title="Release Pipeline"
-          onAddHref={viewer.can("releases.upload") ? "/app/admin/releases#upload" : undefined}
+          onAddHref={viewer.can("releases.upload") ? "/app/products" : undefined}
           addLabel="Upload"
+          exportName="edusentinel-releases"
+          exportRows={releases.map((r) => ({
+            product: r.product.name,
+            version: r.version,
+            status: r.status,
+            scan: r.artifact?.scanStatus ?? "PENDING",
+            sha256: r.artifact?.sha256 ?? "",
+          }))}
         />
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[720px] text-left">
@@ -175,7 +183,7 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
                     {e.action}
                   </span>
                   <span className="block truncate text-xs text-text-muted">
-                    {e.actor?.email ?? "system"}
+                    {e.actorEmail ?? "system"}
                   </span>
                 </span>
                 <span className="shrink-0 text-xs text-text-muted">
