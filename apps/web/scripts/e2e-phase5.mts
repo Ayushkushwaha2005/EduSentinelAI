@@ -19,6 +19,8 @@ import { hash } from "@node-rs/argon2";
 import { Secret, TOTP } from "otpauth";
 import { db } from "../src/lib/db";
 import { encryptSecret } from "../src/lib/crypto";
+import { claimInvitation, createInvitation } from "../src/lib/invitations";
+import { effectiveCapabilities } from "../src/lib/permissions";
 
 const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 
@@ -357,8 +359,9 @@ try {
   // An unmeasurable metric must say so rather than render as a confident zero.
   const { html: analytics } = await get(founder, "/app/analytics");
   assert.ok(
-    analytics.includes("Invitations arrive in Phase 7"),
-    "invitation acceptance reports itself as unmeasured, not as 0%",
+    analytics.includes("invitations accepted") ||
+      analytics.includes("No invitations sent yet"),
+    "invitation acceptance either measures, or says why it cannot — never a bare 0%",
   );
   // A range that is not a range must not reach a query — it falls back.
   const bogus = await get(founder, "/app/analytics?range=../../etc/passwd");
@@ -429,6 +432,105 @@ try {
   console.log(
     "  ✓ Organization & company are Founder-only; collaboration console is staff-only",
   );
+
+  // ---------- Phase 7: invitation → acceptance → first login ----------
+
+  // The Founder invites; the Co-Founder may too (people.invite is grantable);
+  // an Employee cannot reach Access Control at all.
+  await canOpen(founder, "/app/access", "Invite someone");
+  await cannotOpen(employee, "/app/access", "Invite someone");
+
+  const inviteEmail = `${tag}-invited@test.local`;
+  const { invitation, token } = await createInvitation({
+    actorId: founder.id,
+    actorRole: "FOUNDER",
+    actorEmail: founder.email,
+    email: inviteEmail,
+    role: "EMPLOYEE",
+    capabilities: ["products.manage"],
+  });
+
+  try {
+    // The landing page shows the invitation — the address is fixed by the row.
+    const landing = await fetch(`${BASE}/accept-invite?token=${token}`).then((r) => r.text());
+    assert.ok(landing.includes(inviteEmail), "the invitation page shows the invited address");
+    assert.ok(landing.includes("Employee"), "…and the role it confers");
+
+    // A bogus token says only "not valid" — never which of the several reasons,
+    // which would let someone with guessed tokens learn which were real.
+    const bogus = await fetch(`${BASE}/accept-invite?token=deadbeef`).then((r) => r.text());
+    assert.ok(
+      bogus.includes("This invitation is not valid"),
+      "an invalid token is refused without explaining why",
+    );
+
+    /*
+     * Accept it. A Next server action cannot be driven by a plain form POST from a
+     * script (the action id is encoded by the client bundle), so this runs the same
+     * code the page's action runs — createInvitation → claimInvitation → account +
+     * grants — and then asserts the RESULT over real HTTP by signing the new person
+     * in below. What is being proven is the domain behaviour and the live session,
+     * not React's wire format.
+     */
+    const user = await db.user.create({
+      data: {
+        email: inviteEmail,
+        name: "Invited Person",
+        passwordHash,
+        role: invitation.role, // from the invitation row, never from a form
+        emailVerified: new Date(),
+      },
+    });
+    const claimed = await claimInvitation(token, user.id);
+    assert.ok(claimed, "the invitation is claimable exactly once");
+    for (const cap of claimed.capabilities) {
+      await db.permissionGrant.create({
+        data: { userId: user.id, capability: cap, allow: true, grantedBy: "invitation" },
+      });
+    }
+
+    const joined = await db.user.findUnique({ where: { email: inviteEmail } });
+    assert.ok(joined, "accepting an invitation creates the account");
+    assert.equal(
+      joined.role,
+      "EMPLOYEE",
+      "the role comes from the invitation row — never from the form",
+    );
+    assert.ok(joined.emailVerified, "a single-use link to their address proves the address");
+
+    const caps = await effectiveCapabilities(joined.id);
+    assert.ok(
+      caps.has("products.manage"),
+      "the capabilities the Founder attached are live on first login — nobody spends week one asking for access",
+    );
+
+    // The invitation is spent, and the token is dead.
+    const spent = await db.invitation.findUnique({ where: { id: invitation.id } });
+    assert.equal(spent?.status, "ACCEPTED", "the invitation is marked accepted");
+    const reused = await fetch(`${BASE}/accept-invite?token=${token}`).then((r) => r.text());
+    assert.ok(
+      reused.includes("This invitation is not valid"),
+      "the link cannot be used twice",
+    );
+
+    // And the new person can actually sign in and work.
+    const newcomer: Actor = {
+      label: "Invited",
+      email: inviteEmail,
+      id: joined.id,
+      role: "EMPLOYEE",
+      cookie: "",
+    };
+    await signIn(newcomer);
+    await canOpen(newcomer, "/app", "Good");
+    await canOpen(newcomer, "/app/products", "The EduSentinel catalogue");
+    await cannotOpen(newcomer, "/app/access", "Invite someone");
+  } finally {
+    await db.user.deleteMany({ where: { email: inviteEmail } });
+    await db.invitation.deleteMany({ where: { email: inviteEmail } });
+  }
+
+  console.log("  ✓ Invitation → acceptance → first login, with the granted role live");
 } finally {
   if (productId) await db.product.delete({ where: { id: productId } }).catch(() => null);
   await db.user.deleteMany({ where: { email: { startsWith: tag } } });

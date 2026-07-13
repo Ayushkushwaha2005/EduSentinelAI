@@ -66,6 +66,14 @@ Products are **database records, not code**. The Founder adds/edits/publishes/ar
 - **Client components must not import from `lib/org.ts` / `lib/collaborations.ts` / `lib/company.ts`** — those import `db`. Pure constants and types live in `lib/org-types.ts`.
 - Org/company text is sanitized on write and rendered as plain text; social links go through `safeHref` (https or internal path only); photos and logos go through `lib/images.ts` (no SVG). The public roster shows `PUBLIC` members only and never a phone number.
 
+## Invitations, mail & offboarding (Phase 7)
+
+- **An invitation is a link in an email, so it must not be able to mint leadership.** `lib/invitations.ts` is the gate: FOUNDER and CO_FOUNDER are never invitable (by anyone), nobody invites a peer or superior, and reserved capabilities are refused on write *and* stripped on read. Tokens are single-use, expiring, and stored **only as a SHA-256 hash**.
+- Acceptance (`/accept-invite`) takes the **role and email from the invitation row, never from the form** — it is the one place an unauthenticated request yields a role above USER.
+- `people.invite` is grantable; **`people.offboard` is founder-reserved** (taking access away is, in the wrong hands, how you silence someone). Offboarding strips role/grants/sessions/ownership but **never deletes the account** — the audit chain snapshots the actor so a record survives the person, and it must still verify afterwards.
+- **Grant expiry is real** (`expiresInDays` on the grant form). Temporary access that quietly becomes permanent is how a company stops knowing who can do what.
+- **Mail goes through `lib/mail.ts`** — plain text only, **no tracking pixels, no click-redirects, no remote images**; an email tracker is a tracker. Dev writes to `storage/outbox`. Every attempt is recorded in `MailLog` and failures surface in Access Control; **bodies are never stored** (they contain live credentials).
+
 ## Rules
 
 - All colors/type/spacing/motion come from `packages/ui/src/tokens.css`; never hard-code hex values or durations in app code. Brand cyan/teal is for accents and large text only (fails AA at body size on dark).

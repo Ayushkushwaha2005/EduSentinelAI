@@ -592,7 +592,8 @@ Full regression: `test:security`, `test:pipeline`, `test:content`,
 `check:trackers` and the 12-group E2E all green.
 ⏳ **Two-person review before merge — this milestone touches authorization.**
 
-## Phase 7 — People: Invitations, Access Management & the Real Permission System ⏳
+## Phase 7 — People: Invitations, Access Management & the Real Permission System ✅
+### (built + tested 2026-07-14; exit pending second-person review)
 
 *How a person joins EduSentinel, what they can do, and how they leave.* Today
 accounts appear only by public signup or a seed script; the Founder cannot bring
@@ -658,11 +659,53 @@ The exclusive Founder console (`/app/access`), finished:
   written straight into the table and must still fail to escalate; founder-reserved
   set remains non-delegable; an expired grant grants nothing.
 
-🔒 **Exit criteria:** two-person review (this phase touches authorization) ·
-invitation tokens single-use/expiring/hashed · offboarding leaves a verifying
-audit chain · E2E covers invite → accept → MFA → first login → offboard.
+🔒 **Delivered** (built + tested 2026-07-14). `npm run test:invites`
+(`scripts/test-phase7.mts`, runs in CI) plus the E2E:
+- **An invitation is a link in an email, so it must not be able to mint the
+  company's leadership.** FOUNDER and CO_FOUNDER are not invitable by anyone,
+  including the Founder. Nobody invites a peer or a superior. Reserved
+  capabilities are refused on write *and* stripped on read, so a forged or
+  corrupted invitation row grants nothing.
+- Only the Founder may attach starting capabilities — attaching them **is**
+  `permissions.grant`, which is founder-reserved. `people.invite` itself is
+  grantable, so a Co-Founder can bring an engineer on board.
+- The token is stored **only as a SHA-256 hash**; the plaintext exists in the
+  email and nowhere else. Single-use (atomically — two people racing the same link
+  produce one account), expiring on read rather than by a cron that might not run,
+  and re-inviting an address supersedes the outstanding link so two live links with
+  different roles cannot coexist.
+- **Acceptance takes the role and the email from the invitation row, never from the
+  form.** This is the one place an unauthenticated request produces a role above
+  USER, so it reads nothing the requester supplied except their name and password.
+- **Offboarding** (founder-reserved `people.offboard`): role stripped, grants
+  deleted, sessions revoked, pending invitations withdrawn, products reassigned,
+  teams and open tasks released, org entry removed, collaborations ended — and the
+  **account and its audit history remain**, because the audit chain snapshots the
+  actor precisely so a record survives the person. The chain still verifies
+  afterwards; the test proves it byte-for-byte.
+- **Grant expiry made real:** `expiresAt` existed since Phase 5 and
+  `effectiveCapabilities()` always honoured it, but nothing could ever *set* it, so
+  every grant was permanent in practice. The Founder now chooses 7/30/90 days or
+  forever, and an expired grant grants nothing.
+- **Explain view:** every capability states its provenance — role default, explicit
+  grant, explicit revoke, and when it lapses. Authorization that cannot be
+  inspected becomes folklore.
+- **Quarterly access review** (`AccessReview`): the Founder is shown everyone
+  holding an explicit capability and confirms or revokes, on the record. The
+  Continuous Security Track's promise now has rows behind it.
+- **Mail** (`lib/mail.ts`): one interface, plain-text only, **no tracking pixels,
+  no click-redirects, no remote images** — an email tracker is a tracker, and the
+  privacy promise does not stop at the browser. A dev outbox writes to
+  `storage/outbox` so the whole flow is testable without sending mail. Every
+  attempt is recorded (`MailLog`) and failures **surface in Access Control**: a
+  failed invitation that vanishes into a log file is an invitation the Founder
+  thinks they sent. Bodies are never stored — they contain live credentials.
+- Invitation acceptance rate, which Phase 6.3 reported as *unmeasured*, now
+  measures.
 
-## Phase 8 — Workforce Operations: Attendance, Leave & Calendar ⏳
+⏳ **Two-person review before merge — this phase touches authorization.**
+
+## Phase 8 — Workforce Operations: Attendance, Leave & Calendar ⏳ (next — awaiting founder approval)
 
 *The HR function of Phase 5.7 (an EMPLOYEE with an HR title, not a new rung on
 the ladder) gets the tools it needs. The role ladder does not change.*

@@ -12,6 +12,9 @@ import { ROLE_LABELS, type Role } from "@/lib/roles";
 import { Avatar } from "@/components/dashboard/avatar";
 import { Breadcrumb, Panel } from "@/components/dashboard/widgets";
 import { PersonRow } from "./person-row";
+import { AccessReview, InviteForm, InviteList } from "./invite-panel";
+import { invitableBy, pendingInvitations } from "@/lib/invitations";
+import { failedMail } from "@/lib/mail";
 
 /*
  * Access Control — the Founder's console.
@@ -24,7 +27,7 @@ import { PersonRow } from "./person-row";
 export default async function AccessPage() {
   const founder = await requireFounder();
 
-  const [users, grants] = await Promise.all([
+  const [users, grants, invitations, elevated, lastReview, failures] = await Promise.all([
     db.user.findMany({
       orderBy: [{ role: "desc" }, { createdAt: "asc" }],
       select: {
@@ -38,14 +41,38 @@ export default async function AccessPage() {
       },
     }),
     db.permissionGrant.findMany({
-      select: { userId: true, capability: true, allow: true, reason: true },
+      select: {
+        id: true,
+        userId: true,
+        capability: true,
+        allow: true,
+        reason: true,
+        expiresAt: true,
+      },
     }),
+    pendingInvitations(),
+    // The access-review scope: every explicit ALLOW beyond a role default.
+    db.permissionGrant.findMany({
+      where: { allow: true },
+      orderBy: { createdAt: "asc" },
+      include: { user: { select: { name: true, email: true } } },
+    }),
+    db.accessReview.findFirst({ orderBy: { reviewedAt: "desc" } }),
+    failedMail(5),
   ]);
 
-  const grantsByUser = new Map<string, { capability: string; allow: boolean }[]>();
+  const grantsByUser = new Map<
+    string,
+    { capability: string; allow: boolean; expiresAt: Date | null; reason: string | null }[]
+  >();
   for (const g of grants) {
     const list = grantsByUser.get(g.userId) ?? [];
-    list.push({ capability: g.capability, allow: g.allow });
+    list.push({
+      capability: g.capability,
+      allow: g.allow,
+      expiresAt: g.expiresAt,
+      reason: g.reason,
+    });
     grantsByUser.set(g.userId, list);
   }
 
@@ -53,6 +80,7 @@ export default async function AccessPage() {
   // them too, so hiding them here is convenience, not the control.
   const grantable: Capability[] = CAPABILITIES.filter((c) => !isFounderReserved(c));
   const roles = grantableRoles(founder.role);
+  const invitableRoles = invitableBy(founder.role);
 
   return (
     <div className="flex flex-col gap-4">
@@ -87,6 +115,67 @@ export default async function AccessPage() {
             </li>
           ))}
         </ul>
+      </Panel>
+
+      {/* ---- invitations: the offer IS the access decision ---- */}
+      <Panel>
+        <h2 className="text-[19px] font-semibold tracking-[-0.01em]">Invite someone</h2>
+        <p className="mt-1 max-w-3xl text-[15px] text-text-secondary">
+          Choose their role — and, if you like, the permissions they start with — at
+          the moment you invite them. They arrive with the right access already
+          granted, decided once and on the record.
+        </p>
+        <div className="mt-5">
+          <InviteForm
+            roles={invitableRoles}
+            grantable={grantable}
+            canAttachCapabilities={founder.can("permissions.grant")}
+          />
+        </div>
+
+        <h3 className="mt-8 text-sm font-semibold uppercase tracking-[0.08em] text-text-muted">
+          Invitations
+        </h3>
+        <InviteList invitations={invitations} />
+
+        {/* A failed invitation that vanishes into a log file is an invitation the
+            Founder thinks they sent. */}
+        {failures.length > 0 && (
+          <div className="mt-6 rounded-card border border-danger/30 bg-danger/[0.03] p-4">
+            <p className="text-sm font-semibold text-danger">
+              {failures.length} email{failures.length === 1 ? "" : "s"} failed to send
+            </p>
+            <ul className="mt-2 flex flex-col gap-1">
+              {failures.map((f) => (
+                <li key={f.id} className="truncate text-sm text-text-secondary">
+                  {f.to} · {f.subject} · {f.error ?? "unknown error"}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </Panel>
+
+      {/* ---- quarterly access review ---- */}
+      <Panel>
+        <h2 className="text-[19px] font-semibold tracking-[-0.01em]">Access review</h2>
+        <div className="mt-4">
+          <AccessReview
+            grants={elevated.map((g) => ({
+              id: g.id,
+              capability: g.capability,
+              name: g.user.name,
+              email: g.user.email,
+              reason: g.reason,
+              expiresAt: g.expiresAt,
+            }))}
+            lastReview={
+              lastReview
+                ? { reviewedAt: lastReview.reviewedAt, revoked: lastReview.revoked }
+                : null
+            }
+          />
+        </div>
       </Panel>
 
       <Panel>
@@ -149,6 +238,7 @@ export default async function AccessPage() {
                 grantable={grantable}
                 defaults={defaultCapabilities(u.role)}
                 overrides={grantsByUser.get(u.id) ?? []}
+                canOffboard={founder.can("people.offboard")}
               />
             </div>
           ))}

@@ -59,6 +59,12 @@ jobs:
       # internal member, and People/Collaboration cannot diverge again.
       - run: npx tsx scripts/test-phase65.mts
         working-directory: apps/web
+      # Phase 7 gates: an invitation is a link in an email and must not be able to
+      # mint the company's leadership — no FOUNDER/CO_FOUNDER, no peer, no reserved
+      # capability, single-use and expiring. Offboarding removes access, keeps the
+      # account, and leaves the audit chain verifying.
+      - run: npx tsx scripts/test-phase7.mts
+        working-directory: apps/web
       # audit hash chain must verify (tamper-evidence)
       - run: npx tsx scripts/verify-audit.mts
         working-directory: apps/web
