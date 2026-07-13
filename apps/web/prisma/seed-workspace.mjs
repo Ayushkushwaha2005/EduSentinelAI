@@ -26,8 +26,19 @@ const PEOPLE = [
   { email: "rohan@edusentinel.ai", name: "Rohan Verma", role: "EMPLOYEE", title: "Platform Engineer" },
   { email: "sara@edusentinel.ai", name: "Sara Khan", role: "EMPLOYEE", title: "Product Designer" },
   { email: "dev@edusentinel.ai", name: "Dev Sharma", role: "ADMIN", title: "Engineering Lead" },
+  // HR is a function, not a rung on the role ladder: an HR lead is an EMPLOYEE
+  // with an HR title on the People & Culture team. Adding an HR *role* would
+  // change the authorization ladder, which needs founder approval.
+  { email: "neha@edusentinel.ai", name: "Neha Sharma", role: "EMPLOYEE", title: "HR Manager" },
   { email: "partner@external.org", name: "Lena Fischer", role: "COLLABORATOR", title: null },
 ];
+
+// Releases need a creator; the Founder owns the seeded product.
+const founder = await db.user.findFirst({
+  where: { role: "FOUNDER" },
+  select: { id: true },
+});
+const founderId = founder?.id ?? null;
 
 const users = {};
 for (const p of PEOPLE) {
@@ -68,6 +79,14 @@ const TEAMS = [
     projects: [
       { name: "Workspace dashboards", progress: 70 },
       { name: "Brand system v2", progress: 50 },
+    ],
+  },
+  {
+    name: "People & Culture",
+    members: ["neha@edusentinel.ai"],
+    projects: [
+      { name: "Onboarding handbook", progress: 60 },
+      { name: "Quarterly access review", progress: 20 },
     ],
   },
 ];
@@ -171,7 +190,48 @@ for (const t of THREADS) {
   });
 }
 
+// ---- one quarantined release, so the pipeline has something to review ----
+// Dev only. Written into storage/quarantine exactly like a real upload (a real
+// zip, so magic-byte validation would pass) and left QUARANTINED: the Founder
+// still has to sign and publish it, which is the flow worth exercising.
+const firstProduct = await db.product.findFirst({ orderBy: { sortOrder: "asc" } });
+if (firstProduct && founderId && (await db.release.count()) === 0) {
+  const { mkdir, writeFile } = await import("node:fs/promises");
+  const { createHash, randomBytes } = await import("node:crypto");
+  const path = await import("node:path");
+
+  // Smallest valid zip: an empty archive (PK end-of-central-directory record).
+  const zip = Buffer.from([
+    0x50, 0x4b, 0x05, 0x06, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  ]);
+  const storageName = `${randomBytes(16).toString("hex")}.bin`;
+  const dir = path.join(process.cwd(), "storage", "quarantine");
+  await mkdir(dir, { recursive: true });
+  await writeFile(path.join(dir, storageName), zip);
+
+  await db.release.create({
+    data: {
+      productId: firstProduct.id,
+      version: "0.1.0",
+      notes: "Seeded demo build awaiting founder review.",
+      status: "QUARANTINED",
+      createdById: founderId,
+      artifact: {
+        create: {
+          fileName: "edusentinel-extension-0.1.0.zip",
+          storageName,
+          size: zip.length,
+          mime: "application/zip",
+          sha256: createHash("sha256").update(zip).digest("hex"),
+          scanStatus: "CLEAN",
+          scanDetail: "seeded demo artifact (dev only)",
+        },
+      },
+    },
+  });
+}
+
 console.log(
-  `seed:workspace — ${PEOPLE.length} accounts, ${TEAMS.length} teams, ${THREADS.length} threads seeded. Demo password: ${password}`,
+  `seed:workspace — ${PEOPLE.length} accounts, ${TEAMS.length} teams, ${THREADS.length} threads, 1 quarantined release seeded. Demo password: ${password}`,
 );
 await db.$disconnect();

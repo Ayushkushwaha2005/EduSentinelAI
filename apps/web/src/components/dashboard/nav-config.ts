@@ -61,6 +61,18 @@ export const NAV: NavItem[] = [
       { label: "Add Team", href: "/app/teams#new", cap: "team.manage" },
     ],
   },
+  {
+    label: "People",
+    href: "/app/people",
+    icon: "user",
+    cap: "users.view",
+    children: [
+      { label: "Directory", href: "/app/people", cap: "users.view" },
+      // Assigning roles/permissions stays founder-reserved — the directory is
+      // read-only, so this child simply points at the one place that can.
+      { label: "Access Control", href: "/app/access", cap: "permissions.grant" },
+    ],
+  },
   { label: "Tasks", href: "/app/tasks", icon: "clipboard" },
   {
     label: "Collaboration",

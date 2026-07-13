@@ -106,28 +106,64 @@ export async function myCollaborations(email: string) {
   });
 }
 
-/** Last 7 days of signup activity — backs the reference's growth chart. */
+/**
+ * Account growth over the last 7 days — backs the reference's bar chart.
+ *
+ * CUMULATIVE (total accounts at the end of each day), not per-day signups.
+ * Per-day was the honest number but produced a chart that read as empty: a young
+ * platform signs everyone up on one day, so six bars sat at zero and one spiked.
+ * The running total is equally true and actually shows the shape of growth.
+ */
 export async function growthSeries(): Promise<{ label: string; value: number }[]> {
   const days: { label: string; value: number }[] = [];
   const now = new Date();
 
   for (let i = 6; i >= 0; i--) {
-    const start = new Date(now);
-    start.setDate(now.getDate() - i);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 1);
+    const end = new Date(now);
+    end.setDate(now.getDate() - i);
+    end.setHours(23, 59, 59, 999);
 
-    const value = await db.user.count({
-      where: { createdAt: { gte: start, lt: end } },
-    });
+    const value = await db.user.count({ where: { createdAt: { lte: end } } });
 
     days.push({
-      label: start.toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
+      label: end.toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
       value,
     });
   }
   return days;
+}
+
+/**
+ * Staff with their current work — the reference's "List Techs" panel.
+ * Internal staff only; never shown to a collaborator.
+ */
+export async function staffWithWork(take = 6) {
+  const staff = await db.user.findMany({
+    where: { role: { in: ["EMPLOYEE", "ADMIN", "CO_FOUNDER", "FOUNDER"] } },
+    orderBy: { createdAt: "asc" },
+    take,
+    select: {
+      id: true,
+      name: true,
+      role: true,
+      memberships: { take: 1, select: { title: true, team: { select: { name: true } } } },
+      tasks: {
+        where: { status: { not: "DONE" } },
+        take: 1,
+        orderBy: { dueAt: "asc" },
+        select: { id: true, title: true, status: true },
+      },
+    },
+  });
+
+  return staff.map((s) => ({
+    id: s.id,
+    name: s.name,
+    role: s.role,
+    title: s.memberships[0]?.title ?? null,
+    team: s.memberships[0]?.team.name ?? null,
+    task: s.tasks[0] ?? null,
+  }));
 }
 
 export async function recentAudit(take = 8) {
