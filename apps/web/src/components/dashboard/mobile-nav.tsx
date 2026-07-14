@@ -7,6 +7,7 @@ import { LogoWordmark } from "@/components/logo";
 import type { NavItem, NavIcon } from "./nav-config";
 import {
   BoxIcon,
+  CalendarIcon,
   ChatIcon,
   ClipboardIcon,
   GridIcon,
@@ -29,6 +30,7 @@ const ICONS: Record<NavIcon, (p: { size?: number }) => React.ReactElement> = {
   shield: ShieldIcon,
   key: KeyIcon,
   chat: ChatIcon,
+  calendar: CalendarIcon,
 };
 
 /*

@@ -26,7 +26,8 @@ export type NavIcon =
   | "report"
   | "shield"
   | "key"
-  | "chat";
+  | "chat"
+  | "calendar";
 
 export const NAV: NavItem[] = [
   { label: "Dashboard", href: "/app", icon: "grid" },
@@ -74,6 +75,13 @@ export const NAV: NavItem[] = [
     ],
   },
   { label: "Tasks", href: "/app/tasks", icon: "clipboard" },
+  // Phase 8. No capability on the parent items: your own attendance, your own
+  // leave and the company calendar belong to everyone who works here. The
+  // management surfaces INSIDE them (the team's day, the approval queue, editing
+  // holidays) are capability-gated in lib/hr.ts and re-checked in every action.
+  { label: "Attendance", href: "/app/attendance", icon: "clipboard" },
+  { label: "Leave", href: "/app/leave", icon: "calendar" },
+  { label: "Calendar", href: "/app/calendar", icon: "calendar" },
   // Grantable on its own: the Founder can hand someone the numbers without also
   // handing them the account directory.
   { label: "Analytics", href: "/app/analytics", icon: "report", cap: "analytics.read" },

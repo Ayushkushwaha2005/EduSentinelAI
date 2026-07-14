@@ -33,6 +33,37 @@ export default function PrivacyPage() {
           prevention, retained for a limited period.
         </li>
       </ul>
+      <h2>If you work at EduSentinel</h2>
+      <p>
+        Staff accounts hold workforce records — attendance, leave requests and
+        leave balances. These are personal data, and we treat them as such.
+      </p>
+      <ul>
+        <li>
+          <strong>Your attendance and leave are not company-wide reading.</strong>{" "}
+          They are visible to you, to whoever approves your leave, and to the people
+          explicitly granted HR permissions. Not to your colleagues, and not to
+          anyone who simply happens to be senior.
+        </li>
+        <li>
+          <strong>The reason you give for leave is read only by you and whoever
+          decides the request.</strong> It is the field most likely to contain a
+          medical fact, so it goes no further: it does not appear on the team
+          calendar, in any export, in a notification, or in our audit log. The
+          shared calendar shows that you are away — never why, and never which kind
+          of leave it was.
+        </li>
+        <li>
+          <strong>Past records are corrected, not rewritten.</strong> A change to an
+          attendance record is requested, approved, and recorded with who asked and
+          who agreed.
+        </li>
+        <li>
+          <strong>Retention.</strong> Attendance and leave records are kept for 24
+          months after the period they describe, then deleted.
+        </li>
+      </ul>
+
       <h2>What we will never do</h2>
       <ul>
         <li>Sell or rent personal data to anyone.</li>

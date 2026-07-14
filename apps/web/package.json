@@ -13,6 +13,7 @@
     "db:seed:workspace": "node --env-file=.env prisma/seed-workspace.mjs",
     "db:seed:catalog": "node --env-file=.env prisma/seed-catalog.mjs",
     "db:seed:org": "node --env-file=.env prisma/seed-org.mjs",
+    "db:seed:hr": "node --env-file=.env prisma/seed-hr.mjs",
     "postinstall": "prisma generate",
     "test:security": "tsx --env-file=.env scripts/test-phase21.mts",
     "audit:verify": "tsx --env-file=.env scripts/verify-audit.mts",
@@ -23,6 +24,7 @@
     "test:data": "tsx --env-file=.env scripts/test-phase6.mts",
     "test:org": "tsx --env-file=.env scripts/test-phase65.mts",
     "test:invites": "tsx --env-file=.env scripts/test-phase7.mts",
+    "test:hr": "tsx --env-file=.env scripts/test-phase8.mts",
     "test:e2e": "tsx --env-file=.env scripts/e2e-phase5.mts",
     "mfa:enroll": "node --env-file=.env scripts/mfa-enroll.mjs"
   },

@@ -74,6 +74,15 @@ Products are **database records, not code**. The Founder adds/edits/publishes/ar
 - **Grant expiry is real** (`expiresInDays` on the grant form). Temporary access that quietly becomes permanent is how a company stops knowing who can do what.
 - **Mail goes through `lib/mail.ts`** — plain text only, **no tracking pixels, no click-redirects, no remote images**; an email tracker is a tracker. Dev writes to `storage/outbox`. Every attempt is recorded in `MailLog` and failures surface in Access Control; **bodies are never stored** (they contain live credentials).
 
+## HR & workforce (Phase 8)
+
+- **The role ladder did not change.** HR authority is four *grantable* capabilities — `attendance.manage`, `leave.approve`, `calendar.manage`, `hr.view`. An HR lead is an EMPLOYEE who has been granted them. Never add an `HR` role.
+- **All attendance/leave reads go through `lib/hr.ts`.** It scopes by relationship (self · approver · HR · founder); there is no unscoped "all employees" read. Asking for a record you may not see returns `null`, even with the exact id.
+- **A leave reason reaches only the person and their approver chain.** `hr.view` is *not* enough — it is the field most likely to hold a medical fact. Redaction happens in the query layer (`redactLeave`), never in a component, and the reason is **never written to the audit log** (`audit.read` is a wider circle than the approvers). The team calendar carries no reason **and no leave type**.
+- **Leave maths is server-side**: weekends and holidays are not charged, pending days are held, balances cannot go negative, and each transition is one transaction. Approving leave writes the attendance days; cancelling releases them.
+- **Attendance corrections are requested and approved, never applied silently** — and nobody decides their own correction or their own leave.
+- Retention: 24 months (`purgeExpiredRecords()`). Bootstrap leave types with `npm run db:seed:hr`.
+
 ## Rules
 
 - All colors/type/spacing/motion come from `packages/ui/src/tokens.css`; never hard-code hex values or durations in app code. Brand cyan/teal is for accents and large text only (fails AA at body size on dark).

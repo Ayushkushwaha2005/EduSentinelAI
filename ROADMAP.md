@@ -593,7 +593,7 @@ Full regression: `test:security`, `test:pipeline`, `test:content`,
 ⏳ **Two-person review before merge — this milestone touches authorization.**
 
 ## Phase 7 — People: Invitations, Access Management & the Real Permission System ✅
-### (built + tested 2026-07-14; exit pending second-person review)
+### (built + tested 2026-07-14; **approved by the Founder 2026-07-14**)
 
 *How a person joins EduSentinel, what they can do, and how they leave.* Today
 accounts appear only by public signup or a seed script; the Founder cannot bring
@@ -703,39 +703,98 @@ The exclusive Founder console (`/app/access`), finished:
 - Invitation acceptance rate, which Phase 6.3 reported as *unmeasured*, now
   measures.
 
-⏳ **Two-person review before merge — this phase touches authorization.**
+✅ **Reviewed and approved by the Founder.**
 
-## Phase 8 — Workforce Operations: Attendance, Leave & Calendar ⏳ (next — awaiting founder approval)
+## Phase 8 — HR & Workforce Management ✅
+### (built + tested 2026-07-14; exit pending second-person review)
 
 *The HR function of Phase 5.7 (an EMPLOYEE with an HR title, not a new rung on
-the ladder) gets the tools it needs. The role ladder does not change.*
+the ladder) gets the tools it needs.* **The role ladder does not change** — adding
+an `HR` role would rewrite the authorization ladder, and HR authority is expressed
+where all authority is expressed: as **capabilities**, granted per person.
 
-- **Attendance** — clock-in/out or day-state marking, per-person history, team
-  view for managers, corrections that are *requested and approved* rather than
-  silently overwritten (an attendance record that anyone can quietly rewrite is
-  worthless), every correction audited.
-- **Leave management** — leave types and balances, request → approve/reject →
-  balance adjustment, delegation while away, manager and HR views, cancellation
-  and audit. Approval runs on `leave.approve`, granted per person, so approval
-  authority is explicit rather than implied by seniority.
-- **Holiday calendar** — company holidays and regional sets, published to the
-  workspace, feeding leave-balance maths; the Founder (or a `calendar.manage`
-  holder) maintains it. Team calendar shows who is out, without exposing *why*.
-- **Employee, Co-Founder and HR workflows** built on the above: onboarding
-  checklist for a new joiner, task and workload views already in 5.3 wired to real
-  assignment, manager approval chains, Co-Founder's full operational view minus
-  founder-reserved actions, HR's directory-and-people view.
-- 🔒 **Attendance and leave data are sensitive personal data.** Visibility is
-  scoped by relationship (self / manager / HR / founder) through query helpers —
-  never "all employees" reads in a page. Leave *reasons* and any health-adjacent
-  note are readable only by the approver chain, and stated as such in the privacy
-  policy. Retention limits are defined here, not deferred.
+New capabilities (all grantable; none founder-reserved — running payroll-adjacent
+operations is ordinary work, not a trust boundary):
+`attendance.manage` · `leave.approve` · `calendar.manage` · `hr.view`
 
-🔒 **Exit criteria:** every new table has a scoped helper and a guard · no
-cross-employee data leak in E2E (an employee tries to read another's attendance
-and is refused) · privacy policy updated *before* the feature ships.
+### 8.1 — Attendance
 
-## Phase 9 — Support, Notifications & Response ⏳
+- Clock in / clock out, or mark a day state (working, remote, sick, absent).
+- Own history for everyone; a team view for `attendance.manage` holders.
+- **Corrections are requested and approved, never silently overwritten.** An
+  attendance record anyone can quietly rewrite is worthless as a record — it would
+  be a claim about the past with no author. Every correction carries who asked,
+  who approved, what changed, and is written to the audit chain.
+
+### 8.2 — Leave
+
+- Leave types with per-person balances; request → approve/reject → balance moves.
+- Requests are **costed against the holiday calendar and weekends** (§8.3): booking
+  five days across a public holiday must not spend five days of a person's balance.
+- Cancellation returns the balance. Approval runs on `leave.approve` — explicit,
+  granted per person, so approval authority is a decision rather than something
+  seniority quietly implies.
+- Balances cannot go negative; the *server* refuses, not the form.
+
+### 8.3 — Holiday calendar
+
+- Company holidays, maintained by a `calendar.manage` holder, published to the
+  workspace and feeding the leave maths above.
+- A team calendar showing **who is out — and never why.**
+
+### 8.4 — Workflows & dashboards
+
+- Employee: my attendance, my balances, my requests, the calendar.
+- Manager / HR (`leave.approve`, `attendance.manage`, `hr.view`): the approval
+  queue, the team's day, the corrections queue.
+- Founder / Co-Founder: the same operational view, plus the HR overview on the
+  leadership dashboard. No founder-reserved actions are added by this phase.
+
+🔒 **Attendance and leave are sensitive personal data**, and are treated as such:
+- Visibility is scoped **by relationship** (self · approver · HR · founder) inside
+  `lib/hr.ts`. No page performs an unscoped "all employees" read.
+- **A leave reason is readable only by the person and their approver chain.** It is
+  the field most likely to contain a medical fact, and it never appears on a team
+  calendar, in an export, or in a notification payload.
+- Retention is defined now, not deferred: attendance and leave records are kept for
+  **24 months** after the period they describe.
+- The privacy policy is updated **in this phase**, before the feature ships.
+
+🔒 **Delivered** (built + tested 2026-07-14). `npm run test:hr`
+(`scripts/test-phase8.mts`, runs in CI) plus the E2E:
+- **The role ladder is unchanged** — the test asserts it. HR authority is four
+  grantable capabilities, so an HR lead is an EMPLOYEE who has been given them.
+- **No cross-employee leak.** An employee asking for a colleague's attendance or
+  leave gets `null` — including with the exact record id in hand, so a tampered URL
+  learns nothing. Their approval queue is empty; they cannot enumerate the team.
+- **The reason is the crown jewel, and it is treated like one.** It reaches the
+  person and their approver chain and *nobody else*: an `hr.view` holder receives
+  `null` for the field, not the string. It is redacted in the **query layer**
+  (`redactLeave`), so a future page cannot leak it by forgetting. It is not on the
+  team calendar (which carries no reason *and no leave type* — "SICK" against a
+  name on a shared calendar is a medical disclosure), not in an export, and
+  **never written to the audit log**, which `audit.read` opens to a wider circle
+  than the approver chain.
+- **The leave arithmetic is right and it is the server's.** Weekends and public
+  holidays inside a range are not charged — booking a week containing a bank
+  holiday costs four days, not five. Pending requests *hold* their days, so five
+  overlapping requests cannot each look affordable. Balances cannot go negative,
+  and an entitlement cannot be set below what is already used. Cancelling returns
+  the days; approving moves them from pending to used, in one transaction.
+- **Corrections are requested and approved, never applied silently** — an
+  attendance record anyone can quietly rewrite is a claim about the past with no
+  author. Nobody approves their own correction, or their own leave.
+- Attendance and leave stay in step: approving leave writes the attendance days,
+  cancelling releases them.
+- ✅ **Privacy policy updated in this phase, before the feature shipped** —
+  `/legal/privacy` now states plainly who can see workforce records, that the
+  reason goes no further than the approver, and the 24-month retention limit
+  (`purgeExpiredRecords()` is executable code, not a sentence in a document).
+
+Bootstrap: `npm run db:seed:hr` (leave types — configuration, not demo data).
+⏳ **Two-person review before merge — this phase touches authorization.**
+
+## Phase 9 — Support, Notifications & Response ⏳ (next — awaiting founder approval)
 
 - **Service Request / Support Center** — an internal and collaborator-facing
   request system: category, priority, description, attachments, assignment,

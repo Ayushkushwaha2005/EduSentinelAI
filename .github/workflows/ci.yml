@@ -65,6 +65,12 @@ jobs:
       # account, and leaves the audit chain verifying.
       - run: npx tsx scripts/test-phase7.mts
         working-directory: apps/web
+      # Phase 8 gates: attendance and leave are sensitive personal data. No
+      # cross-employee read (even with the exact record id), a leave reason reaches
+      # only the person and their approver chain — never HR, the team calendar or
+      # the audit log — and the leave arithmetic cannot overdraw a balance.
+      - run: npx tsx scripts/test-phase8.mts
+        working-directory: apps/web
       # audit hash chain must verify (tamper-evidence)
       - run: npx tsx scripts/verify-audit.mts
         working-directory: apps/web

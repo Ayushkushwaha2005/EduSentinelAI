@@ -40,6 +40,14 @@ export const CAPABILITIES = [
   "collab.manage", // create/edit collaborations (Phase 6.5; grantable)
   "people.invite", // invite someone to join  (Phase 7; grantable, one-directional)
   "people.offboard", // strip access and end an account's tenure  (founder-reserved)
+  // Phase 8 — HR & workforce. All grantable: running attendance and leave is
+  // ordinary operational work, not a trust boundary. HR authority is expressed as
+  // capabilities granted per person, NOT as a new rung on the role ladder —
+  // adding an HR role would rewrite the authorization ladder itself.
+  "attendance.manage", // see the team's attendance; approve corrections
+  "leave.approve", // decide leave requests
+  "calendar.manage", // company holidays and leave types
+  "hr.view", // the HR overview: who is out, who is waiting on a decision
 ] as const;
 export type Capability = (typeof CAPABILITIES)[number];
 
@@ -97,6 +105,12 @@ const BASE_EMPLOYEE: Capability[] = [
 
 const BASE_ADMIN: Capability[] = [
   ...BASE_EMPLOYEE,
+  // A manager approves their people's leave and sees their team's attendance.
+  // An HR lead is an EMPLOYEE with these granted to them individually — which is
+  // exactly the point of the capability layer.
+  "attendance.manage",
+  "leave.approve",
+  "hr.view",
   "products.manage",
   "releases.upload",
   "releases.review",
@@ -120,6 +134,7 @@ const BASE_CO_FOUNDER: Capability[] = [
   "team.manage",
   "products.publish",
   "collab.manage",
+  "calendar.manage",
   // Inviting is one-directional (lib/invitations.ts): a Co-Founder can invite an
   // Employee, never a peer, and never with capabilities attached — attaching
   // capabilities IS permissions.grant, which is founder-reserved.
