@@ -23,6 +23,156 @@ body {
   );
 }
 
+/* ==========================================================================
+ * DARK MODE (Phase 9.4)
+ *
+ * Every rule below is scoped to [data-theme="dark"]. Light mode never matches a
+ * single one of them, which is how "Light Mode is frozen" is enforced by the
+ * cascade rather than by care.
+ *
+ * The trick that makes this maintainable: the product is already built out of
+ * `bg-surface-raised` panels. Rather than adding a `dark:` variant to two hundred
+ * components — which would be two hundred chances to miss one — dark mode
+ * REDEFINES WHAT A RAISED SURFACE IS. One rule, and every Panel, card and popover
+ * in the workspace becomes glass at once.
+ * ========================================================================== */
+
+[data-theme="dark"] body {
+  /* Two faint off-screen light sources. Without them the black is a void, and a
+     void has no depth for glass to sit in front of. */
+  background-image:
+    radial-gradient(60rem 40rem at 12% -10%, rgb(46 230 255 / 6%), transparent 60%),
+    radial-gradient(50rem 36rem at 96% 4%, rgb(139 92 246 / 5%), transparent 62%);
+  background-attachment: fixed;
+}
+
+/* The glass surface. This single rule is the theme. */
+[data-theme="dark"] .bg-surface-raised {
+  position: relative;
+  background-color: color-mix(in srgb, var(--color-surface-raised) 72%, transparent);
+  background-image: var(--glass-tint);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.25);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.25);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Light from inside the card — the reference's actual idea, and the one thing
+   that stops a dark UI from reading as a grey box on a black page. Painted on a
+   pseudo-element so it never intercepts a click. */
+[data-theme="dark"] .bg-surface-raised::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--glow-veil);
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-brand);
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme="dark"] .bg-surface-raised:hover::before {
+  opacity: 1;
+}
+
+/* Content sits above the veil. */
+[data-theme="dark"] .bg-surface-raised > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Inputs and the overlay chips are glass too, one step deeper into the pane. */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: color-mix(in srgb, var(--color-surface-overlay) 55%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Focus is a BLOOM, not a ring drawn on top of glass — a hard outline on a
+   translucent surface looks stuck to the screen instead of lit by the interface.
+   It is still a visible, unmissable focus state: that is not negotiable. */
+[data-theme="dark"] :focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-brand-cyan) 70%, transparent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px rgb(46 230 255 / 12%);
+  border-radius: var(--radius-control);
+}
+
+/* Primary controls glow faintly, as a lit object would. */
+[data-theme="dark"] .bg-ink {
+  box-shadow: 0 8px 24px -12px rgb(46 230 255 / 25%);
+}
+
+/* Brand accents carry a little light with them. */
+[data-theme="dark"] .text-brand-cyan {
+  text-shadow: 0 0 18px rgb(46 230 255 / 22%);
+}
+
+/* Scrollbars: part of the surface, not an OS artifact bolted onto it. */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-border-subtle) 90%, transparent);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-brand-cyan) 40%, var(--color-surface-overlay));
+  background-clip: padding-box;
+}
+
+[data-theme="dark"] .pinstripes {
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent 79px,
+    rgb(255 255 255 / 3%) 79px,
+    rgb(255 255 255 / 3%) 80px
+  );
+}
+
+[data-theme="dark"] ::selection {
+  background: color-mix(in srgb, var(--color-brand-cyan) 30%, transparent);
+}
+
+/*
+ * The meteor field. Fixed behind everything, and only ever painted in dark mode —
+ * the canvas element is not even mounted in light (see components/meteors.tsx).
+ */
+.meteor-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  /* Ambience must never sit on top of the work. */
+  opacity: 0;
+  transition: opacity 1200ms var(--ease-brand);
+}
+
+[data-theme="dark"] .meteor-field {
+  opacity: 1;
+}
+
+/*
+ * Card tilt — a fraction of a degree, and only on surfaces that are not dense
+ * with data. `--tilt-max` is 0deg in light mode, so this compiles to nothing
+ * there.
+ */
+.tilt {
+  transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform var(--duration-base) var(--ease-brand);
+  will-change: transform;
+}
+
 /*
  * Reduced motion. This is a standing project rule (CLAUDE.md) that was written
  * down but never actually implemented — the token comment promised it and no
@@ -41,5 +191,16 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* The meteor field is not slowed under reduced motion — it is NOT DRAWN. A
+     frozen starfield would still be a field of dots someone did not ask for; the
+     canvas simply never mounts (components/meteors.tsx checks the same query).
+     Tilt goes to zero for the same reason. */
+  .meteor-field {
+    display: none;
+  }
+  .tilt {
+    transform: none !important;
   }
 }

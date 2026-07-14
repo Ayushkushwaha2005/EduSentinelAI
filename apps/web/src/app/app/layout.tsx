@@ -9,6 +9,8 @@ import { navFor } from "@/components/dashboard/nav-config";
 import { listConversations } from "@/lib/messages";
 import { avatarUrlFor, onlineStaff, touchPresence } from "@/lib/profile";
 import { recentNotifications, unreadCount } from "@/lib/notifications";
+import { MeteorField } from "@/components/meteors";
+import { ThemeScript } from "@/components/theme";
 import type { Role } from "@/lib/roles";
 
 export const metadata = { robots: { index: false } };
@@ -79,9 +81,18 @@ export default async function AppLayout({
     unreadCount(viewer.id),
   ]);
 
+  // /app is dynamic and carries the strict nonced CSP (src/middleware.ts). The
+  // no-flash theme script takes that nonce — Phase 9.4 does not add 'unsafe-inline'
+  // to a policy this platform spent Phase 2.1 tightening.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
-    <div className="min-h-screen bg-surface-base p-3 md:p-4">
-      <div className="flex gap-4">
+    <div className="relative min-h-screen bg-surface-base p-3 md:p-4">
+      <ThemeScript nonce={nonce} />
+      <MeteorField />
+
+      {/* The workspace sits above the sky, never in it. */}
+      <div className="relative z-10 flex gap-4">
         <Sidebar items={items} presence={presence} />
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <Topbar
