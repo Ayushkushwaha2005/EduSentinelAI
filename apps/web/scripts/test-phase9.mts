@@ -358,7 +358,7 @@ try {
      * Anything else that is not scoped changes light mode, and light mode is frozen.
      */
     if (!selector.endsWith("{") || selector.startsWith("@") || selector.startsWith("*")) continue;
-    if (/^(\.meteor-field|\.meteor-sheen|\.tilt|\s|})/.test(selector)) continue;
+    if (/^(\.meteor-field|\.meteor-sheen|\.meteor-shafts|\.tilt|\s|})/.test(selector)) continue;
     // Keyframe stops (`0% {`, `from {`) are not selectors.
     if (/^(\d+%|from|to)\s*{$/.test(selector)) continue;
     assert.ok(
