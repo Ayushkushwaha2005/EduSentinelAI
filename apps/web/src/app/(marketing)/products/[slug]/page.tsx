@@ -41,7 +41,7 @@ export default async function ProductPage({
     product.pricing === "soon" ? "Coming Soon" : product.pricing === "paid" ? "Paid" : "Free";
 
   return (
-    <main className="pt-20">
+    <main className="pt-20" data-accent="violet">
       <div className="mx-auto max-w-[880px] px-6 pb-24 pt-16 md:px-10 md:pt-24">
         <Link
           href="/products"

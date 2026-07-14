@@ -72,7 +72,11 @@ export default async function Home() {
       </section>
 
       {/* products preview — full showcase lives at /products */}
-      <section className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32">
+      {/* Violet: the same colour the catalogue carries everywhere else. */}
+      <section
+        className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32"
+        data-accent="violet"
+      >
         <Reveal className="flex flex-col items-center text-center">
           <h2 className="max-w-2xl text-balance text-4xl font-medium tracking-[-0.03em] md:text-6xl">
             Products built for digital trust.

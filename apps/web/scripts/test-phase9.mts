@@ -349,11 +349,18 @@ try {
   const darkSection = globals.slice(globals.indexOf("DARK MODE (Phase 9.4)"));
   for (const line of darkSection.split("\n")) {
     const selector = line.trim();
-    // Selector lines only (they end in `{`), and skip the two theme-agnostic
-    // helpers that are inert in light mode by token (.meteor-field, .tilt) plus
-    // at-rules and nested blocks.
+    /*
+     * Selector lines only (they end in `{`). Three helpers are exempt because they
+     * are inert in light mode BY CONSTRUCTION, not by scoping:
+     *   .meteor-field — opacity 0 unless the theme is dark, and never mounted
+     *   .meteor-sheen — lives inside .meteor-field, so it inherits that
+     *   .tilt         — `--tilt-max` is 0deg in light, so the transform is identity
+     * Anything else that is not scoped changes light mode, and light mode is frozen.
+     */
     if (!selector.endsWith("{") || selector.startsWith("@") || selector.startsWith("*")) continue;
-    if (/^(\.meteor-field|\.tilt|\s|})/.test(selector)) continue;
+    if (/^(\.meteor-field|\.meteor-sheen|\.tilt|\s|})/.test(selector)) continue;
+    // Keyframe stops (`0% {`, `from {`) are not selectors.
+    if (/^(\d+%|from|to)\s*{$/.test(selector)) continue;
     assert.ok(
       selector.includes('[data-theme="dark"]'),
       `dark-mode rule must be scoped to [data-theme="dark"] — found: ${selector}`,

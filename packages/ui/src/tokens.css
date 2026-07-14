@@ -105,6 +105,34 @@
   --color-warning: #fbbf24;
   --color-danger: #fb7185;
 
+  /*
+   * ---- The accent triad (from the reference) ----
+   *
+   * The reference does not decorate with colour, it ASSIGNS it. Three accents,
+   * each with a job, used in the same place every time:
+   *
+   *   VIOLET  → the template/product card. What you pick, build and publish.
+   *   AZURE   → workflow: connections, active states, live indicators, progress.
+   *   AMBER   → the inbox: messages, notifications, labels, the actions on them.
+   *
+   * A surface declares which of the three it belongs to with `data-accent`, and
+   * everything inside it — the icon tile, the links, the hover bloom, the focus
+   * ring — takes its light from that one decision. The palette is not re-invented
+   * per component, which is exactly why the reference reads as one product rather
+   * than three screens.
+   *
+   * `--accent` defaults to azure: the workspace is a workflow.
+   */
+  --color-accent-violet: #b57cff;
+  --color-accent-violet-deep: #7c3aed;
+  --color-accent-azure: #2ee6ff;
+  --color-accent-azure-deep: #0ea5e9;
+  --color-accent-amber: #f0b95c;
+  --color-accent-amber-deep: #c2801f;
+
+  --accent: var(--color-accent-azure);
+  --accent-deep: var(--color-accent-azure-deep);
+
   /* Surface physics. These are the theme: the tokens above are only its palette. */
   --glass-blur: 20px;
   --glass-tint: linear-gradient(
@@ -116,12 +144,17 @@
   --glass-shadow:
     inset 0 1px 0 0 rgb(255 255 255 / 7%),
     0 24px 48px -32px rgb(0 0 0 / 90%);
-  /* The light that bleeds from inside a card, as in the reference. */
+  /*
+   * The light that bleeds from INSIDE a card — the reference's actual idea. It is
+   * built from `--accent`, so a violet surface glows violet and an amber one glows
+   * amber without a single component knowing which it is.
+   */
   --glow-veil: radial-gradient(
-    120% 90% at 12% 0%,
-    rgb(46 230 255 / 7%) 0%,
-    rgb(53 227 194 / 3%) 34%,
-    transparent 68%
+    130% 100% at 14% -6%,
+    color-mix(in srgb, var(--accent) 16%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 6%, transparent) 32%,
+    transparent 70%
   );
+  --accent-edge: color-mix(in srgb, var(--accent) 26%, transparent);
   --tilt-max: 0.6deg;
 }
