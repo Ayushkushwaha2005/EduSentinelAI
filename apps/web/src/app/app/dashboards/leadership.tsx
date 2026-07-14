@@ -11,6 +11,7 @@ import {
   teamCards,
 } from "@/lib/dashboard";
 import { growth } from "@/lib/analytics";
+import { hrSummary } from "@/lib/hr";
 import { directory } from "@/lib/people";
 import { BoxIcon, ServerIcon, UsersIcon } from "@/components/dashboard/icons";
 import { Avatar } from "@/components/dashboard/avatar";
@@ -34,7 +35,7 @@ import {
  * puts those capabilities in their effective set.
  */
 export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }) {
-  const [stats, teams, series, audit, releases, people, staff, owners, publishers] =
+  const [stats, teams, series, audit, releases, people, staff, owners, publishers, hr] =
     await Promise.all([
       leadershipStats(),
       teamCards(),
@@ -52,6 +53,7 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
       staffWithWork(6),
       productOwners(),
       releasePublishers(),
+      hrSummary(viewer), // null without hr.view — the panel simply does not render
     ]);
 
   const staffNames = staff.map((s) => s.name);
@@ -302,6 +304,51 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
         </div>
         <Pagination shown={releases.length} total={stats.releases} />
       </Panel>
+
+      {/* ---- HR overview (hr.view) ---- */}
+      {hr && (
+        <Panel>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h2 className="text-[19px] font-semibold tracking-[-0.01em]">Workforce today</h2>
+            <span className="flex items-center gap-4 text-sm font-medium">
+              <Link href="/app/attendance" className="text-brand-cyan hover:text-brand-teal">
+                Attendance
+              </Link>
+              <Link href="/app/leave" className="text-brand-cyan hover:text-brand-teal">
+                Leave
+              </Link>
+              <Link href="/app/calendar" className="text-brand-cyan hover:text-brand-teal">
+                Calendar
+              </Link>
+            </span>
+          </div>
+
+          <dl className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { label: "At work", value: hr.present, of: `of ${hr.staff} staff` },
+              { label: "On leave", value: hr.onLeave, of: "today" },
+              {
+                label: "Requests waiting",
+                value: hr.pendingRequests,
+                of: hr.pendingRequests > 0 ? "need a decision" : "nothing pending",
+              },
+              {
+                label: "Corrections waiting",
+                value: hr.pendingFixes,
+                of: hr.pendingFixes > 0 ? "need a decision" : "nothing pending",
+              },
+            ].map((s) => (
+              <div key={s.label} className="rounded-card border border-border-subtle p-4">
+                <dt className="text-sm text-text-secondary">{s.label}</dt>
+                <dd className="mt-1 text-[26px] font-semibold tabular-nums tracking-[-0.02em]">
+                  {s.value}
+                </dd>
+                <dd className="text-xs text-text-muted">{s.of}</dd>
+              </div>
+            ))}
+          </dl>
+        </Panel>
+      )}
 
       {/* ---- recent activity ---- */}
       {viewer.can("audit.read") && (

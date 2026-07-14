@@ -531,6 +531,90 @@ try {
   }
 
   console.log("  ✓ Invitation → acceptance → first login, with the granted role live");
+
+  // ---------- Phase 8: attendance, leave, calendar ----------
+
+  // Everyone gets their own attendance, leave and the company calendar — working
+  // here is enough. Even a collaborator? No: they do not work here.
+  for (const actor of [founder, employee]) {
+    await canOpen(actor, "/app/attendance", "Your last 30 days");
+    await canOpen(actor, "/app/leave", "Request leave");
+    await canOpen(actor, "/app/calendar", "Company holidays");
+  }
+
+  // The management surfaces inside those pages are capability-gated: an employee
+  // sees their own day, never the team's, and no approval queue.
+  await sees(founder, "/app/attendance", "The team today", true);
+  await sees(employee, "/app/attendance", "The team today", false);
+  await sees(founder, "/app/leave", "Awaiting your decision", true);
+  await sees(employee, "/app/leave", "Awaiting your decision", false);
+  await sees(founder, "/app/calendar", "Individual entitlement", true);
+  await sees(employee, "/app/calendar", "Add holiday", false);
+
+  // Request → approve → the balance actually moves, and the reason reaches the
+  // approver and nobody else.
+  const annual = await db.leaveType.findUnique({ where: { code: "ANNUAL" } });
+  if (annual) {
+    await db.leaveBalance.create({
+      data: { userId: employee.id, leaveTypeId: annual.id, year: 2026, entitled: 10 },
+    });
+    const leave = await db.leaveRequest.create({
+      data: {
+        userId: employee.id,
+        leaveTypeId: annual.id,
+        startDate: new Date(Date.UTC(2026, 8, 7)), // a Monday
+        endDate: new Date(Date.UTC(2026, 8, 8)),
+        days: 2,
+        reason: "Private medical matter",
+        status: "PENDING",
+      },
+    });
+    await db.leaveBalance.updateMany({
+      where: { userId: employee.id, leaveTypeId: annual.id, year: 2026 },
+      data: { pending: 2 },
+    });
+
+    try {
+      // The Founder approves leave, so they see the request AND its reason.
+      const queue = await get(founder, "/app/leave");
+      assert.ok(queue.html.includes("Employee Probe"), "the approver sees the request");
+      assert.ok(
+        queue.html.includes("Private medical matter"),
+        "the approver sees the reason — they have to weigh it",
+      );
+
+      // The person themselves sees their own.
+      const own = await get(employee, "/app/leave");
+      assert.ok(own.html.includes("Annual leave"), "the requester sees their own request");
+
+      // A COLLEAGUE never sees it — not the request, and above all not the reason.
+      const stranger = await get(collaborator, "/app/leave");
+      assert.ok(
+        !stranger.html.includes("Private medical matter"),
+        "nobody else's reason ever reaches another person's page",
+      );
+
+      // And it does not leak onto the shared calendar either.
+      await db.leaveRequest.update({
+        where: { id: leave.id },
+        data: { status: "APPROVED" },
+      });
+      const cal = await get(founder, "/app/calendar");
+      assert.ok(
+        cal.html.includes("Employee Probe"),
+        "the calendar shows that they are away",
+      );
+      assert.ok(
+        !cal.html.includes("Private medical matter"),
+        "the calendar NEVER shows why — not even to the Founder",
+      );
+    } finally {
+      await db.leaveRequest.deleteMany({ where: { userId: employee.id } });
+      await db.leaveBalance.deleteMany({ where: { userId: employee.id } });
+    }
+  }
+
+  console.log("  ✓ Attendance/leave/calendar: own always, team by capability, reason never leaks");
 } finally {
   if (productId) await db.product.delete({ where: { id: productId } }).catch(() => null);
   await db.user.deleteMany({ where: { email: { startsWith: tag } } });

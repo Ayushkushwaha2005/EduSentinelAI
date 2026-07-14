@@ -8,6 +8,7 @@ import { Avatar } from "./avatar";
 import type { NavItem, NavIcon } from "./nav-config";
 import {
   BoxIcon,
+  CalendarIcon,
   ChatIcon,
   ChevronDown,
   ClipboardIcon,
@@ -31,6 +32,7 @@ const ICONS: Record<NavIcon, (p: { size?: number }) => React.ReactElement> = {
   shield: ShieldIcon,
   key: KeyIcon,
   chat: ChatIcon,
+  calendar: CalendarIcon,
 };
 
 /*
