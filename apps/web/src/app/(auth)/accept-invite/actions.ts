@@ -6,6 +6,7 @@ import { signIn } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { audit, requestContext } from "@/lib/audit";
 import { claimInvitation, findInvitation } from "@/lib/invitations";
+import { notify } from "@/lib/notifications";
 import { sanitizeLine } from "@/lib/sanitize";
 
 /*
@@ -99,6 +100,22 @@ export async function acceptInvitation(
         grantedBy: "invitation",
         reason: `Attached to the invitation for ${invitation.email}`,
       },
+    });
+  }
+
+  // The person who invited them finds out that they arrived. A real domain event —
+  // not a timer inventing something to say.
+  const inviter = await db.invitation.findUnique({
+    where: { id: invitation.id },
+    select: { invitedById: true },
+  });
+  if (inviter?.invitedById) {
+    await notify({
+      userId: inviter.invitedById,
+      kind: "invite.accepted",
+      title: "Your invitation was accepted",
+      body: invitation.email,
+      href: "/app/access",
     });
   }
 

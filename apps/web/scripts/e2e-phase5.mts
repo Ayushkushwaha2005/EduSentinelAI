@@ -615,6 +615,89 @@ try {
   }
 
   console.log("  ✓ Attendance/leave/calendar: own always, team by capability, reason never leaks");
+
+  // ---------- Phase 9: support & notifications ----------
+
+  // Anyone who can sign in can ask for help — including a collaborator. The staff
+  // QUEUE inside is capability-gated.
+  for (const actor of [founder, employee, collaborator]) {
+    await canOpen(actor, "/app/support", "Your requests");
+    await canOpen(actor, "/app/notifications", "Notifications");
+  }
+  await sees(founder, "/app/support", "The queue", true);
+  await sees(employee, "/app/support", "The queue", false);
+  await sees(collaborator, "/app/support", "The queue", false);
+
+  // Broadcast is a capability, not an assumption about seniority.
+  await sees(founder, "/app/notifications", "Broadcast", true);
+  await sees(employee, "/app/notifications", "Broadcast", false);
+
+  const ticket = await db.supportRequest.create({
+    data: {
+      requesterId: employee.id,
+      subject: `${tag} cannot reach releases`,
+      category: "access",
+      priority: "HIGH",
+      messages: { create: [{ authorId: employee.id, body: "Please grant me access." }] },
+    },
+  });
+  await db.supportMessage.create({
+    data: {
+      requestId: ticket.id,
+      authorId: founder.id,
+      body: "INTERNAL-ONLY-MARKER: check whether they should have this at all.",
+      internal: true,
+    },
+  });
+
+  try {
+    // The requester sees their thread — but NOT the internal note.
+    const mine = await get(employee, `/app/support/${ticket.id}`);
+    assert.ok(mine.html.includes("Please grant me access"), "the requester sees their thread");
+    assert.ok(
+      !mine.html.includes("INTERNAL-ONLY-MARKER"),
+      "an internal note NEVER reaches the requester's page",
+    );
+
+    // Staff see it.
+    const staff = await get(founder, `/app/support/${ticket.id}`);
+    assert.ok(
+      staff.html.includes("INTERNAL-ONLY-MARKER"),
+      "staff see the internal note — that is what it is for",
+    );
+
+    // A collaborator with the exact id gets nothing.
+    const stranger = await get(collaborator, `/app/support/${ticket.id}`);
+    assert.ok(
+      !stranger.html.includes("Please grant me access"),
+      "someone else's support request is not readable with its exact id",
+    );
+
+    // The bell is real: a notification for the employee shows up, and only theirs.
+    await db.notification.create({
+      data: {
+        userId: employee.id,
+        kind: "support.replied",
+        title: `${tag} reply to your support request`,
+        href: `/app/support/${ticket.id}`,
+      },
+    });
+    const bell = await get(employee, "/app");
+    assert.ok(
+      bell.html.includes(`${tag} reply to your support request`),
+      "the notification bell shows the recipient's own notification",
+    );
+    const notMine = await get(collaborator, "/app");
+    assert.ok(
+      !notMine.html.includes(`${tag} reply to your support request`),
+      "a notification is never shown to anyone but its owner",
+    );
+  } finally {
+    await db.supportRequest.delete({ where: { id: ticket.id } }).catch(() => null);
+    await db.notification.deleteMany({ where: { userId: employee.id } });
+  }
+
+  console.log("  ✓ Support threads are participant-scoped; internal notes and bells do not leak");
 } finally {
   if (productId) await db.product.delete({ where: { id: productId } }).catch(() => null);
   await db.user.deleteMany({ where: { email: { startsWith: tag } } });

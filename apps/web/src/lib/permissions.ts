@@ -48,6 +48,10 @@ export const CAPABILITIES = [
   "leave.approve", // decide leave requests
   "calendar.manage", // company holidays and leave types
   "hr.view", // the HR overview: who is out, who is waiting on a decision
+  // Phase 9 — support & notifications. Grantable: answering support is work, and
+  // broadcasting is a capability rather than an assumption about seniority.
+  "support.respond", // see the support queue, reply, assign, resolve
+  "notifications.broadcast", // send a notification to everyone
 ] as const;
 export type Capability = (typeof CAPABILITIES)[number];
 
@@ -111,6 +115,7 @@ const BASE_ADMIN: Capability[] = [
   "attendance.manage",
   "leave.approve",
   "hr.view",
+  "support.respond",
   "products.manage",
   "releases.upload",
   "releases.review",
@@ -135,6 +140,7 @@ const BASE_CO_FOUNDER: Capability[] = [
   "products.publish",
   "collab.manage",
   "calendar.manage",
+  "notifications.broadcast",
   // Inviting is one-directional (lib/invitations.ts): a Co-Founder can invite an
   // Employee, never a peer, and never with capabilities attached — attaching
   // capabilities IS permissions.grant, which is founder-reserved.

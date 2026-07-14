@@ -83,6 +83,14 @@ Products are **database records, not code**. The Founder adds/edits/publishes/ar
 - **Attendance corrections are requested and approved, never applied silently** — and nobody decides their own correction or their own leave.
 - Retention: 24 months (`purgeExpiredRecords()`). Bootstrap leave types with `npm run db:seed:hr`.
 
+## Support & notifications (Phase 9)
+
+- **Support threads are participant-scoped** (`lib/support.ts`): the requester, plus `support.respond` holders. No unscoped "get by id" — `openRequest(viewer, id)` returns `null` for a request you may not see, identical to one that does not exist. A collaborator never sees another collaborator's request.
+- **Internal notes are filtered in the query layer**, never in a component. The requester's payload simply does not contain them.
+- **Attachments go through `lib/attachments.ts`** — magic bytes, 10 MB cap, PNG/JPEG/PDF/ZIP only, **no SVG** (it is script, aimed at the person answering). Served by `/api/support-file` as a download with `nosniff` + sandbox CSP, asking the same access question as the thread page.
+- **A notification must carry nothing its recipient could not already open.** It is written at the moment of the event, with the *actor's* data in hand — the easiest place in the codebase to leak a leave reason. Payload = title + one sentence (160-char cap is the guardrail) + an internal `/app` link that re-checks server-side. Never paste a record body into `notify()`.
+- Audiences come from `holdersOf(capability)` so the people told about work are the people who can do it. `notifications.broadcast` is a capability; the R7b founder alerts (`lib/audit.ts`) stay separate and unmuteable.
+
 ## Rules
 
 - All colors/type/spacing/motion come from `packages/ui/src/tokens.css`; never hard-code hex values or durations in app code. Brand cyan/teal is for accents and large text only (fails AA at body size on dark).

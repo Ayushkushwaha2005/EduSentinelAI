@@ -27,7 +27,8 @@ export type NavIcon =
   | "shield"
   | "key"
   | "chat"
-  | "calendar";
+  | "calendar"
+  | "bell";
 
 export const NAV: NavItem[] = [
   { label: "Dashboard", href: "/app", icon: "grid" },
@@ -82,6 +83,11 @@ export const NAV: NavItem[] = [
   { label: "Attendance", href: "/app/attendance", icon: "clipboard" },
   { label: "Leave", href: "/app/leave", icon: "calendar" },
   { label: "Calendar", href: "/app/calendar", icon: "calendar" },
+  // Phase 9. Anyone who can sign in can ask for help — including a collaborator.
+  // The staff queue inside is gated on `support.respond` in lib/support.ts, which
+  // returns an empty list to anyone else rather than relying on the page to hide it.
+  { label: "Support", href: "/app/support", icon: "chat" },
+  { label: "Notifications", href: "/app/notifications", icon: "bell" },
   // Grantable on its own: the Founder can hand someone the numbers without also
   // handing them the account directory.
   { label: "Analytics", href: "/app/analytics", icon: "report", cap: "analytics.read" },

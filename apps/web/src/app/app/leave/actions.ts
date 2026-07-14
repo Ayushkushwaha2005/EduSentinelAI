@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { audit, requestContext } from "@/lib/audit";
 import { assertCapability, requireViewer } from "@/lib/guard";
+import { holdersOf, notify, notifyMany } from "@/lib/notifications";
 import {
   cleanNote,
   currentYear,
@@ -115,6 +116,22 @@ export async function requestLeave(
     ...ctx,
   });
 
+  /*
+   * Tell the people who can decide it — and tell them NOTHING ELSE.
+   *
+   * Phase 8 spends its entire budget keeping the leave REASON inside the approver
+   * chain. A notification is written at the moment of the event, when the
+   * requester's data is in hand, so it is the single easiest place to undo all of
+   * that with one convenient string. It carries a name, a count of days, and a
+   * link. The reason stays where it lives, behind the guard on the page.
+   */
+  await notifyMany(await holdersOf("leave.approve"), {
+    kind: "leave.pending",
+    title: "Leave request awaiting your decision",
+    body: `${viewer.name} · ${days} day${days === 1 ? "" : "s"}`,
+    href: "/app/leave",
+  });
+
   revalidatePath("/app/leave");
   revalidatePath("/app/calendar");
   return { notice: `Requested ${days} day${days === 1 ? "" : "s"} of ${type.name}.` };
@@ -194,6 +211,14 @@ export async function decideLeave(
     actorId: actor.id,
     detail: `${request.leaveType.code} ${request.days}d -> ${decision}`,
     ...ctx,
+  });
+
+  await notify({
+    userId: request.userId,
+    kind: "leave.decided",
+    title: `Your leave request was ${decision.toLowerCase()}`,
+    body: `${request.days} day${request.days === 1 ? "" : "s"}`,
+    href: "/app/leave",
   });
 
   revalidatePath("/app/leave");
