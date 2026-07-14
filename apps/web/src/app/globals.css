@@ -38,11 +38,19 @@ body {
  * ========================================================================== */
 
 [data-theme="dark"] body {
-  /* Two faint off-screen light sources. Without them the black is a void, and a
-     void has no depth for glass to sit in front of. */
+  /*
+   * Three faint off-screen light sources — one per accent, exactly as the
+   * reference lights its three cards. Without them the black is a void, and a void
+   * has no depth for glass to sit in front of.
+   *
+   * They are placed, not scattered: violet top-left (where the catalogue lives in
+   * the nav), azure through the middle (the workflow), amber low-right (the inbox,
+   * where the bell is).
+   */
   background-image:
-    radial-gradient(60rem 40rem at 12% -10%, rgb(46 230 255 / 6%), transparent 60%),
-    radial-gradient(50rem 36rem at 96% 4%, rgb(139 92 246 / 5%), transparent 62%);
+    radial-gradient(55rem 38rem at 6% -8%, rgb(181 124 255 / 7%), transparent 60%),
+    radial-gradient(60rem 42rem at 52% -14%, rgb(46 230 255 / 5%), transparent 62%),
+    radial-gradient(46rem 34rem at 100% 96%, rgb(240 185 92 / 5%), transparent 64%);
   background-attachment: fixed;
 }
 
@@ -101,14 +109,91 @@ body {
   border-radius: var(--radius-control);
 }
 
-/* Primary controls glow faintly, as a lit object would. */
-[data-theme="dark"] .bg-ink {
-  box-shadow: 0 8px 24px -12px rgb(46 230 255 / 25%);
+/* ---------------------------------------------------------------------------
+ * THE ACCENT TRIAD, applied exactly as the reference assigns it.
+ *
+ * A region declares what it IS with `data-accent`, and everything inside it takes
+ * its light from that: the icon tile, the links, the hover bloom, the focus ring,
+ * the active chip. Nothing below invents a colour — it redirects `--accent`, and
+ * the rules already written above follow it.
+ *
+ *   violet → products, templates, the catalogue. What you pick, build and publish.
+ *   azure  → workflow: connections, active states, live indicators, progress.
+ *   amber  → the inbox: messages, notifications, labels, the actions on them.
+ *
+ * `data-accent` does NOTHING in light mode — every rule here is inside the dark
+ * scope, so the paper theme never sees it.
+ * ------------------------------------------------------------------------- */
+
+[data-theme="dark"] [data-accent="violet"] {
+  --accent: var(--color-accent-violet);
+  --accent-deep: var(--color-accent-violet-deep);
+}
+[data-theme="dark"] [data-accent="azure"] {
+  --accent: var(--color-accent-azure);
+  --accent-deep: var(--color-accent-azure-deep);
+}
+[data-theme="dark"] [data-accent="amber"] {
+  --accent: var(--color-accent-amber);
+  --accent-deep: var(--color-accent-amber-deep);
 }
 
-/* Brand accents carry a little light with them. */
+/*
+ * The product is built out of `brand-cyan` utilities — they ARE the accent slots,
+ * they were just all one colour. Rather than rewriting two hundred components to
+ * carry a colour prop, dark mode reinterprets those slots through `--accent`. A
+ * component written next month gets the right colour for its region for free.
+ */
 [data-theme="dark"] .text-brand-cyan {
-  text-shadow: 0 0 18px rgb(46 230 255 / 22%);
+  color: var(--accent);
+  text-shadow: 0 0 20px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+[data-theme="dark"] .hover\:text-brand-teal:hover,
+[data-theme="dark"] .text-brand-teal {
+  color: color-mix(in srgb, var(--accent) 78%, white);
+}
+[data-theme="dark"] .bg-brand-cyan {
+  background-color: var(--accent);
+  color: #06070a; /* the accent is a LIGHT source; text on it must be the dark */
+  box-shadow: 0 0 24px -6px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+/* The tinted icon tile — the reference's small glowing square on every card. */
+[data-theme="dark"] .bg-brand-cyan\/10,
+[data-theme="dark"] .bg-brand-cyan\/\[0\.04\] {
+  background-color: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+    inset 0 12px 24px -12px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+[data-theme="dark"] .border-brand-cyan\/20,
+[data-theme="dark"] .ring-brand-cyan\/25 {
+  border-color: var(--accent-edge);
+}
+[data-theme="dark"] .focus\:border-brand-cyan:focus {
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+/* Accented surfaces catch a little of their own colour along the top edge, the
+   way the lit cards do in the reference. */
+[data-theme="dark"] [data-accent] .bg-surface-raised {
+  border-top-color: color-mix(in srgb, var(--accent) 14%, var(--glass-edge));
+}
+
+/* Primary controls glow faintly, as a lit object would — in their region's colour. */
+[data-theme="dark"] .bg-ink {
+  box-shadow: 0 8px 26px -14px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* Focus follows the accent too, so a focus ring in the inbox is amber. */
+[data-theme="dark"] :focus-visible {
+  outline-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+/* Scroll: the thumb lights up in the region's colour as you move through it. */
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--accent) 45%, var(--color-surface-overlay));
+  background-clip: padding-box;
 }
 
 /* Scrollbars: part of the surface, not an OS artifact bolted onto it. */
@@ -160,6 +245,39 @@ body {
 
 [data-theme="dark"] .meteor-field {
   opacity: 1;
+}
+
+/*
+ * The glass sheen. One very faint, very wide diagonal band drifting across the
+ * whole viewport — it is what makes the page read as being seen THROUGH something
+ * rather than displayed on something. It is CSS, so the canvas pays nothing for
+ * it, and it is slow enough (70s) that you never catch it moving.
+ */
+.meteor-sheen {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgb(255 255 255 / 2.2%) 47%,
+    rgb(181 124 255 / 2.4%) 50%,
+    rgb(46 230 255 / 2%) 53%,
+    transparent 62%
+  );
+  animation: sheen-drift 70s linear infinite;
+}
+
+@keyframes sheen-drift {
+  0% {
+    transform: translate3d(-12%, -6%, 0);
+  }
+  50% {
+    transform: translate3d(12%, 6%, 0);
+  }
+  100% {
+    transform: translate3d(-12%, -6%, 0);
+  }
 }
 
 /*

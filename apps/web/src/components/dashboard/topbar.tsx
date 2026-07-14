@@ -77,11 +77,15 @@ export function Topbar({
           />
         </form>
 
-        {showMessages && <MessagePeek items={messages} unread={unread} />}
+        {/* Messages and notifications ARE the inbox, so they are amber wherever
+            you happen to be standing — the reference's rule: colour means a thing,
+            it does not decorate a place. */}
+        <span data-accent="amber" className="flex items-center gap-4">
+          {showMessages && <MessagePeek items={messages} unread={unread} />}
+          <NotificationBell items={notifications} unread={unreadNotifications} />
+        </span>
 
         <ThemeToggle />
-
-        <NotificationBell items={notifications} unread={unreadNotifications} />
 
         <div className="flex items-center gap-3 border-l border-border-subtle pl-4">
           <Link

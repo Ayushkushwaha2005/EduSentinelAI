@@ -920,6 +920,20 @@ it. Its layout is not copied.
 - **The bell, the toggle and the field are all real.** System/light/dark, persisted
   per *device* (a theme belongs to the screen you are looking at, not to your
   account), following the OS when the OS changes, with **no flash** on first paint.
+- **The accent triad, taken from the reference and assigned by meaning** — violet
+  for the catalogue, azure for the workflow, amber for the inbox. A region declares
+  itself with `data-accent` (decided once, from the route); the icon tiles, links,
+  hover blooms, focus rings and glass edges all take their light from `--accent`,
+  so the same colour means the same thing on every page. The existing `brand-cyan`
+  utilities *are* the accent slots — they were simply all one colour — so a
+  component written next month gets its region's colour without knowing it exists.
+  Audited across all 20 workspace pages and the public catalogue.
+- **The meteor field is atmosphere, not an animation**: time-based (identical on a
+  60 Hz and a 144 Hz screen), slow enough to cross in 3–5 seconds, spawning
+  anywhere along the top and left edges so the whole viewport gets weather, three
+  parallax depths, embers shed along the trails, a 70-second glass sheen over the
+  page, and only ever the three accent hues — the sky is not allowed its own
+  palette.
 
 ⏳ **Two-person review before merge — this phase touches authorization.**
 

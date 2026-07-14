@@ -95,6 +95,7 @@ Products are **database records, not code**. The Founder adds/edits/publishes/ar
 
 - **Light Mode is FROZEN.** Every dark rule is scoped to `[data-theme="dark"]` — `test:support` fails CI on an unscoped rule or a changed light token. Dark is a purely additive layer.
 - **One rule makes the product glass**: dark mode redefines `.bg-surface-raised` (blur + hairline edge + internal `--glow-veil`), so every Panel/card/popover — including ones written later — is glass without a `dark:` variant anywhere.
+- **The accent triad is assigned by MEANING, never chosen per component** (from the reference): **violet** = products/catalogue/releases · **azure** = workflow, active state, live indicators (the default) · **amber** = the inbox — messages, notifications, support, collaboration. A region declares itself with `data-accent` (set once in `app/layout.tsx` from the route); everything inside takes its light from `--accent`. Existing `brand-cyan` utilities ARE the accent slots — dark mode reinterprets them, so a new component gets its region's colour for free. Never hard-code a violet/amber value in a component.
 - **The CSP is not weakened.** The no-flash theme script carries the nonce `src/middleware.ts` already issues. Never add `unsafe-inline` to make a theme work.
 - **Reduced motion = absent, not slower.** The meteor canvas is not mounted; `--tilt-max` is `0deg`. Tilt goes on glanceable cards, never on tables.
 - Theme is persisted in **localStorage, not the database** — it belongs to the device, not the account.

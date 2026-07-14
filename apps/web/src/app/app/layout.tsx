@@ -16,6 +16,40 @@ import type { Role } from "@/lib/roles";
 export const metadata = { robots: { index: false } };
 
 /*
+ * Which of the three accents this region belongs to (Phase 9.4).
+ *
+ * The reference assigns colour by MEANING, not by decoration — the template card
+ * is violet, the workflow is cyan, the inbox is amber — and it does so
+ * consistently, which is why it reads as one product. So the accent is decided
+ * ONCE, here, from the route, and every surface below inherits it: icon tiles,
+ * links, hover blooms, focus rings and the glass edge all take their light from
+ * `--accent` without a single component knowing which colour it ended up with.
+ */
+function accentFor(pathname: string): "violet" | "azure" | "amber" {
+  // The inbox, in every form it takes: messages, notifications, the collaboration
+  // threads, the support desk. Anything that is a conversation waiting for you.
+  if (
+    pathname.startsWith("/app/messages") ||
+    pathname.startsWith("/app/notifications") ||
+    pathname.startsWith("/app/support") ||
+    pathname.startsWith("/app/collaborations") ||
+    pathname.startsWith("/app/admin/collaborations")
+  ) {
+    return "amber";
+  }
+  // What you build, publish and ship — the catalogue and its releases.
+  if (
+    pathname.startsWith("/app/products") ||
+    pathname.startsWith("/app/admin/releases")
+  ) {
+    return "violet";
+  }
+  // Everything else is the workflow itself: the dashboards, people, teams, tasks,
+  // attendance, analytics, access. Live state, progress, connections.
+  return "azure";
+}
+
+/*
  * The single workspace shell. Everyone — Founder, Co-Founder, Employee,
  * Collaborator — signs in at the same /login and lands here; the shell adapts
  * to the viewer's role and effective capabilities. There is no separate admin
@@ -93,7 +127,11 @@ export default async function AppLayout({
 
       {/* The workspace sits above the sky, never in it. */}
       <div className="relative z-10 flex gap-4">
-        <Sidebar items={items} presence={presence} />
+        {/* Navigation is the workflow, always — it must not change colour under
+            you as you move between regions. Only the CONTENT takes the accent. */}
+        <div data-accent="azure" className="contents">
+          <Sidebar items={items} presence={presence} />
+        </div>
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           <Topbar
             name={viewer.name}
@@ -125,7 +163,10 @@ export default async function AppLayout({
               unread: c.unread,
             }))}
           />
-          <main className="min-w-0">{children}</main>
+          {/* The region decides its own light (see accentFor above). */}
+          <main className="min-w-0" data-accent={accentFor(pathname)}>
+            {children}
+          </main>
         </div>
       </div>
     </div>

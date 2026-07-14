@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function ProductsPage() {
   return (
-    <main className="pt-20">
+    <main className="pt-20" data-accent="violet">
       <div className="pt-16 md:pt-24">
         <ProductsSection />
       </div>

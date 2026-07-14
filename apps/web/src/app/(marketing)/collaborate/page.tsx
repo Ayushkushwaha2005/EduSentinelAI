@@ -17,7 +17,7 @@ export default function CollaboratePage() {
   const token = issueFormToken();
 
   return (
-    <main className="mx-auto max-w-[1360px] px-6 pb-32 pt-20 md:px-10">
+    <main className="mx-auto max-w-[1360px] px-6 pb-32 pt-20 md:px-10" data-accent="amber">
       <div className="pt-16 md:pt-24">
         <SplitHeading
           title="Build with us."
