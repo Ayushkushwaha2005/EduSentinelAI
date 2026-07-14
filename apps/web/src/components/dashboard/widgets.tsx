@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AvatarStack } from "./avatar";
 import { ExportButton, type ExportRow } from "./export-button";
 import { ChevronLeft, ChevronRight, PlusIcon, SearchIcon } from "./icons";
+import { Tilt } from "./tilt";
 
 /* Reference widgets, re-skinned to EduSentinel tokens. Layout follows the
  * approved screenshots closely; colours/type/radius come from tokens.css only. */
@@ -74,8 +75,11 @@ export function StatCard({
   const footer = hasPeople || !!href;
 
   return (
-    <Panel>
-      <div className="flex items-start gap-4">
+    // Tilt goes on the summary cards and nowhere else: they exist to be glanced
+    // at. It is inert in light mode and under reduced motion (--tilt-max: 0deg).
+    <Tilt>
+      <Panel>
+        <div className="flex items-start gap-4">
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card bg-brand-cyan/10 text-brand-cyan">
           {icon}
         </span>
@@ -99,7 +103,8 @@ export function StatCard({
           )}
         </div>
       )}
-    </Panel>
+      </Panel>
+    </Tilt>
   );
 }
 

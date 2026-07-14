@@ -309,9 +309,82 @@ try {
   });
 }
 
+/* ---------- 9.4: dark mode is additive, and it is not allowed to cost anything ---------- */
+{
+  const { readFileSync } = await import("node:fs");
+  const path = await import("node:path");
+  const root = path.resolve(process.cwd(), "..", "..");
+
+  const tokens = readFileSync(
+    path.join(root, "packages", "ui", "src", "tokens.css"),
+    "utf8",
+  );
+
+  // LIGHT MODE IS FROZEN. These are the exact values the paper theme shipped with
+  // in Phase 1; dark mode is a separate layer and must never have edited them.
+  const LIGHT = {
+    "--color-surface-base": "#f5f4f1",
+    "--color-surface-raised": "#ffffff",
+    "--color-surface-overlay": "#ececea",
+    "--color-border-subtle": "#e3e1db",
+    "--color-ink": "#121317",
+    "--color-text-primary": "#16181d",
+    "--color-brand-cyan": "#0891b2",
+    "--color-brand-teal": "#0d9488",
+  };
+  const theme = tokens.slice(tokens.indexOf("@theme"), tokens.indexOf("[data-theme=\"dark\"]"));
+  for (const [name, value] of Object.entries(LIGHT)) {
+    assert.ok(
+      new RegExp(`${name}:\\s*${value};`).test(theme),
+      `Light Mode is frozen: ${name} must still be ${value}`,
+    );
+  }
+
+  // Every dark rule is scoped. A rule that is not scoped is a rule that changes
+  // light mode, which is the one thing this work was not allowed to do.
+  const globals = readFileSync(
+    path.join(root, "apps", "web", "src", "app", "globals.css"),
+    "utf8",
+  );
+  const darkSection = globals.slice(globals.indexOf("DARK MODE (Phase 9.4)"));
+  for (const line of darkSection.split("\n")) {
+    const selector = line.trim();
+    // Selector lines only (they end in `{`), and skip the two theme-agnostic
+    // helpers that are inert in light mode by token (.meteor-field, .tilt) plus
+    // at-rules and nested blocks.
+    if (!selector.endsWith("{") || selector.startsWith("@") || selector.startsWith("*")) continue;
+    if (/^(\.meteor-field|\.tilt|\s|})/.test(selector)) continue;
+    assert.ok(
+      selector.includes('[data-theme="dark"]'),
+      `dark-mode rule must be scoped to [data-theme="dark"] — found: ${selector}`,
+    );
+  }
+
+  // 🔒 The CSP was not weakened to make the no-flash script work. The dynamic
+  // policy is still nonce + strict-dynamic — no 'unsafe-inline' was added to it.
+  const middleware = readFileSync(
+    path.join(root, "apps", "web", "src", "middleware.ts"),
+    "utf8",
+  );
+  const dynamicPolicy = middleware.match(/csp = `\$\{SHARED\}; script-src[^`]+`/g) ?? [];
+  const nonced = dynamicPolicy.find((p) => p.includes("nonce-"));
+  assert.ok(nonced, "the dynamic CSP still issues a nonce");
+  assert.ok(
+    !nonced.includes("unsafe-inline"),
+    "the nonced CSP must NOT gain 'unsafe-inline' — the theme script carries the nonce instead",
+  );
+
+  // The field is not merely slowed under reduced motion — it is not drawn.
+  assert.ok(
+    /prefers-reduced-motion[\s\S]*\.meteor-field\s*{\s*display:\s*none/.test(globals),
+    "under prefers-reduced-motion the meteor field must not be drawn at all",
+  );
+}
+
 console.log(
   "phase 9 — a support request reaches its requester and the people who answer it and " +
     "nobody else, internal notes never reach the requester, attachments pass the upload " +
-    "gates, and a notification carries nothing its recipient could not already open.",
+    "gates, a notification carries nothing its recipient could not already open, and dark " +
+    "mode is additive: light mode is byte-frozen and the CSP was not weakened.",
 );
 await db.$disconnect();

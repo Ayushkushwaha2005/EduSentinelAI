@@ -1,6 +1,6 @@
 # EduSentinel AI — Master Roadmap
 
-*Version 3.0 · 2026-07-14 · Remaining work re-planned as Phases 6–12.
+*Version 3.1 · 2026-07-14 · Remaining work re-planned as Phases 6–11 (Dark Mode folded into Phase 9).
 Phases 0–5.8 are complete and frozen — this revision does not alter them.*
 
 This is the single source of truth for phase planning. It supersedes the
@@ -366,7 +366,7 @@ enter one code. MFA is enforced from the next login onward.
 
 ---
 
-# Remaining work — Phases 6 to 12
+# Remaining work — Phases 6 to 11
 
 *Planned 2026-07-14. Everything above this line is built and frozen; nothing in
 this section redesigns it.* Phase 5 delivered the **skeleton** of the workspace:
@@ -374,11 +374,12 @@ real authorization, real catalogue, real audit chain. What it did not deliver is
 an **operating company inside that skeleton** — the people, the workflows, the
 communications and the polish. That is what follows.
 
-The remaining work is divided into **seven phases**. Phases 6–8 make the
-workspace real (data, people, HR). Phase 9 makes it responsive (support,
-notifications, analytics). Phase 10 makes it beautiful (the premium Dark Mode
-design language). Phase 11 makes it shippable. Phase 12 is the original
-post-launch product expansion, unchanged in substance and renumbered.
+The remaining work is divided into **six phases**. Phases 6–8 make the workspace
+real (data, people, HR). Phase 9 makes it responsive *and beautiful* — support,
+notifications, and the premium Dark Mode design language, which the Founder folded
+into Phase 9 on 2026-07-14 rather than giving it a phase of its own. Phase 10
+makes it shippable. Phase 11 is the original post-launch product expansion,
+unchanged in substance and renumbered.
 
 Two rules apply to every phase below, inherited and non-negotiable:
 1. **Founder Trust Model** — no new surface may grant, demote or bypass FOUNDER,
@@ -859,67 +860,71 @@ plus the E2E:
   to interrupt the company. Collaborators are excluded: a company announcement is
   not addressed to an external partner.
 
+### 9.4 — Premium Dark Mode: an original design language ✅
+*(Folded into Phase 9 by Founder decision, 2026-07-14 — it does not get a phase of
+its own.)*
+
+**Light Mode is finished and frozen. It does not change — not one token, not one
+pixel.** Everything below is additive: a `[data-theme="dark"]` layer that light
+mode never reads.
+
+Dark Mode becomes **its own authored theme**, not an inversion and not a filter.
+The reference (`EduSentinel AI pics/Screenshot 2026-07-14 013234.png`) is used for
+the **physics of the surface only** — how light behaves, how glass catches an
+edge, how colour bleeds from *inside* a card rather than being painted on top of
+it. Its layout is not copied.
+
+- **Deep-black canvas with layered elevation.** Near-black base; panels lifted by
+  light, not by a drop shadow. Each card carries a faint internal glow — the
+  content lights the card, the way it does in the reference.
+- **Real glassmorphism**: backdrop blur, a hairline top highlight where the light
+  catches the edge, a 1px border that is brighter at the top than the bottom.
+  Applied to surfaces, not sprayed on every div.
+- **An animated meteor shower / particle field** behind the shell: slow, sparse,
+  parallaxed, drifting stars with occasional meteors that streak and fade. It is
+  ambience, and ambience must never cost a frame of interaction — so it runs on a
+  single canvas, pauses when the tab is hidden, and is **silent under
+  `prefers-reduced-motion`** (the field is not drawn at all, not merely slowed).
+- **Micro-interactions**: pointer-reactive card tilt measured in fractions of a
+  degree, magnetic hover on controls, a soft focus bloom. Never on data-dense
+  tables, where motion fights reading.
+- **A theme toggle in the top navigation** — system / light / dark, persisted, with
+  **no flash of the wrong theme** on first paint.
+
+🔒 **Delivered, and gated in `test:support` (CI):**
+- ✅ **Light Mode is byte-frozen** — the test asserts the eight load-bearing paper
+  tokens still hold their Phase 1 values, and that **every** dark rule in
+  `globals.css` is scoped to `[data-theme="dark"]`. An unscoped rule fails CI,
+  because an unscoped rule is one that changed light mode.
+- ✅ **The CSP was not weakened.** The no-flash script carries the per-request
+  nonce `src/middleware.ts` already issues; the test asserts the nonced policy has
+  not gained `unsafe-inline`. `middleware.ts` is untouched by this work.
+- ✅ **Reduced motion means absent, not slower.** The test asserts the meteor field
+  is `display: none` under the media query, and the canvas is never even mounted
+  (`components/meteors.tsx` reads the same query). Tilt collapses to `0deg` by
+  token.
+- **One rule makes the whole product glass.** Rather than adding a `dark:` variant
+  to two hundred components — two hundred chances to miss one — dark mode
+  *redefines what a raised surface is*. Every Panel, card and popover became glass
+  at once, and a component written next month gets it for free.
+- **The light comes from inside.** Each surface carries a `--glow-veil` that lifts
+  on hover; the accent is used as light (bloom, focus, glow) far more than as ink,
+  which is the reference's actual idea and the thing that stops a dark UI reading
+  as a grey box on a black page.
+- **`--tilt-max: 0deg` in light mode** means the tilt component compiles to nothing
+  there without a single conditional in the JSX. Tilt is on the summary cards and
+  **not** on tables: motion under text you are trying to read is not premium, it is
+  an obstacle.
+- **Contrast**: body text `#e8ecf3` on `#07080c` ≈ 16:1. Brand cyan/teal stays an
+  accent and large-type colour, exactly as the charter requires in light mode.
+- **The bell, the toggle and the field are all real.** System/light/dark, persisted
+  per *device* (a theme belongs to the screen you are looking at, not to your
+  account), following the OS when the OS changes, with **no flash** on first paint.
+
 ⏳ **Two-person review before merge — this phase touches authorization.**
 
-## Phase 10 — Premium Dark Mode: an original design language ⏳ (next — awaiting founder approval)
-
-*Light Mode is finished and frozen — it does not change in this phase.* Dark Mode
-today is the same layout with darker tokens. It becomes **its own, deliberately
-authored theme**: not an inversion, not a filter, and not a copy of the reference
-screenshot (`EduSentinel AI pics/Screenshot 2026-07-14 013234.png`), which is
-**inspiration for the physics of the surface only** — depth, light bleed, glass —
-never for its layout, palette or content.
-
-The goal is a surface that reads as **handcrafted**: something a design team
-argued over. Template-derived, generically "AI-looking" output is a failure
-condition for this phase, not a stylistic preference.
-
-- **Deep-black canvas** with layered elevation — near-black base, lifted panels,
-  and light that comes *from inside* the interface (a card is lit by its own
-  content) rather than from a flat overlay.
-- **Premium glassmorphism** — hairline borders, real backdrop blur, edge
-  highlights that respond to elevation. Applied where it means something (panels,
-  overlays, the command surface), not sprayed across every div.
-- **EduSentinel brand identity, not a stock aesthetic** — cyan/teal remains an
-  *accent and large-type* colour only (it fails AA at body size on dark; that rule
-  from the project charter is not relaxed for beauty). The dark palette is
-  authored to hit AA at body size, then the accent is used for light, not for
-  text.
-- **Animated meteor-shower / particle field** behind the shell — slow, sparse,
-  parallaxed, GPU-cheap, and *silent under `prefers-reduced-motion`* (the media
-  query is honoured from the first commit, per 5.6). It runs on a canvas that
-  pauses off-screen and on battery-saver; ambience must never cost a frame of
-  interaction.
-- **Subtle 3D motion** — pointer-reactive tilt/parallax on cards measured in a
-  few degrees, spring-eased, never on data-dense tables where it would fight
-  reading.
-- **Premium transitions and unique interactions** — a real motion vocabulary
-  (shared-element route transitions, magnetic hover, staggered reveals, a
-  glass command palette), all speaking one language defined in tokens.
-- **Modern enterprise feel** — restrained. Density, alignment and typographic
-  rhythm are what make it read as production SaaS; the effects are the finish, not
-  the substance.
-
-Implementation rules (so this stays maintainable rather than becoming a pile of
-one-off CSS):
-- Everything lands as **tokens in `packages/ui/src/tokens.css`** — a dark-theme
-  token layer (surface elevations, glass blur/border, glow, motion curves,
-  durations). App code keeps hard-coding **nothing**: no hex, no ms. This is an
-  existing project rule and this phase is where it is most tempting to break.
-- Theme is a real switch (system / light / dark), persisted per user (§6.2), with
-  **no flash of the wrong theme** on first paint.
-- 🔒 Effects must not weaken the CSP (R4): no inline style injection, no
-  `unsafe-inline`, no remote fonts or shaders pulled from a CDN — the no-tracker
-  and CSP invariants outrank the visual.
-- 🔒 Accessibility is a gate, not a nice-to-have: AA contrast at body size in dark
-  mode, visible focus rings on glass, full keyboard reachability of every new
-  interaction, and complete parity with reduced motion.
-
-🔒 **Exit criteria:** Light Mode pixel-unchanged (asserted) · contrast audit
-passes AA · reduced-motion parity · CSP unchanged and `check:trackers` green ·
-Lighthouse performance not regressed by the particle layer.
-
-## Phase 11 — Production-Ready Dashboard ⏳ (merges with the Pre-Launch Gate)
+## Phase 10 — Production-Ready Dashboard ⏳ (next — awaiting founder approval)
+### (merges with the Pre-Launch Gate; was Phase 11 before Dark Mode folded into Phase 9)
 
 The workspace stops being a demo and becomes a product that can carry a real
 company.
@@ -941,7 +946,7 @@ company.
   `test:e2e` / `audit:verify` green · two-person review · Pre-Launch checklist
   signed off by the Founder.
 
-## Pre-Launch Gate 🔒 (MEDIUM tier — executed inside Phase 11)
+## Pre-Launch Gate 🔒 (MEDIUM tier — executed inside Phase 10)
 
 Full checklist in [SECURITY-ROADMAP.md §7](./SECURITY-ROADMAP.md#7-pre-public-launch-security-checklist).
 Headlines: production Postgres (TLS, least-privilege role, RLS) · secret
@@ -950,7 +955,7 @@ Cloudflare proxy + rate rules + bot mode · monitoring/alerting reaching a
 human · incident-response runbook matching the published disclosure SLAs ·
 breached-password checking.
 
-## Phase 12 — Expansion ⏳ (per-product, post-launch — was Phase 6)
+## Phase 11 — Expansion ⏳ (per-product, post-launch)
 
 Browser extension, desktop, mobile clients — all authenticating against the
 Phase 2 identity service and distributing via the Phase 3 download center.

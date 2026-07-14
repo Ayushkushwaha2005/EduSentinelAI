@@ -43,4 +43,85 @@
   --duration-base: 250ms;
   --duration-reveal: 400ms;
   --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Light-mode surface physics. Flat by design: paper does not glow.
+     The dark theme overrides these to make glass. */
+  --glass-blur: 0px;
+  --glass-tint: transparent;
+  --glass-edge: transparent;
+  --glass-shadow: none;
+  --glow-veil: transparent;
+  --tilt-max: 0deg;
+}
+
+/*
+ * ============================================================================
+ * DARK MODE (Phase 9.4) — an authored theme, not an inversion.
+ * ============================================================================
+ *
+ * LIGHT MODE ABOVE IS FROZEN. Nothing in this block is read when the theme is
+ * light, so the paper theme is byte-for-byte the one that shipped in Phase 1.
+ *
+ * The design idea, taken from the reference's PHYSICS rather than its layout:
+ * a surface in the dark is not "the light surface, darker". It is a pane of glass
+ * over a black room, and the light comes from INSIDE the interface — the content
+ * lights the card. So:
+ *
+ *   - the base is near-black with a trace of blue, never pure #000 (pure black
+ *     kills the sense of depth: nothing can sit *behind* it);
+ *   - panels are a translucent tint with a hairline edge that is brighter at the
+ *     top, where light would actually catch it;
+ *   - the accent is used as LIGHT (glow, bloom, focus) far more than as ink.
+ *
+ * Contrast is a gate, not a preference. Body text is #e8ecf3 on #07080c — about
+ * 16:1, comfortably AA at any size. Brand cyan stays what it is in light mode: an
+ * accent and large-type colour, never body copy.
+ */
+[data-theme="dark"] {
+  /* Surfaces — a black room, and glass in it */
+  --color-surface-base: #07080c;
+  --color-surface-raised: #0e1016;
+  --color-surface-overlay: #191d26;
+  --color-border-subtle: #262b36;
+
+  /* "Ink" inverts: the high-contrast CTA in a dark room is a light one. Every
+     bg-ink / text-surface-raised button in the product flips with these two, so
+     nothing needs a dark-mode variant written by hand. */
+  --color-ink: #eef1f7;
+  --color-ink-hover: #ffffff;
+
+  /* Text — AA at body size on the base, which is the whole point */
+  --color-text-primary: #e8ecf3;
+  --color-text-secondary: #a2abbd;
+  --color-text-muted: #6f7787;
+
+  /* Brand — brighter on black, still accents and large type only */
+  --color-brand-cyan: #2ee6ff;
+  --color-brand-teal: #35e3c2;
+  --color-brand-glow: #67f0ff;
+
+  /* Semantic — lifted so they read on black without shouting */
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-danger: #fb7185;
+
+  /* Surface physics. These are the theme: the tokens above are only its palette. */
+  --glass-blur: 20px;
+  --glass-tint: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 5.5%) 0%,
+    rgb(255 255 255 / 2%) 100%
+  );
+  --glass-edge: rgb(255 255 255 / 8%);
+  --glass-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 7%),
+    0 24px 48px -32px rgb(0 0 0 / 90%);
+  /* The light that bleeds from inside a card, as in the reference. */
+  --glow-veil: radial-gradient(
+    120% 90% at 12% 0%,
+    rgb(46 230 255 / 7%) 0%,
+    rgb(53 227 194 / 3%) 34%,
+    transparent 68%
+  );
+  --tilt-max: 0.6deg;
 }

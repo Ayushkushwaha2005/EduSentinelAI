@@ -91,10 +91,18 @@ Products are **database records, not code**. The Founder adds/edits/publishes/ar
 - **A notification must carry nothing its recipient could not already open.** It is written at the moment of the event, with the *actor's* data in hand — the easiest place in the codebase to leak a leave reason. Payload = title + one sentence (160-char cap is the guardrail) + an internal `/app` link that re-checks server-side. Never paste a record body into `notify()`.
 - Audiences come from `holdersOf(capability)` so the people told about work are the people who can do it. `notifications.broadcast` is a capability; the R7b founder alerts (`lib/audit.ts`) stay separate and unmuteable.
 
+## Dark Mode (Phase 9.4)
+
+- **Light Mode is FROZEN.** Every dark rule is scoped to `[data-theme="dark"]` — `test:support` fails CI on an unscoped rule or a changed light token. Dark is a purely additive layer.
+- **One rule makes the product glass**: dark mode redefines `.bg-surface-raised` (blur + hairline edge + internal `--glow-veil`), so every Panel/card/popover — including ones written later — is glass without a `dark:` variant anywhere.
+- **The CSP is not weakened.** The no-flash theme script carries the nonce `src/middleware.ts` already issues. Never add `unsafe-inline` to make a theme work.
+- **Reduced motion = absent, not slower.** The meteor canvas is not mounted; `--tilt-max` is `0deg`. Tilt goes on glanceable cards, never on tables.
+- Theme is persisted in **localStorage, not the database** — it belongs to the device, not the account.
+
 ## Rules
 
 - All colors/type/spacing/motion come from `packages/ui/src/tokens.css`; never hard-code hex values or durations in app code. Brand cyan/teal is for accents and large text only (fails AA at body size on dark).
-- Dark-first design; respect `prefers-reduced-motion`.
+- Respect `prefers-reduced-motion`.
 - Development proceeds in approved phases — `ROADMAP.md` is the source of truth, with security gates per phase from `SECURITY-ROADMAP.md` (Security-by-Design: a phase is not complete until its 🔒 gates pass; the Founder Trust Model is a permanent architectural principle). Each phase requires founder approval before starting. Changes to auth, payments, or release signing require two-person review.
 - `npm audit` high/critical blocks merge; moderate findings must be logged in `SECURITY-NOTES.md`.
 - Security headers are set in `apps/web/next.config.ts` — keep them when editing config.

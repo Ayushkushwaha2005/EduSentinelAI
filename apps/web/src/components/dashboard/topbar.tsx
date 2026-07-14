@@ -5,6 +5,7 @@ import { ROLE_LABELS, type Role } from "@/lib/roles";
 import { SignOutButton } from "./sign-out";
 import { MessagePeek, type PeekItem } from "./message-peek";
 import { NotificationBell, type BellItem } from "./notification-bell";
+import { ThemeToggle } from "@/components/theme";
 import { MobileNav } from "./mobile-nav";
 import type { NavItem } from "./nav-config";
 
@@ -77,6 +78,8 @@ export function Topbar({
         </form>
 
         {showMessages && <MessagePeek items={messages} unread={unread} />}
+
+        <ThemeToggle />
 
         <NotificationBell items={notifications} unread={unreadNotifications} />
 

@@ -11,6 +11,7 @@ import {
   useReducedMotion,
 } from "framer-motion";
 import { LogoWordmark } from "./logo";
+import { ThemeToggle } from "./theme";
 import { EASE } from "./motion";
 
 const links = [
@@ -67,7 +68,8 @@ export function Nav() {
           ))}
         </div>
 
-        <div className="hidden shrink-0 items-center gap-7 md:flex">
+        <div className="hidden shrink-0 items-center gap-5 md:flex">
+          <ThemeToggle />
           <Link
             href="/login"
             className="text-[16px] text-text-primary/75 transition-colors hover:text-text-primary"
