@@ -706,7 +706,7 @@ The exclusive Founder console (`/app/access`), finished:
 ✅ **Reviewed and approved by the Founder.**
 
 ## Phase 8 — HR & Workforce Management ✅
-### (built + tested 2026-07-14; exit pending second-person review)
+### (built + tested 2026-07-14; **approved by the Founder 2026-07-14**)
 
 *The HR function of Phase 5.7 (an EMPLOYEE with an HR title, not a new rung on
 the ladder) gets the tools it needs.* **The role ladder does not change** — adding
@@ -792,9 +792,10 @@ operations is ordinary work, not a trust boundary):
   (`purgeExpiredRecords()` is executable code, not a sentence in a document).
 
 Bootstrap: `npm run db:seed:hr` (leave types — configuration, not demo data).
-⏳ **Two-person review before merge — this phase touches authorization.**
+✅ **Reviewed and approved by the Founder.**
 
-## Phase 9 — Support, Notifications & Response ⏳ (next — awaiting founder approval)
+## Phase 9 — Support, Notifications & Response ✅
+### (built + tested 2026-07-14; exit pending second-person review)
 
 - **Service Request / Support Center** — an internal and collaborator-facing
   request system: category, priority, description, attachments, assignment,
@@ -815,11 +816,52 @@ Bootstrap: `npm run db:seed:hr` (leave types — configuration, not demo data).
   deep-link re-checks server-side. Broadcast is a capability
   (`notifications.broadcast`), not a role assumption.
 
-🔒 **Exit criteria:** support attachments pass upload gates · notification
-payloads carry no unauthorized data (E2E asserts) · no notification path bypasses
-`lib/guard.ts`.
+🔒 **Delivered.** `npm run test:support` (`scripts/test-phase9.mts`, runs in CI)
+plus the E2E:
+- **A support request reaches its requester and the people who answer it — nobody
+  else.** An unrelated employee asking for it *with the exact id* gets null, the
+  same answer a non-existent request gives, so a tampered URL learns nothing. A
+  collaborator may raise a request and reach staff, and can **never** see another
+  collaborator's — we do not become a channel between external parties.
+- **Internal notes are filtered in the query layer**, not in a component. The
+  requester never receives one, so no page can leak it by forgetting. Staff need
+  somewhere to say "this is the third time this month"; a note that leaks is worse
+  than no note, because everyone assumed it was private.
+- **Attachments pass the same gates as release artifacts and avatars**: magic
+  bytes (never the filename or claimed MIME — both chosen by whoever chose the
+  file), a 10 MB cap, a PNG/JPEG/PDF/ZIP allowlist, storage outside the web root
+  under a generated name, and a route that asks the **same access question the
+  thread page did**. **No SVG** — it is script, and it would be served into the
+  session of the person answering. Served as a download with `nosniff` and a
+  sandbox CSP, never rendered in our origin.
+- **SLA is measured, not promised**: `firstResponseAt` is stamped on the first
+  *visible staff* reply (an internal note is not a response to the person waiting),
+  and "overdue" means nobody has answered yet — not a permanent mark on a request
+  that was answered late.
+- **The notification bell is back** — and only now. Phase 6.1 deleted it because it
+  was a button with no handler wearing a permanently-lit dot; it returns with a
+  real count, real domain events, and a dot that lights only when something is
+  genuinely unread.
+- 🔒 **A notification carries nothing its recipient could not already open.** This
+  is the phase's sharpest edge: a notification is written *at the moment of the
+  event*, when the actor's data is in hand, which makes it the easiest place in the
+  codebase to undo Phase 8 — "Priya requested leave: hospital appointment" would
+  push a medical fact into a bell, a list and a digest. So the payload is a title,
+  one sentence of context (capped at 160 chars — the cap *is* the guardrail), and a
+  link that **re-checks server-side**. The test asserts no leave reason ever reaches
+  a payload, that every href is an internal `/app` path (an external one is dropped
+  at write time), and that marking your notifications read cannot touch anyone
+  else's.
+- Notification audiences come from `holdersOf(capability)`, resolved the same way
+  authorization is — so the people *told* about work are exactly the people who can
+  *do* it. A separate list would drift.
+- **Broadcast is a capability**, not an assumption that seniority carries the right
+  to interrupt the company. Collaborators are excluded: a company announcement is
+  not addressed to an external partner.
 
-## Phase 10 — Premium Dark Mode: an original design language ⏳
+⏳ **Two-person review before merge — this phase touches authorization.**
+
+## Phase 10 — Premium Dark Mode: an original design language ⏳ (next — awaiting founder approval)
 
 *Light Mode is finished and frozen — it does not change in this phase.* Dark Mode
 today is the same layout with darker tokens. It becomes **its own, deliberately

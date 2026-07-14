@@ -71,6 +71,13 @@ jobs:
       # the audit log — and the leave arithmetic cannot overdraw a balance.
       - run: npx tsx scripts/test-phase8.mts
         working-directory: apps/web
+      # Phase 9 gates: a support request reaches its requester and the people who
+      # answer it and nobody else (even with the exact id); internal notes never
+      # reach the requester; attachments pass the magic-byte gates (no SVG); and a
+      # notification carries nothing its recipient could not already open — above
+      # all, never a leave reason.
+      - run: npx tsx scripts/test-phase9.mts
+        working-directory: apps/web
       # audit hash chain must verify (tamper-evidence)
       - run: npx tsx scripts/verify-audit.mts
         working-directory: apps/web

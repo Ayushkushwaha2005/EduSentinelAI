@@ -4,6 +4,7 @@ import { CalendarIcon, SearchIcon } from "./icons";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
 import { SignOutButton } from "./sign-out";
 import { MessagePeek, type PeekItem } from "./message-peek";
+import { NotificationBell, type BellItem } from "./notification-bell";
 import { MobileNav } from "./mobile-nav";
 import type { NavItem } from "./nav-config";
 
@@ -15,10 +16,11 @@ import type { NavItem } from "./nav-config";
  * The search box is a real GET form to /app/search — results there are scoped to
  * what the viewer may actually see, never a global index.
  *
- * The reference's notification bell is GONE (Phase 6.1). It was a <button> with no
- * handler, wearing a permanently-lit unread dot: it announced notifications that
- * did not exist and could not be opened. Notifications are Phase 9 and the bell
- * comes back when it has something true to say.
+ * The notification bell was DELETED in Phase 6.1 — it was a <button> with no
+ * handler wearing a permanently-lit unread dot, announcing notifications that did
+ * not exist and could not be opened. Phase 9 built the notifications, so it is
+ * back: the count is real, every item is a domain event, and the dot only lights
+ * when something is actually unread.
  */
 export function Topbar({
   name,
@@ -28,6 +30,8 @@ export function Topbar({
   messages = [],
   showMessages = false,
   nav = [],
+  notifications = [],
+  unreadNotifications = 0,
 }: {
   name: string;
   role: Role;
@@ -36,6 +40,8 @@ export function Topbar({
   messages?: PeekItem[];
   showMessages?: boolean;
   nav?: NavItem[];
+  notifications?: BellItem[];
+  unreadNotifications?: number;
 }) {
   const period = new Date().toLocaleDateString("en-US", {
     month: "long",
@@ -71,6 +77,8 @@ export function Topbar({
         </form>
 
         {showMessages && <MessagePeek items={messages} unread={unread} />}
+
+        <NotificationBell items={notifications} unread={unreadNotifications} />
 
         <div className="flex items-center gap-3 border-l border-border-subtle pl-4">
           <Link

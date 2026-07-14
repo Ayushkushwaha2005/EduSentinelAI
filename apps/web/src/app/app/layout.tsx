@@ -8,6 +8,7 @@ import { Topbar } from "@/components/dashboard/topbar";
 import { navFor } from "@/components/dashboard/nav-config";
 import { listConversations } from "@/lib/messages";
 import { avatarUrlFor, onlineStaff, touchPresence } from "@/lib/profile";
+import { recentNotifications, unreadCount } from "@/lib/notifications";
 import type { Role } from "@/lib/roles";
 
 export const metadata = { robots: { index: false } };
@@ -71,6 +72,13 @@ export default async function AppLayout({
   const recent = canMessage ? (await listConversations(viewer.id)).slice(0, 4) : [];
   const unread = recent.filter((c) => c.unread).length;
 
+  // Notifications are per-user by construction — these two queries are scoped to
+  // viewer.id and nothing else, so the bell can only ever ring for its owner.
+  const [notifications, unreadNotifications] = await Promise.all([
+    recentNotifications(viewer.id, 8),
+    unreadCount(viewer.id),
+  ]);
+
   return (
     <div className="min-h-screen bg-surface-base p-3 md:p-4">
       <div className="flex gap-4">
@@ -81,6 +89,18 @@ export default async function AppLayout({
             role={viewer.role as Role}
             avatarUrl={me ? avatarUrlFor(me) : null}
             nav={items}
+            unreadNotifications={unreadNotifications}
+            notifications={notifications.map((n) => ({
+              id: n.id,
+              title: n.title,
+              body: n.body,
+              href: n.href,
+              unread: !n.readAt,
+              time: n.createdAt.toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            }))}
             showMessages={canMessage}
             unread={unread}
             messages={recent.map((c) => ({

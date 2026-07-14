@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { LogoWordmark } from "@/components/logo";
 import type { NavItem, NavIcon } from "./nav-config";
 import {
+  BellIcon,
   BoxIcon,
   CalendarIcon,
   ChatIcon,
@@ -31,6 +32,7 @@ const ICONS: Record<NavIcon, (p: { size?: number }) => React.ReactElement> = {
   key: KeyIcon,
   chat: ChatIcon,
   calendar: CalendarIcon,
+  bell: BellIcon,
 };
 
 /*

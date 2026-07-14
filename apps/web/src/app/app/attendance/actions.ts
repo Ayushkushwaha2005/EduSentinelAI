@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { audit, requestContext } from "@/lib/audit";
 import { assertCapability, requireViewer } from "@/lib/guard";
 import { cleanNote, dayOf, isAttendanceStatus, todayFor } from "@/lib/hr";
+import { holdersOf, notify, notifyMany } from "@/lib/notifications";
 
 /*
  * Attendance (Phase 8.1).
@@ -134,6 +135,15 @@ export async function requestCorrection(
     detail: `${record.date.toISOString().slice(0, 10)}: ${record.status} -> ${toStatus}`,
     ...ctx,
   });
+  // The reason for a correction can say anything ("I was at the hospital"), so it
+  // does not travel either. A name and a date is enough to get someone to look.
+  await notifyMany(await holdersOf("attendance.manage"), {
+    kind: "attendance.correction_pending",
+    title: "Attendance correction awaiting review",
+    body: `${viewer.name} · ${record.date.toISOString().slice(0, 10)}`,
+    href: "/app/attendance",
+  });
+
   revalidatePath("/app/attendance");
   return { notice: "Correction requested — it will be reviewed." };
 }
@@ -189,6 +199,13 @@ export async function decideCorrection(
     detail: `${correction.attendance.date.toISOString().slice(0, 10)} ${correction.fromStatus}->${correction.toStatus}: ${decision}`,
     ...ctx,
   });
+  await notify({
+    userId: correction.attendance.userId,
+    kind: "attendance.correction_decided",
+    title: `Your attendance correction was ${decision.toLowerCase()}`,
+    href: "/app/attendance",
+  });
+
   revalidatePath("/app/attendance");
   return { notice: `Correction ${decision.toLowerCase()}.` };
 }
