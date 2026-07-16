@@ -1,12 +1,14 @@
 // Bring the production database up to date on Vercel — migrate, then seed once.
 //
-// Runs from `postinstall`, so on Vercel the schema is created and the public
-// catalogue/org data is populated during install, before `next build` collects
-// page data. Doing it here (rather than overriding vercel.json `buildCommand`)
-// keeps Vercel's monorepo Next.js output detection intact.
+// Runs from `prebuild` (not postinstall) so it executes on EVERY build, even
+// when Vercel restores the install cache and skips postinstall. That matters
+// because Neon's serverless compute auto-suspends when idle: this step's first
+// connection wakes it, so `next build`'s page-data queries reach a live database
+// instead of failing with "Can't reach database server". Running it under the
+// project's Root Directory (apps/web) also keeps Next.js output detection intact.
 //
-// Locally and in CI (`VERCEL` unset) this is a no-op, so `npm install` never
-// touches a database and offline installs keep working.
+// Locally and in CI (`VERCEL` unset) this is a no-op, so a normal build never
+// touches a database.
 import { execSync } from "node:child_process";
 
 if (!process.env.VERCEL) {
@@ -20,8 +22,23 @@ const direct =
   process.env.DATABASE_URL_UNPOOLED || process.env.POSTGRES_URL_NON_POOLING;
 const env = direct ? { ...process.env, DATABASE_URL: direct } : process.env;
 
-console.log("[vercel-db] applying migrations…");
-execSync("prisma migrate deploy", { stdio: "inherit", env });
+// `migrate deploy` is also our "wake Neon" step. A suspended compute can miss the
+// first connection's timeout while it cold-starts, so retry a few times.
+let migrated = false;
+for (let attempt = 1; attempt <= 4 && !migrated; attempt++) {
+  try {
+    console.log(`[vercel-db] applying migrations (attempt ${attempt})…`);
+    execSync("prisma migrate deploy", { stdio: "inherit", env });
+    migrated = true;
+  } catch (e) {
+    console.log(`[vercel-db] migrate attempt ${attempt} failed: ${e.message}`);
+    if (attempt < 4) await new Promise((r) => setTimeout(r, 4000));
+  }
+}
+if (!migrated) {
+  console.error("[vercel-db] could not apply migrations after retries");
+  process.exit(1);
+}
 
 // Seed only when the database is empty, so this is a one-time cost on the first
 // deploy against a fresh database and a no-op on every deploy after. The seeds are
