@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "npm run dev --workspace apps/web",
     "build": "npm run build --workspace apps/web",
+    "vercel-build": "npm run db:deploy --workspace apps/web && npm run build --workspace apps/web",
     "lint": "npm run lint --workspace apps/web",
     "typecheck": "npm run typecheck --workspace apps/web",
     "check:trackers": "node scripts/check-trackers.mjs"
