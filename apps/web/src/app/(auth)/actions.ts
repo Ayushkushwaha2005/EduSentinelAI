@@ -8,6 +8,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { audit, requestContext } from "@/lib/audit";
 import { signIn } from "@/lib/auth";
+import { isAdminRole } from "@/lib/roles";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAuthToken, consumeAuthToken } from "@/lib/tokens";
 import { sendMail, appUrl } from "@/lib/mailer";
@@ -110,10 +111,29 @@ export async function loginAction(
   }
 
   const next = (formData.get("next") as string) || "/app";
-  const redirectTo = next.startsWith("/") && !next.startsWith("//") ? next : "/app";
+  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/app";
+
+  // Privileged accounts must enrol MFA before anything opens. Send them to
+  // enrolment DIRECTLY on login, instead of letting them land on /app and having
+  // the /app layout redirect() them there mid-navigation: a redirect() issued
+  // from a layout while resolving the login's own redirect renders as a BLANK
+  // page in the App Router. Landing straight on /app/security avoids that second,
+  // in-render hop. The layout gate stays as the catch-all for any other entry.
+  const emailRaw = (formData.get("email") as string) ?? "";
+  const account = await db.user.findUnique({
+    where: { email: emailRaw.toLowerCase().trim() },
+    select: { role: true, mfaEnabled: true },
+  });
+  const redirectTo =
+    account && isAdminRole(account.role) && !account.mfaEnabled
+      ? `/app/security?mfa=required&next=${encodeURIComponent(
+          safeNext.startsWith("/app/security") ? "/app" : safeNext,
+        )}`
+      : safeNext;
+
   try {
     await signIn("credentials", {
-      email: formData.get("email"),
+      email: emailRaw,
       password: formData.get("password"),
       code: (formData.get("code") as string) || undefined,
       redirectTo,
