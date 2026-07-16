@@ -110,6 +110,18 @@ body {
   z-index: 1;
 }
 
+/* …but absolutely positioned decorations (e.g. the accent bloom laid over a
+   team portrait) must STAY absolute. The stacking rule above outranks the
+   `.absolute` utility and would pull them into flow, opening an empty block
+   above the card's real content — dark mode only, since light never runs it.
+   Restore the utility's position (and its z-index alongside it). */
+[data-theme="dark"] .bg-surface-raised > .absolute {
+  position: absolute;
+}
+[data-theme="dark"] .bg-surface-raised > .z-10 {
+  z-index: 10;
+}
+
 /* Inputs and the overlay chips are glass too, one step deeper into the pane. */
 [data-theme="dark"] input,
 [data-theme="dark"] select,
@@ -286,6 +298,66 @@ body {
 }
 
 /*
+ * Nebula haze. A few enormous, near-invisible clouds of accent colour, drifting on
+ * a long cycle. This is what fills the black so there is never a truly empty region:
+ * even where no star or meteor sits, the sky has faint colour and depth. It sits
+ * BENEATH the canvas (z-index 0; the canvas is z-index 1), so the stars stay crisp
+ * in front of it.
+ */
+.meteor-nebula {
+  position: absolute;
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 44% at 18% 22%, rgb(120 80 220 / 16%), transparent 70%),
+    radial-gradient(42% 40% at 82% 30%, rgb(30 150 210 / 13%), transparent 72%),
+    radial-gradient(46% 50% at 62% 82%, rgb(210 150 60 / 10%), transparent 74%),
+    radial-gradient(50% 55% at 30% 78%, rgb(90 60 190 / 10%), transparent 76%);
+  filter: blur(20px) saturate(1.1);
+  animation: nebula-drift 90s ease-in-out infinite;
+}
+
+/*
+ * Space dust. A very fine, tiled speckle — thousands of sub-pixel motes far too
+ * small and numerous to be worth putting on the canvas — laid down as a repeating
+ * radial pattern and drifting slowly. It gives the deep field a granular texture
+ * the discrete stars can't, so the darkness never looks like flat paint.
+ */
+.meteor-dust {
+  position: absolute;
+  inset: -10%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image:
+    radial-gradient(rgb(255 255 255 / 55%) 0.5px, transparent 0.6px),
+    radial-gradient(rgb(190 210 255 / 45%) 0.5px, transparent 0.6px);
+  background-size: 120px 120px, 200px 200px;
+  background-position: 0 0, 60px 90px;
+  animation: dust-drift 120s linear infinite;
+}
+
+@keyframes nebula-drift {
+  0%,
+  100% {
+    transform: translate3d(-3%, -2%, 0) scale(1.05);
+  }
+  50% {
+    transform: translate3d(3%, 2%, 0) scale(1.12);
+  }
+}
+
+@keyframes dust-drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-120px, -180px, 0);
+  }
+}
+
+/*
  * The glass sheen. One very faint, very wide diagonal band drifting across the
  * whole viewport — it is what makes the page read as being seen THROUGH something
  * rather than displayed on something. It is CSS, so the canvas pays nothing for
@@ -294,6 +366,7 @@ body {
 .meteor-sheen {
   position: absolute;
   inset: -20%;
+  z-index: 2;
   pointer-events: none;
   background: linear-gradient(
     115deg,
@@ -317,6 +390,7 @@ body {
 .meteor-shafts {
   position: absolute;
   inset: -30%;
+  z-index: 2;
   pointer-events: none;
   background:
     linear-gradient(74deg, transparent 42%, rgb(160 110 255 / 5%) 50%, transparent 58%),

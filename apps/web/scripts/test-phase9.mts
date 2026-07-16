@@ -350,15 +350,18 @@ try {
   for (const line of darkSection.split("\n")) {
     const selector = line.trim();
     /*
-     * Selector lines only (they end in `{`). Three helpers are exempt because they
-     * are inert in light mode BY CONSTRUCTION, not by scoping:
-     *   .meteor-field — opacity 0 unless the theme is dark, and never mounted
-     *   .meteor-sheen — lives inside .meteor-field, so it inherits that
-     *   .tilt         — `--tilt-max` is 0deg in light, so the transform is identity
+     * Selector lines only (they end in `{`). A handful of helpers are exempt because
+     * they are inert in light mode BY CONSTRUCTION, not by scoping:
+     *   .meteor-field  — opacity 0 unless the theme is dark, and never mounted
+     *   .meteor-sheen  — lives inside .meteor-field, so it inherits that
+     *   .meteor-shafts — same: a child of the field
+     *   .meteor-nebula — same: a child of the field (Phase 9 cinematic rebuild)
+     *   .meteor-dust   — same: a child of the field (Phase 9 cinematic rebuild)
+     *   .tilt          — `--tilt-max` is 0deg in light, so the transform is identity
      * Anything else that is not scoped changes light mode, and light mode is frozen.
      */
     if (!selector.endsWith("{") || selector.startsWith("@") || selector.startsWith("*")) continue;
-    if (/^(\.meteor-field|\.meteor-sheen|\.meteor-shafts|\.tilt|\s|})/.test(selector)) continue;
+    if (/^(\.meteor-field|\.meteor-sheen|\.meteor-shafts|\.meteor-nebula|\.meteor-dust|\.tilt|\s|})/.test(selector)) continue;
     // Keyframe stops (`0% {`, `from {`) are not selectors.
     if (/^(\d+%|from|to)\s*{$/.test(selector)) continue;
     assert.ok(

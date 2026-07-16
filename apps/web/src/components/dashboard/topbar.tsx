@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Avatar } from "./avatar";
-import { CalendarIcon, SearchIcon } from "./icons";
+import { SearchIcon } from "./icons";
+import { DateCalendar } from "./date-calendar";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
 import { SignOutButton } from "./sign-out";
 import { MessagePeek, type PeekItem } from "./message-peek";
@@ -44,19 +45,11 @@ export function Topbar({
   notifications?: BellItem[];
   unreadNotifications?: number;
 }) {
-  const period = new Date().toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-
   return (
     <header className="flex h-[76px] items-center justify-between gap-4 rounded-card bg-surface-raised px-4 md:px-6">
       <div className="flex items-center gap-3">
         <MobileNav items={nav} />
-        <div className="flex items-center gap-2 text-[15px] font-medium text-text-primary">
-          {period}
-          <CalendarIcon size={18} className="text-text-secondary" />
-        </div>
+        <DateCalendar now={new Date().toISOString()} />
       </div>
 
       <div className="flex items-center gap-4">

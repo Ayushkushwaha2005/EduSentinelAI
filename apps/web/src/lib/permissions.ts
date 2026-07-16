@@ -170,14 +170,24 @@ export function defaultCapabilities(role: string | undefined): Capability[] {
  * every non-founder *after* grants are applied, so no row in PermissionGrant
  * can ever escalate.
  */
-export async function effectiveCapabilities(userId: string): Promise<Set<Capability>> {
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
-  if (!user) return new Set();
+export async function effectiveCapabilities(
+  userId: string,
+  knownRole?: string,
+): Promise<Set<Capability>> {
+  // The caller often already holds the role (requireViewer just fetched it), so
+  // accept it and skip a redundant SELECT. Only hit the database when it wasn't
+  // supplied.
+  let role = knownRole;
+  if (role === undefined) {
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+    if (!user) return new Set();
+    role = user.role;
+  }
 
-  const effective = new Set<Capability>(defaultCapabilities(user.role));
+  const effective = new Set<Capability>(defaultCapabilities(role));
 
   const grants = await db.permissionGrant.findMany({
     where: {
@@ -194,7 +204,7 @@ export async function effectiveCapabilities(userId: string): Promise<Set<Capabil
   }
 
   // Founder Trust Model backstop — applied last, unconditionally.
-  if (user.role !== "FOUNDER") {
+  if (role !== "FOUNDER") {
     for (const cap of FOUNDER_RESERVED) effective.delete(cap);
   } else {
     // and the Founder can never be stripped of them by a revoke row

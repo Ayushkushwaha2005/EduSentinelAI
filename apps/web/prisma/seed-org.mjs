@@ -14,13 +14,15 @@ import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
 
-// A verbatim copy of what src/lib/team.ts held. Deliberately duplicated here
-// rather than imported: seeds run outside the Next build, and this is a one-time
-// migration record — it must not change when the app's source does.
+// The core team (Phase 9). `designation` carries the role stack as " · "-separated
+// segments — the first is the primary title (rendered as the teal label), the rest
+// are specialty pills. `department` is explicit here rather than derived from the
+// title, since several people share the "Co-Founder" title across departments.
 const TEAM = [
   {
     name: "Ayush Kushwaha",
-    designation: "Founder",
+    designation: "Founder · Frontend and Backend Developer · AI and Cloud Expert",
+    department: "Leadership",
     bio: "Protection without surveillance isn't a slogan — it's an engineering constraint we apply to every release.",
     photo: "ayush-kushwaha.jpg",
     links: [
@@ -30,39 +32,44 @@ const TEAM = [
     ],
   },
   {
+    name: "Vedansh Devnani",
+    designation: "Co-Founder · Frontend and Backend Developer · Cyber Security Expert",
+    department: "Engineering",
+    bio: "Reliable systems are quiet systems — the backend should earn trust by never demanding attention.",
+    photo: "vedansh-devnani.png",
+    links: [{ label: "LinkedIn", href: "https://www.linkedin.com/in/vedansh-devnani-7269b6322/" }],
+  },
+  {
     name: "Ayush Maurya",
-    designation: "Co-Founder",
+    designation: "Co-Founder · AI/ML and Data Analytics",
+    department: "Leadership",
     bio: "If we can't explain what a model does with your data in one paragraph, we don't ship it.",
-    photo: null,
+    photo: "ayush-maurya.jpeg",
     links: [{ label: "LinkedIn", href: "https://www.linkedin.com/in/contactayush111/" }],
   },
   {
     name: "Shalu Kumari",
-    designation: "Co-Founder",
+    designation: "Co-Founder · UI/UX Designer · Bug Fixer",
+    department: "Design",
     bio: "Privacy-first should feel premium — good design is how trust becomes visible.",
     photo: "shalu-kumari.png",
     links: [],
   },
   {
+    name: "Aishika",
+    designation: "Co-Founder · UI/UX Designer · Testing · Content",
+    department: "Design",
+    bio: "We grow by being worth recommending — clarity and honesty are the whole marketing strategy.",
+    photo: "aishika-portrait.jpeg",
+    links: [{ label: "LinkedIn", href: "https://www.linkedin.com/in/aishika-0a185725b/" }],
+  },
+  {
     name: "Jujhar Singh",
-    designation: "Marketing Lead",
+    designation: "Marketing Leader · Frontend Developer · Vulnerability Testing · Marketing",
+    department: "Growth",
     bio: "One design language, one identity, one platform — every product we add should feel inevitable.",
     photo: "jujhar-singh.jpeg",
     links: [{ label: "LinkedIn", href: "https://www.linkedin.com/in/jujhar-singh-23137a341/" }],
-  },
-  {
-    name: "Vedansh Devnani",
-    designation: "Engineering Lead",
-    bio: "Reliable systems are quiet systems — the backend should earn trust by never demanding attention.",
-    photo: null,
-    links: [{ label: "LinkedIn", href: "https://www.linkedin.com/in/vedansh-devnani-7269b6322/" }],
-  },
-  {
-    name: "Aishika",
-    designation: "Collaborative Partner",
-    bio: "We grow by being worth recommending — clarity and honesty are the whole marketing strategy.",
-    photo: null,
-    links: [{ label: "LinkedIn", href: "https://www.linkedin.com/in/aishika-0a185725b/" }],
   },
 ];
 
@@ -74,13 +81,6 @@ const DEPARTMENTS = [
   { name: "Growth", slug: "growth", sortOrder: 4 },
 ];
 
-const DEPT_FOR = {
-  Founder: "Leadership",
-  "Co-Founder": "Leadership",
-  "Engineering Lead": "Engineering",
-  "Marketing Lead": "Growth",
-  "Collaborative Partner": null,
-};
 
 // ---- company ----
 await db.companyProfile.upsert({
@@ -132,7 +132,7 @@ for (const [i, m] of TEAM.entries()) {
       name: m.name,
       designation: m.designation,
       bio: m.bio,
-      departmentId: deptId(DEPT_FOR[m.designation] ?? ""),
+      departmentId: deptId(m.department ?? ""),
       links: JSON.stringify(m.links),
       // The portraits that shipped in public/team/ stay where they are: they are
       // build assets, not uploads, and copying them into storage/ would create a

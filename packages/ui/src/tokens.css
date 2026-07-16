@@ -134,16 +134,26 @@
   --accent-deep: var(--color-accent-azure-deep);
 
   /* Surface physics. These are the theme: the tokens above are only its palette. */
-  --glass-blur: 20px;
+  --glass-blur: 22px;
+  /* A top-lit pane: a brighter catch at the very top edge where light would land,
+     easing to a faint darkening at the foot so the glass has a body rather than a
+     flat wash. This is the difference between "tinted rectangle" and "a pane of
+     glass with light on it". */
   --glass-tint: linear-gradient(
     180deg,
-    rgb(255 255 255 / 5.5%) 0%,
-    rgb(255 255 255 / 2%) 100%
+    rgb(255 255 255 / 7%) 0%,
+    rgb(255 255 255 / 2.4%) 30%,
+    rgb(255 255 255 / 1%) 68%,
+    rgb(0 0 0 / 6%) 100%
   );
-  --glass-edge: rgb(255 255 255 / 8%);
+  --glass-edge: rgb(255 255 255 / 9%);
+  /* Elevation is now three-part: a crisp top specular, a tight contact shadow that
+     anchors the pane, and a wide ambient cast that lifts it off the black. Together
+     they read as a real object floating in front of the sky, not a decal on it. */
   --glass-shadow:
-    inset 0 1px 0 0 rgb(255 255 255 / 7%),
-    0 24px 48px -32px rgb(0 0 0 / 90%);
+    inset 0 1px 0 0 rgb(255 255 255 / 9%),
+    0 2px 6px -2px rgb(0 0 0 / 55%),
+    0 30px 60px -34px rgb(0 0 0 / 92%);
   /*
    * The light that bleeds from INSIDE a card — the reference's actual idea. It is
    * built from `--accent`, so a violet surface glows violet and an amber one glows
