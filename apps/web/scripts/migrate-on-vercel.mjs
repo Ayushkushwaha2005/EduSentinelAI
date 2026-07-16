@@ -67,7 +67,9 @@ if (!empty) {
 }
 
 console.log("[vercel-db] empty database — seeding initial data…");
-for (const script of ["seed-catalog.mjs", "seed-org.mjs", "seed-hr.mjs", "seed.mjs"]) {
+// Founder first: the catalogue seed requires a Founder to own the products
+// (R12). Founder self-skips unless FOUNDER_EMAIL / FOUNDER_PASSWORD are set.
+for (const script of ["seed.mjs", "seed-catalog.mjs", "seed-org.mjs", "seed-hr.mjs"]) {
   try {
     execSync(`node prisma/${script}`, { stdio: "inherit", env });
   } catch (e) {
