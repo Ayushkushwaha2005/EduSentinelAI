@@ -50,6 +50,11 @@ export function DateCalendar({ now }: { now: string }) {
   })}, ${today.getDate()} ${today.toLocaleDateString("en-US", {
     month: "long",
   })} ${today.getFullYear()}`;
+  // A compact form for small screens so the top bar never overflows on a phone
+  // or tablet; the full form returns once there is room for it.
+  const shortLabel = `${today.getDate()} ${today.toLocaleDateString("en-US", {
+    month: "short",
+  })} ${today.getFullYear()}`;
 
   const heading = `${new Date(view.year, view.month, 1).toLocaleDateString("en-US", {
     month: "long",
@@ -79,10 +84,14 @@ export function DateCalendar({ now }: { now: string }) {
         }}
         aria-expanded={open}
         aria-label={`Calendar, today is ${label}`}
-        className="flex items-center gap-2 text-[15px] font-medium text-text-primary transition-colors duration-[--duration-fast] hover:text-brand-cyan"
+        className="flex items-center gap-2 whitespace-nowrap text-[15px] font-medium text-text-primary transition-colors duration-[--duration-fast] hover:text-brand-cyan"
       >
-        {label}
-        <CalendarIcon size={18} className="text-text-secondary" />
+        {/* Smallest screens show only the calendar button (tap to open); the
+            compact date returns at sm and the full date at xl, so the top bar
+            never overflows on a phone, a tablet, or a laptop beside the sidebar. */}
+        <span className="hidden sm:inline xl:hidden">{shortLabel}</span>
+        <span className="hidden xl:inline">{label}</span>
+        <CalendarIcon size={18} className="shrink-0 text-text-secondary" />
       </button>
 
       <AnimatePresence>
