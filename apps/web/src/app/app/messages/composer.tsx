@@ -34,12 +34,12 @@ export function Composer({ conversationId }: { conversationId: string }) {
         name="body"
         autoComplete="off"
         placeholder="Write your message ..."
-        className="h-11 flex-1 rounded-full border border-border-subtle bg-surface-raised px-5 text-[15px] outline-none transition-colors duration-[--duration-fast] placeholder:text-text-muted focus:border-brand-cyan"
+        className="h-11 min-w-0 flex-1 rounded-full border border-border-subtle bg-surface-raised px-5 text-[15px] outline-none transition-colors duration-[--duration-fast] placeholder:text-text-muted focus:border-brand-cyan"
       />
       <button
         type="submit"
         disabled={pending}
-        className="h-11 rounded-full bg-brand-cyan px-6 text-sm font-medium text-surface-raised transition-colors duration-[--duration-fast] hover:bg-brand-teal disabled:opacity-60"
+        className="h-11 shrink-0 rounded-full bg-brand-cyan px-4 text-sm font-medium text-surface-raised transition-colors duration-[--duration-fast] hover:bg-brand-teal disabled:opacity-60 sm:px-6"
       >
         {pending ? "Sending…" : "Send"}
       </button>

@@ -46,14 +46,14 @@ export function Topbar({
   unreadNotifications?: number;
 }) {
   return (
-    <header className="flex h-[76px] items-center justify-between gap-4 rounded-card bg-surface-raised px-4 md:px-6">
+    <header className="flex h-[76px] items-center justify-between gap-3 rounded-card bg-surface-raised px-3 sm:gap-4 sm:px-4 md:px-6">
       <div className="flex items-center gap-3">
         <MobileNav items={nav} />
         <DateCalendar now={new Date().toISOString()} />
       </div>
 
-      <div className="flex items-center gap-4">
-        <form action="/app/search" className="relative hidden sm:block">
+      <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
+        <form action="/app/search" className="relative hidden xl:block">
           <label className="sr-only" htmlFor="workspace-search">
             Search the workspace
           </label>
@@ -73,19 +73,19 @@ export function Topbar({
         {/* Messages and notifications ARE the inbox, so they are amber wherever
             you happen to be standing — the reference's rule: colour means a thing,
             it does not decorate a place. */}
-        <span data-accent="amber" className="flex items-center gap-4">
+        <span data-accent="amber" className="flex items-center gap-3 sm:gap-4">
           {showMessages && <MessagePeek items={messages} unread={unread} />}
           <NotificationBell items={notifications} unread={unreadNotifications} />
         </span>
 
         <ThemeToggle />
 
-        <div className="flex items-center gap-3 border-l border-border-subtle pl-4">
+        <div className="flex items-center gap-2 border-l border-border-subtle pl-2 sm:gap-3 sm:pl-4">
           <Link
             href="/app/profile"
             className="flex items-center gap-3 rounded-control transition-colors duration-[--duration-fast] hover:opacity-80"
           >
-            <span className="hidden text-right leading-tight sm:block">
+            <span className="hidden text-right leading-tight xl:block">
               <span className="block text-[15px] font-semibold tracking-[-0.01em]">
                 {name}
               </span>

@@ -35,7 +35,7 @@ export function ThemeScript({ nonce }: { nonce?: string }) {
   const js = `
 (function(){
   try {
-    var t = localStorage.getItem(${JSON.stringify(THEME_KEY)}) || "system";
+    var t = localStorage.getItem(${JSON.stringify(THEME_KEY)}) || "light";
     var dark = t === "dark" || (t === "system" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches);
     if (dark) document.documentElement.setAttribute("data-theme", "dark");
@@ -92,14 +92,14 @@ function subscribeToTheme(onChange: () => void): () => void {
 
 function readTheme(): Theme {
   const stored = localStorage.getItem(THEME_KEY) as Theme | null;
-  return stored && ORDER.includes(stored) ? stored : "system";
+  return stored && ORDER.includes(stored) ? stored : "light";
 }
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
   const theme = useSyncExternalStore(
     subscribeToTheme,
     readTheme,
-    () => "system" as Theme, // the server cannot know; it renders the neutral mark
+    () => "light" as Theme, // default on first visit; the server cannot read localStorage
   );
 
   // Following the OS means following it when it CHANGES — a laptop that flips to

@@ -58,7 +58,9 @@ export default async function MessagesPage({
 
         <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(280px,360px)_1fr]">
           {/* ---- conversation list ---- */}
-          <div className="rounded-card border border-border-subtle p-4">
+          {/* min-w-0 lets these grid columns shrink below their content's intrinsic
+              width instead of forcing the page wider than a phone screen. */}
+          <div className="min-w-0 rounded-card border border-border-subtle p-4">
             <div className="flex items-center justify-between gap-3">
               {canSeeTabs ? (
                 <div className="flex items-center gap-5">
@@ -145,7 +147,7 @@ export default async function MessagesPage({
           </div>
 
           {/* ---- thread ---- */}
-          <div className="flex min-h-[560px] flex-col rounded-card border border-border-subtle">
+          <div className="flex min-h-[560px] min-w-0 flex-col rounded-card border border-border-subtle">
             {isNew ? (
               <NewConversation contacts={contacts} />
             ) : thread ? (

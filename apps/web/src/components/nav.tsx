@@ -127,6 +127,20 @@ export function Nav() {
                   </Link>
                 </motion.div>
               ))}
+              {/* Sign in and the theme toggle live in the desktop-only cluster, so
+                  the mobile menu carries them too — every navigation option and the
+                  Light/Dark switch stays reachable on a phone. */}
+              <Link
+                href="/login"
+                onClick={() => setOpen(false)}
+                className="block rounded-control px-3 py-3 text-[15px] text-text-primary hover:bg-surface-overlay"
+              >
+                Sign in
+              </Link>
+              <div className="mt-2 flex items-center justify-between px-3">
+                <span className="text-[15px] text-text-secondary">Theme</span>
+                <ThemeToggle />
+              </div>
               <Link
                 href="/contact"
                 onClick={() => setOpen(false)}
