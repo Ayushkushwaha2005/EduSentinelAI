@@ -25,42 +25,63 @@ export type MfaState = { error?: string; setup?: MfaSetup; done?: boolean };
  * match. A new secret is minted only when there is nothing pending.
  */
 export async function startMfaSetup(): Promise<MfaState> {
+  // requireViewer() may redirect (throws NEXT_REDIRECT) — keep it outside the
+  // try so that control-flow throw is never swallowed as an error.
   const viewer = await requireViewer();
 
-  const existing = await db.user.findUnique({
-    where: { id: viewer.id },
-    select: { totpSecret: true, mfaEnabled: true },
-  });
-
-  const base32 =
-    existing?.totpSecret && !existing.mfaEnabled
-      ? decryptSecret(existing.totpSecret) // resume the pending enrolment
-      : null;
-
-  const secret = base32 ? Secret.fromBase32(base32) : new Secret({ size: 20 });
-  const totp = new TOTP({
-    issuer: "EduSentinel AI",
-    label: viewer.email,
-    secret,
-    digits: 6,
-    period: 30,
-  });
-
-  if (!base32) {
-    await db.user.update({
+  try {
+    const existing = await db.user.findUnique({
       where: { id: viewer.id },
-      data: { totpSecret: encryptSecret(secret.base32), mfaEnabled: false },
+      select: { totpSecret: true, mfaEnabled: true },
     });
-  }
 
-  const otpauthUri = totp.toString();
-  return {
-    setup: {
-      otpauthUri,
-      qrDataUrl: await QRCode.toDataURL(otpauthUri, { margin: 1, width: 220 }),
-      manualKey: secret.base32,
-    },
-  };
+    // Resume a pending enrolment when one exists. If the stored secret cannot be
+    // decrypted — e.g. it was encrypted under a previous MFA_ENC_KEY — treat it
+    // as absent and mint a fresh one rather than throwing (which would blank the
+    // page). The old, unreadable secret is simply overwritten below.
+    let base32: string | null = null;
+    if (existing?.totpSecret && !existing.mfaEnabled) {
+      try {
+        base32 = decryptSecret(existing.totpSecret);
+      } catch {
+        base32 = null;
+      }
+    }
+
+    const secret = base32 ? Secret.fromBase32(base32) : new Secret({ size: 20 });
+    const totp = new TOTP({
+      issuer: "EduSentinel AI",
+      label: viewer.email,
+      secret,
+      digits: 6,
+      period: 30,
+    });
+
+    if (!base32) {
+      await db.user.update({
+        where: { id: viewer.id },
+        data: { totpSecret: encryptSecret(secret.base32), mfaEnabled: false },
+      });
+    }
+
+    const otpauthUri = totp.toString();
+    return {
+      setup: {
+        otpauthUri,
+        qrDataUrl: await QRCode.toDataURL(otpauthUri, { margin: 1, width: 220 }),
+        manualKey: secret.base32,
+      },
+    };
+  } catch (e) {
+    // Never let this crash the client (an unhandled server-action rejection with
+    // no error boundary unmounts React to a blank page). Surface a message and
+    // log the real cause for the runtime logs.
+    console.error("startMfaSetup failed:", e);
+    return {
+      error:
+        "Couldn't start two-factor setup. Please refresh and try again — if it persists, contact support.",
+    };
+  }
 }
 
 /** Step 2: confirm a live code to switch MFA on. */

@@ -29,6 +29,7 @@ export function MfaPanel({
 }) {
   const router = useRouter();
   const [setup, setSetup] = useState<MfaSetup | null>(null);
+  const [setupError, setSetupError] = useState<string | null>(null);
   const [starting, startTransition] = useTransition();
   const [confirmState, confirmAction, confirming] = useActionState<MfaState, FormData>(
     confirmMfa,
@@ -56,14 +57,20 @@ export function MfaPanel({
   const needsEnrolment = !mfaEnabled && mandatory;
   const requested = useRef(false);
 
-  useEffect(() => {
-    if (!needsEnrolment || setup || requested.current) return;
+  const beginSetup = () => {
+    setSetupError(null);
     requested.current = true;
     startTransition(async () => {
       const res = await startMfaSetup();
       if (res.setup) setSetup(res.setup);
+      else if (res.error) setSetupError(res.error);
     });
-  }, [needsEnrolment, setup, startTransition]);
+  };
+
+  useEffect(() => {
+    if (!needsEnrolment || setup || requested.current) return;
+    beginSetup();
+  }, [needsEnrolment, setup]);
 
   if (mfaEnabled && !disableState.done) {
     return (
@@ -117,8 +124,26 @@ export function MfaPanel({
 
   if (!setup) {
     // Mandatory-MFA accounts get the QR opened for them (effect above); show the
-    // in-flight state rather than a button they would have to discover.
+    // in-flight state rather than a button they would have to discover — unless
+    // starting failed, in which case show why and offer a retry (never a blank).
     if (needsEnrolment) {
+      if (setupError) {
+        return (
+          <div>
+            <p role="alert" className="text-[15px] text-danger">
+              {setupError}
+            </p>
+            <button
+              type="button"
+              disabled={starting}
+              onClick={beginSetup}
+              className={`mt-4 ${buttonClass}`}
+            >
+              {starting ? "Retrying…" : "Try again"}
+            </button>
+          </div>
+        );
+      }
       return (
         <p className="text-[15px] text-text-secondary">
           Preparing your authenticator setup…
@@ -135,16 +160,16 @@ export function MfaPanel({
         <button
           type="button"
           disabled={starting}
-          onClick={() =>
-            startTransition(async () => {
-              const res = await startMfaSetup();
-              if (res.setup) setSetup(res.setup);
-            })
-          }
+          onClick={beginSetup}
           className={`mt-4 ${buttonClass}`}
         >
           {starting ? "Generating…" : "Set up two-factor authentication"}
         </button>
+        {setupError && (
+          <p role="alert" className="mt-3 text-sm text-danger">
+            {setupError}
+          </p>
+        )}
       </div>
     );
   }
