@@ -13,6 +13,7 @@
     "check:trackers": "node scripts/check-trackers.mjs"
   },
   "dependencies": {
+    "@tailwindcss/oxide": "^4.3.2",
     "lightningcss": "^1.32.0"
   }
 }
