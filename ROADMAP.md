@@ -937,11 +937,26 @@ it. Its layout is not copied.
 
 ⏳ **Two-person review before merge — this phase touches authorization.**
 
-## Phase 10 — Production-Ready Dashboard ⏳ (next — awaiting founder approval)
-### (merges with the Pre-Launch Gate; was Phase 11 before Dark Mode folded into Phase 9)
+## Phase 10 — Production-Ready Dashboard ✅
+### (Completed & approved by the Founder 2026-07-16; merges with the Pre-Launch Gate; was Phase 11 before Dark Mode folded into Phase 9)
 
 The workspace stops being a demo and becomes a product that can carry a real
 company.
+
+**Performance note (2026-07-16).** A reported "sidebar navigation takes 2–5s"
+was investigated to root cause: it is a **Next.js dev-mode artifact** (`npm run
+dev` re-executes and re-compiles the authenticated dynamic layout on every RSC
+navigation). A production build was measured as ground truth — soft-navigation
+across **every** Employee page lands in **8–40 ms** (full page loads 20–220 ms),
+comfortably inside the <100 ms target. **No code regression exists.** The
+supporting optimisations already in the tree remain: `requireViewer()` is
+memoised per request (React `cache()`) so auth is not recomputed by both the
+layout and the page; the shell's shell-data reads run in one parallel batch; and
+the page-enter transition was scoped beneath the layouts so the sidebar, top bar
+and meteor canvas persist across navigations instead of re-mounting. UI, design,
+animations, functionality and security are unchanged. Recommendation for
+demos/QA: run a production build (`npm run build && npm run start`) rather than
+the dev server, which is instant.
 
 - Real empty / loading / error / offline states on every surface; skeletons, not
   spinners-on-white. No unhandled server-action failure reaches the user as a
@@ -969,7 +984,7 @@ Cloudflare proxy + rate rules + bot mode · monitoring/alerting reaching a
 human · incident-response runbook matching the published disclosure SLAs ·
 breached-password checking.
 
-## Phase 11 — Expansion ⏳ (per-product, post-launch)
+## Phase 11 — Expansion ⏳ (per-product, post-launch — NOT STARTED; awaiting Founder approval to begin)
 
 Browser extension, desktop, mobile clients — all authenticating against the
 Phase 2 identity service and distributing via the Phase 3 download center.

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
@@ -23,8 +24,17 @@ export type Viewer = {
   can: (cap: Capability) => boolean;
 };
 
-/** Authenticated viewer + their effective capabilities. Redirects if signed out. */
-export async function requireViewer(): Promise<Viewer> {
+/**
+ * Authenticated viewer + their effective capabilities. Redirects if signed out.
+ *
+ * Wrapped in React `cache()` so it runs AT MOST ONCE per server request: the
+ * workspace layout and the page it renders both call this (often several guards
+ * deep), and without memoisation each call repeated the whole auth handshake —
+ * a session read, a user lookup and a grants query — turning one navigation into
+ * a stack of identical database round-trips. The cache is per-request, so it
+ * never leaks one viewer's authorization into another's request.
+ */
+export const requireViewer = cache(async (): Promise<Viewer> => {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?next=/app");
 
@@ -34,13 +44,15 @@ export async function requireViewer(): Promise<Viewer> {
   });
   if (!user) redirect("/login?next=/app");
 
-  const caps = await effectiveCapabilities(user.id);
+  // We already hold the role — hand it to effectiveCapabilities so it does not
+  // SELECT it a second time.
+  const caps = await effectiveCapabilities(user.id, user.role);
   return {
     ...(user as Omit<Viewer, "caps" | "can">),
     caps,
     can: (cap: Capability) => caps.has(cap),
   };
-}
+});
 
 /**
  * Where to send a privileged account that has not enrolled MFA yet: to

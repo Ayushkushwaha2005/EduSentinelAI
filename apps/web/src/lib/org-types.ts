@@ -43,6 +43,23 @@ export const DESIGNATION_SUGGESTIONS = [
   "Collaborative Partner",
 ] as const;
 
+/*
+ * A designation is stored as a " · "-separated stack: the first segment is the
+ * primary title (the teal label), the rest are specialty roles rendered as pills.
+ * Splitting lives here so the company page, home rail and org forms all read it
+ * the same way and can never disagree about which part is the title.
+ */
+export function splitDesignation(designation: string): {
+  title: string;
+  specialties: string[];
+} {
+  const parts = designation
+    .split("·")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return { title: parts[0] ?? designation.trim(), specialties: parts.slice(1) };
+}
+
 export type OrgLink = { label: string; href: string };
 
 /** The form's shape: one "Label|https://…" per line. Pure formatting, no I/O. */

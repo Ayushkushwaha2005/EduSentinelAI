@@ -87,33 +87,36 @@ export default async function AppLayout({
 
   const items = navFor(viewer.caps as Set<string>, viewer.role);
 
-  const me = await db.user.findUnique({
-    where: { id: viewer.id },
-    select: { id: true, avatarName: true, avatarAt: true, lastSeenAt: true },
-  });
-
-  // Presence is now a measured fact (Phase 6.1): the shell stamps lastSeenAt —
-  // throttled, so a navigation is not a write — and the rail below shows only
-  // people actually seen in the last five minutes. It used to hard-code `online`
-  // on the five oldest staff accounts, which was decoration wearing data's clothes.
-  await touchPresence(viewer.id, me?.lastSeenAt ?? null);
-
-  // Presence rail: internal staff only. External collaborators must not be
-  // able to enumerate the team, so they never receive this list.
-  const presence = viewer.can("team.view") ? await onlineStaff(5) : [];
-
-  // Message peek in the top bar. listConversations is participant-scoped, so
-  // this can only ever surface threads the viewer belongs to.
   const canMessage = viewer.can("messages.use");
-  const recent = canMessage ? (await listConversations(viewer.id)).slice(0, 4) : [];
+  const canSeeTeam = viewer.can("team.view");
+
+  // Everything the shell needs is independent, so it is fetched in ONE parallel
+  // batch rather than a chain of awaited round-trips. On a navigation this is the
+  // difference between one wait and five stacked back to back.
+  //   - Presence rail: internal staff only. External collaborators must not be
+  //     able to enumerate the team, so they never receive this list.
+  //   - Message peek: listConversations is participant-scoped, so it can only ever
+  //     surface threads the viewer belongs to.
+  //   - Notifications are per-user by construction — scoped to viewer.id alone.
+  const [me, presence, recentAll, notifications, unreadNotifications] =
+    await Promise.all([
+      db.user.findUnique({
+        where: { id: viewer.id },
+        select: { id: true, avatarName: true, avatarAt: true, lastSeenAt: true },
+      }),
+      canSeeTeam ? onlineStaff(5) : Promise.resolve([]),
+      canMessage ? listConversations(viewer.id) : Promise.resolve([]),
+      recentNotifications(viewer.id, 8),
+      unreadCount(viewer.id),
+    ]);
+
+  const recent = recentAll.slice(0, 4);
   const unread = recent.filter((c) => c.unread).length;
 
-  // Notifications are per-user by construction — these two queries are scoped to
-  // viewer.id and nothing else, so the bell can only ever ring for its owner.
-  const [notifications, unreadNotifications] = await Promise.all([
-    recentNotifications(viewer.id, 8),
-    unreadCount(viewer.id),
-  ]);
+  // Presence is a measured fact (Phase 6.1): the shell stamps lastSeenAt —
+  // throttled, so most navigations return here without touching the database at
+  // all, and the rare write is a single indexed UPDATE.
+  await touchPresence(viewer.id, me?.lastSeenAt ?? null);
 
   // /app is dynamic and carries the strict nonced CSP (src/middleware.ts). The
   // no-flash theme script takes that nonce — Phase 9.4 does not add 'unsafe-inline'

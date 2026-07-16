@@ -14,12 +14,19 @@ export function TeamPhoto({
   className = "",
   sizes,
   compact = false,
+  objectPosition,
 }: {
   name: string;
   photo: string | null;
   className?: string;
   sizes: string;
   compact?: boolean;
+  /**
+   * Per-portrait crop override for sources whose framing differs from the
+   * default (tall portrait, face at top). Still `object-cover` — never a
+   * stretch — this only moves the visible window.
+   */
+  objectPosition?: string;
 }) {
   if (!photo) {
     return (
@@ -45,6 +52,7 @@ export function TeamPhoto({
         fill
         sizes={sizes}
         className="object-cover object-top"
+        style={objectPosition ? { objectPosition } : undefined}
       />
     </div>
   );

@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { Stagger, Item } from "./motion";
 import { TeamPhoto } from "./team-photo";
+import { splitDesignation } from "@/lib/org-types";
 
 /*
  * Reference "Hear it from our users" pattern: heading row with square
@@ -79,14 +80,14 @@ export function CardRail({
                   name={m.name}
                   photo={m.photoUrl}
                   sizes="80px"
-                  className="h-20 w-20 shrink-0 rounded-xl"
+                  className="h-20 w-20 shrink-0 rounded-full ring-1 ring-border-subtle"
                 />
                 <div className="min-w-0">
                   <h3 className="text-[17px] font-semibold tracking-tight">
                     {m.name}
                   </h3>
                   <p className="mt-0.5 text-sm font-medium text-brand-teal">
-                    {m.designation}
+                    {splitDesignation(m.designation).title}
                   </p>
                 </div>
               </div>

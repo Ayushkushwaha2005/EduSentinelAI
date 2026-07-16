@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LogoWordmark } from "./logo";
+import { FooterFaq } from "./footer-faq";
 import { getCompany } from "@/lib/company";
 
 const columns = [
@@ -86,6 +87,11 @@ export async function Footer() {
             ))}
           </ul>
         ))}
+        {/* FAQ — an added footer column spanning the full width beneath the link
+            columns. Product-focused, inline accordion; no page, section or modal. */}
+        <div className="md:col-span-4">
+          <FooterFaq />
+        </div>
       </div>
       <div className="mx-auto max-w-[1360px] px-6 pb-10 text-sm text-text-muted md:px-10">
         © {new Date().getFullYear()} {company.legalName ?? company.name}. All rights
