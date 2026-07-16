@@ -11,5 +11,8 @@
     "lint": "npm run lint --workspace apps/web",
     "typecheck": "npm run typecheck --workspace apps/web",
     "check:trackers": "node scripts/check-trackers.mjs"
+  },
+  "dependencies": {
+    "lightningcss": "^1.32.0"
   }
 }
