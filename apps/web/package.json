@@ -15,7 +15,7 @@
     "db:seed:catalog": "node --env-file=.env prisma/seed-catalog.mjs",
     "db:seed:org": "node --env-file=.env prisma/seed-org.mjs",
     "db:seed:hr": "node --env-file=.env prisma/seed-hr.mjs",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && node scripts/migrate-on-vercel.mjs",
     "test:security": "tsx --env-file=.env scripts/test-phase21.mts",
     "audit:verify": "tsx --env-file=.env scripts/verify-audit.mts",
     "test:pipeline": "tsx --env-file=.env scripts/test-phase3.mts",
