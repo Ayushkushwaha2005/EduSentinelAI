@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "db:push": "prisma db push",
+    "db:deploy": "prisma migrate deploy",
     "db:seed": "node --env-file=.env prisma/seed.mjs",
     "db:seed:workspace": "node --env-file=.env prisma/seed-workspace.mjs",
     "db:seed:catalog": "node --env-file=.env prisma/seed-catalog.mjs",

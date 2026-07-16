@@ -26,3 +26,4 @@ build/
 *.tsbuildinfo
 storage/
 apps/web/storage/
+.env*
