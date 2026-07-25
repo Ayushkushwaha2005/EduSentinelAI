@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { db } from "./db";
 import { appUrl } from "./mailer";
+import { mailFrom } from "./org-email";
 
 /*
  * Transactional email (Phase 7.2).
@@ -33,7 +34,12 @@ export type MailKind =
   | "verify-email"
   | "reset-password"
   | "alert"
-  | "notice";
+  | "notice"
+  /* Phase 10, Task 11: public submissions that must actually reach a person. */
+  | "contact"
+  | "security-report"
+  | "collaboration"
+  | "abuse-report";
 
 /* Rate limit: per-recipient, in-process. Not a substitute for the provider's own
  * limits — it exists so a loop in our code cannot mail-bomb someone, which is a
@@ -69,6 +75,20 @@ export async function send(
   subject: string,
   body: string,
   kind: MailKind,
+  /*
+   * Optional Reply-To (Phase 10, Task 11).
+   *
+   * Public form submissions are delivered FROM our own no-reply address — that
+   * is what the sending domain is verified for, and forging the visitor's
+   * address as the sender is what SPF and DMARC exist to reject. Reply-To is the
+   * correct header for "the human who wrote this", and it means hitting reply in
+   * the shared inbox actually reaches them.
+   *
+   * It is passed as JSON to the provider's API, not concatenated into a raw SMTP
+   * header, so newline-based header injection is not reachable here. It is
+   * nonetheless validated at every call site (zod `.email()`) before arriving.
+   */
+  replyTo?: string,
 ): Promise<SendResult> {
   const recipient = to.trim().toLowerCase();
 
@@ -79,9 +99,36 @@ export async function send(
 
   const apiKey = process.env.RESEND_API_KEY;
 
-  // No provider configured (local dev): write the message to a real outbox file so
-  // the whole flow — including the link in it — is testable without sending mail.
   if (!apiKey) {
+    /*
+     * PRODUCTION WITHOUT A MAIL PROVIDER IS A FAILURE, AND MUST SAY SO
+     * (Phase 10, Task 11).
+     *
+     * This used to fall through to the dev outbox unconditionally and return
+     * `{ ok: true }`. In production that meant: the Founder invites an employee,
+     * the UI says the invitation was sent, MailLog records a cheerful
+     * "DEV_OUTBOX", and the invitation is written to a file on an ephemeral
+     * serverless filesystem that nobody will ever read. Nothing anywhere reports
+     * a problem. The employee simply never hears from us, and the only person
+     * who could notice has been told it worked.
+     *
+     * A missing provider in production is now a hard, recorded failure. The
+     * outbox remains exactly what it always was — a local development
+     * convenience — and nothing else.
+     */
+    if (process.env.NODE_ENV === "production") {
+      const error =
+        "No mail provider configured: RESEND_API_KEY is not set in this environment.";
+      await record(recipient, subject, kind, "FAILED", error);
+      return {
+        ok: false,
+        status: "FAILED",
+        error: "Email could not be sent — the mail provider is not configured.",
+      };
+    }
+
+    // Local dev: write the message to a real outbox file so the whole flow —
+    // including the link in it — is testable without sending mail.
     try {
       await mkdir(OUTBOX, { recursive: true });
       const name = `${Date.now()}-${kind}-${recipient.replace(/[^a-z0-9]+/g, "-")}.txt`;
@@ -106,10 +153,13 @@ export async function send(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: process.env.MAIL_FROM ?? "EduSentinel AI <no-reply@edusentinel.ai>",
+        // The From: address comes from lib/org-email.ts — one place, not a
+        // default buried in a `??` in two different modules (Task 12).
+        from: mailFrom(),
         to: recipient,
         subject,
         text: body, // plain text only — see the note at the top of this file
+        ...(replyTo ? { reply_to: replyTo } : {}),
       }),
     });
 
@@ -149,6 +199,128 @@ export async function failedMail(take = 10) {
 }
 
 /* ---------- templates ---------- */
+
+/*
+ * Public-submission notifications (Phase 10, Task 11).
+ *
+ * These close a real gap rather than adding a feature. Collaboration requests and
+ * abuse reports were written to the database and the audit log and then TOLD
+ * NOBODY — there was no send() call anywhere in either action. A report of abuse
+ * sat in a table until somebody happened to open the right page. The contact page
+ * had no form at all; it listed two mailto: links and a promise that a form was
+ * coming in a future release.
+ *
+ * The bodies below are plain text, carry no links back through a redirector, and
+ * embed no images — the same rules as every other message this platform sends.
+ * The submitter's own words are included because that IS the message; they are
+ * sanitised on the way in (lib/sanitize.ts) at every call site.
+ */
+
+function submissionBody(
+  intro: string,
+  fields: [string, string | null | undefined][],
+  message: string,
+): string {
+  return [
+    intro,
+    "",
+    ...fields.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`),
+    "",
+    "---",
+    message,
+    "---",
+    "",
+    "Reply directly to this email to answer the sender.",
+  ].join("\n");
+}
+
+export function contactEmail(opts: {
+  name: string;
+  email: string;
+  org?: string | null;
+  subject: string;
+  message: string;
+}): { subject: string; body: string } {
+  return {
+    subject: `[Contact] ${opts.subject}`,
+    body: submissionBody(
+      "A message was submitted through the contact form on edusentinel.ai.",
+      [
+        ["From", opts.name],
+        ["Email", opts.email],
+        ["Organisation", opts.org],
+      ],
+      opts.message,
+    ),
+  };
+}
+
+export function securityReportEmail(opts: {
+  reporter?: string | null;
+  email?: string | null;
+  affected: string;
+  severity: string;
+  message: string;
+}): { subject: string; body: string } {
+  return {
+    // The severity is in the subject so triage can happen in the inbox list,
+    // before anyone opens anything.
+    subject: `[Security report — ${opts.severity}] ${opts.affected}`,
+    body: submissionBody(
+      "A vulnerability was reported through the responsible-disclosure form on\n" +
+        "edusentinel.ai. The 90-day coordinated window starts from this message.",
+      [
+        ["Reporter", opts.reporter || "anonymous"],
+        ["Email", opts.email || "not provided — no reply is possible"],
+        ["Affected", opts.affected],
+        ["Reported severity", opts.severity],
+      ],
+      opts.message,
+    ),
+  };
+}
+
+export function collaborationEmail(opts: {
+  name: string;
+  email: string;
+  org?: string | null;
+  kind: string;
+  message: string;
+}): { subject: string; body: string } {
+  return {
+    subject: `[Collaboration — ${opts.kind}] ${opts.name}`,
+    body: submissionBody(
+      "A collaboration request was submitted on edusentinel.ai.",
+      [
+        ["From", opts.name],
+        ["Email", opts.email],
+        ["Organisation", opts.org],
+        ["Type", opts.kind],
+      ],
+      opts.message,
+    ),
+  };
+}
+
+export function abuseReportEmail(opts: {
+  targetType: string;
+  targetRef?: string | null;
+  reporter?: string | null;
+  reason: string;
+}): { subject: string; body: string } {
+  return {
+    subject: `[Abuse report] ${opts.targetType}`,
+    body: submissionBody(
+      "An abuse report was submitted on edusentinel.ai.",
+      [
+        ["Target type", opts.targetType],
+        ["Reference", opts.targetRef],
+        ["Reporter", opts.reporter || "anonymous"],
+      ],
+      opts.reason,
+    ),
+  };
+}
 
 export function invitationEmail(opts: {
   token: string;

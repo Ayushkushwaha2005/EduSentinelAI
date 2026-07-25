@@ -187,7 +187,7 @@ export function PersonRow({
                   name="confirm"
                   required
                   placeholder={`Type ${user.email} to confirm`}
-                  className="h-9 min-w-[240px] flex-1 rounded-control border border-border-subtle bg-surface-raised px-3 text-sm outline-none focus:border-danger"
+                  className="h-9 w-full min-w-0 flex-1 rounded-control sm:w-auto sm:min-w-[240px] border border-border-subtle bg-surface-raised px-3 text-sm outline-none focus:border-danger"
                 />
                 <label className="sr-only" htmlFor={`off-reason-${user.id}`}>
                   Reason

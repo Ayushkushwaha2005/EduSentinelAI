@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ORG_EMAIL } from "@/lib/org-email";
 
 export const metadata: Metadata = {
   title: "Community Guidelines",
@@ -88,9 +89,9 @@ export default function CommunityGuidelinesPage() {
       <p>
         Seen something wrong? Use the{" "}
         <Link href="/collaborate#report">abuse report form</Link>, or email{" "}
-        <a href="mailto:hello@edusentinel.ai">hello@edusentinel.ai</a>. For
+        <a href={`mailto:${ORG_EMAIL.hello}`}>{ORG_EMAIL.hello}</a>. For
         security vulnerabilities, use{" "}
-        <a href="mailto:security@edusentinel.ai">security@edusentinel.ai</a>{" "}
+        <a href={`mailto:${ORG_EMAIL.security}`}>{ORG_EMAIL.security}</a>{" "}
         and see our{" "}
         <Link href="/legal/security">Security &amp; Disclosure policy</Link>.
       </p>

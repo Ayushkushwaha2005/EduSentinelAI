@@ -5,6 +5,7 @@ import { CardRail } from "@/components/card-rail";
 import { publicRoster } from "@/lib/org";
 import { Button } from "@/components/button";
 import { LogoMark } from "@/components/logo";
+import { SentinelAgent } from "@/components/sentinel-agent";
 
 const featureQuad = [
   {
@@ -73,8 +74,10 @@ export default async function Home() {
 
       {/* products preview — full showcase lives at /products */}
       {/* Violet: the same colour the catalogue carries everywhere else. */}
+      {/* ambient-glow (Task 6): a centred headline, one paragraph and a button in
+          a very tall band — one of the emptiest stretches on the site. */}
       <section
-        className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32"
+        className="ambient-glow mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32"
         data-accent="violet"
       >
         <Reveal className="flex flex-col items-center text-center">
@@ -90,6 +93,85 @@ export default async function Home() {
             View Products
           </Button>
         </Reveal>
+      </section>
+
+      {/*
+       * ---- The Sentinel Agent (Phase 10, Task 4) ----
+       *
+       * PLACEMENT, and why here. The brief left the position to judgement, with
+       * the instruction to pick the most premium one. This is it, for three
+       * reasons that all point the same way:
+       *
+       *   - It is BELOW THE FOLD. The agent is a 600 KB WebGL scene; putting it
+       *     in the hero would have made it the Largest Contentful Paint element
+       *     on the site's most important page and undone Task 8 in one move.
+       *     Here it is fetched on approach and never blocks first paint.
+       *
+       *   - It has NARRATIVE JUSTIFICATION. The section immediately above already
+       *     promises "the upcoming SentinelAI Agent". The character arrives as the
+       *     payoff to a sentence the page was already making, instead of as a
+       *     robot bolted onto a security site.
+       *
+       *   - It EARNS ITS SPACE. This was one of the emptiest stretches of the
+       *     page — a straight run of centred text blocks — so the agent does
+       *     double duty as the Task 6 answer to excessive whitespace here.
+       *
+       * Azure: the agent is live, active workflow, not catalogue.
+       */}
+      <section
+        className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32"
+        data-accent="azure"
+      >
+        <div className="grid items-center gap-10 rounded-card border border-border-subtle bg-surface-raised px-6 py-12 md:px-12 lg:grid-cols-[1fr_1.05fr] lg:gap-6 lg:py-6 lg:pr-6">
+          <Reveal>
+            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-brand-teal">
+              Meet the assistant
+            </p>
+            <h2 className="mt-4 text-balance text-4xl font-medium tracking-[-0.03em] md:text-5xl">
+              Sentinel Agent
+            </h2>
+            <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-text-secondary">
+              The official EduSentinel AI assistant. It reads a page the way an
+              analyst would — checking who really sent something, what a link
+              actually points at, and whether a download is signed by someone you
+              have reason to trust — and it does that work on your device.
+            </p>
+
+            <ul className="mt-8 flex flex-col gap-3.5">
+              {[
+                "Runs locally — pages you read are not sent anywhere to be scored.",
+                "Explains its reasoning instead of returning a verdict you cannot check.",
+                "Verifies release signatures against the published key.",
+              ].map((line) => (
+                <li key={line} className="flex items-start gap-3">
+                  <svg
+                    width="19"
+                    height="19"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                    className="mt-0.5 shrink-0 text-brand-cyan"
+                  >
+                    <path d="M9 12l2 2 4-5m-3-6l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z" />
+                  </svg>
+                  <span className="leading-relaxed text-text-secondary">{line}</span>
+                </li>
+              ))}
+            </ul>
+
+            <Button href="/products" size="lg" className="mt-9">
+              Explore the ecosystem
+            </Button>
+          </Reveal>
+
+          {/* The scene mounts itself only when it is wanted — see
+              components/sentinel-agent.tsx for the three gates. */}
+          <SentinelAgent />
+        </div>
       </section>
 
       {/* big split heading + hairline-divided showcase */}
@@ -134,8 +216,9 @@ export default async function Home() {
         )}
       </section>
 
-      {/* brand statement band */}
-      <section className="border-y border-border-subtle bg-surface-raised/40">
+      {/* brand statement band — ambient-grid (Task 6): the widest empty area on
+          the page, and the one place a measured plane suits the copy. */}
+      <section className="ambient-grid border-y border-border-subtle bg-surface-raised/40">
         <div className="mx-auto max-w-[1360px] px-6 py-24 md:px-10 md:py-28">
           <Reveal className="flex flex-col items-center text-center">
             <h2 className="max-w-3xl text-balance text-3xl font-medium leading-[1.15] tracking-[-0.03em] md:text-5xl">
@@ -156,8 +239,9 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* centered CTA */}
-      <section className="mx-auto max-w-[1360px] px-6 pb-32 pt-8 md:px-10">
+      {/* centered CTA — ambient-horizon (Task 6): a headline and a button alone
+          above the footer, the last and emptiest band on the page. */}
+      <section className="ambient-horizon mx-auto max-w-[1360px] px-6 pb-32 pt-8 md:px-10">
         <Reveal className="flex flex-col items-center text-center">
           <h2 className="max-w-2xl text-balance text-4xl font-medium tracking-[-0.03em] md:text-6xl">
             Build something you’re proud of

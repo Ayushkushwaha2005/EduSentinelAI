@@ -12,7 +12,9 @@ export default async function AuthLayout({
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center px-6 py-16">
+    /* px-6 on the narrow end, but the sign-in screen's orbit panel wants the full
+       width on a large display, so the horizontal padding relaxes at lg (Task 1). */
+    <div className="relative flex min-h-screen flex-col items-center justify-center px-6 py-12 md:py-16 lg:px-10">
       <ThemeScript nonce={nonce} />
       <MeteorField />
 

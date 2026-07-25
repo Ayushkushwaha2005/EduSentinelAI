@@ -113,6 +113,8 @@ export function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     // Everything except static assets and framework internals.
-    "/((?!_next/static|_next/image|favicon.ico|icon.png|icon.svg|logo.svg|logo.png|og.png|team/|showcase/|.well-known/).*)",
+    // icon.svg is gone (it was a 578 KB favicon — Phase 10, Task 8); logo-mark.png
+    // and apple-icon.png replaced it and the oversized nav asset.
+    "/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|logo-mark.png|logo.svg|logo.png|og.png|team/|showcase/|.well-known/).*)",
   ],
 };

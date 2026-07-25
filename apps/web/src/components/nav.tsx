@@ -48,7 +48,9 @@ export function Nav() {
         className="mx-auto flex h-20 max-w-[1360px] items-center px-6 md:px-10"
       >
         <Link href="/" aria-label="EduSentinel AI home" className="shrink-0">
-          <LogoWordmark />
+          {/* Above the fold on every marketing page, so it is the one mark that
+              asks for priority — and it carries the Task 2 idle. */}
+          <LogoWordmark priority />
         </Link>
 
         {/* center links, reference-style */}

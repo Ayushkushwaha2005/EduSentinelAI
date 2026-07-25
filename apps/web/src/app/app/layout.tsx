@@ -1,17 +1,17 @@
+import { Suspense } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
 import { requireViewer } from "@/lib/guard";
 import { isAdminRole } from "@/lib/roles";
-import { Sidebar } from "@/components/dashboard/sidebar";
-import { Topbar } from "@/components/dashboard/topbar";
+import {
+  SidebarSkeleton,
+  SidebarWithData,
+  TopbarSkeleton,
+  TopbarWithData,
+} from "@/components/dashboard/shell-chrome";
 import { navFor } from "@/components/dashboard/nav-config";
-import { listConversations } from "@/lib/messages";
-import { avatarUrlFor, onlineStaff, touchPresence } from "@/lib/profile";
-import { recentNotifications, unreadCount } from "@/lib/notifications";
 import { MeteorField } from "@/components/meteors";
 import { ThemeScript } from "@/components/theme";
-import type { Role } from "@/lib/roles";
 
 export const metadata = { robots: { index: false } };
 
@@ -87,36 +87,18 @@ export default async function AppLayout({
 
   const items = navFor(viewer.caps as Set<string>, viewer.role);
 
-  const canMessage = viewer.can("messages.use");
-  const canSeeTeam = viewer.can("team.view");
-
-  // Everything the shell needs is independent, so it is fetched in ONE parallel
-  // batch rather than a chain of awaited round-trips. On a navigation this is the
-  // difference between one wait and five stacked back to back.
-  //   - Presence rail: internal staff only. External collaborators must not be
-  //     able to enumerate the team, so they never receive this list.
-  //   - Message peek: listConversations is participant-scoped, so it can only ever
-  //     surface threads the viewer belongs to.
-  //   - Notifications are per-user by construction — scoped to viewer.id alone.
-  const [me, presence, recentAll, notifications, unreadNotifications] =
-    await Promise.all([
-      db.user.findUnique({
-        where: { id: viewer.id },
-        select: { id: true, avatarName: true, avatarAt: true, lastSeenAt: true },
-      }),
-      canSeeTeam ? onlineStaff(5) : Promise.resolve([]),
-      canMessage ? listConversations(viewer.id) : Promise.resolve([]),
-      recentNotifications(viewer.id, 8),
-      unreadCount(viewer.id),
-    ]);
-
-  const recent = recentAll.slice(0, 4);
-  const unread = recent.filter((c) => c.unread).length;
-
-  // Presence is a measured fact (Phase 6.1): the shell stamps lastSeenAt —
-  // throttled, so most navigations return here without touching the database at
-  // all, and the rare write is a single indexed UPDATE.
-  await touchPresence(viewer.id, me?.lastSeenAt ?? null);
+  /*
+   * The chrome's data is NO LONGER AWAITED HERE (Phase 10, Tasks 8 + 9).
+   *
+   * A layout renders above the route's own Suspense boundary, so five awaited
+   * queries in this function blocked `loading.tsx` from ever showing — the whole
+   * workspace, chrome and content alike, waited on the slowest of them. That is
+   * the unexplained pause after a 2FA code is accepted.
+   *
+   * The queries now live in components/dashboard/shell-chrome.tsx and stream into
+   * the Suspense boundaries below. Authorization did not move: requireViewer()
+   * and the MFA gate above still run before anything renders at all.
+   */
 
   // /app is dynamic and carries the strict nonced CSP (src/middleware.ts). The
   // no-flash theme script takes that nonce — Phase 9.4 does not add 'unsafe-inline'
@@ -127,47 +109,32 @@ export default async function AppLayout({
     <div className="relative min-h-screen bg-surface-base p-3 md:p-4">
       <ThemeScript nonce={nonce} />
       <MeteorField />
+      {/* Task 13: the workspace sidebar is a dozen links deep, so skipping it
+          matters more here than anywhere on the marketing site. */}
+      <a href="#workspace-content" className="skip-link">
+        Skip to content
+      </a>
 
       {/* The workspace sits above the sky, never in it. */}
       <div className="relative z-10 flex gap-4">
         {/* Navigation is the workflow, always — it must not change colour under
             you as you move between regions. Only the CONTENT takes the accent. */}
         <div data-accent="azure" className="contents">
-          <Sidebar items={items} presence={presence} />
+          <Suspense fallback={<SidebarSkeleton />}>
+            <SidebarWithData viewer={viewer} items={items} />
+          </Suspense>
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <Topbar
-            name={viewer.name}
-            role={viewer.role as Role}
-            avatarUrl={me ? avatarUrlFor(me) : null}
-            nav={items}
-            unreadNotifications={unreadNotifications}
-            notifications={notifications.map((n) => ({
-              id: n.id,
-              title: n.title,
-              body: n.body,
-              href: n.href,
-              unread: !n.readAt,
-              time: n.createdAt.toLocaleTimeString("en-GB", {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-            }))}
-            showMessages={canMessage}
-            unread={unread}
-            messages={recent.map((c) => ({
-              id: c.id,
-              title: c.title,
-              preview: c.preview,
-              time: c.lastAt.toLocaleTimeString("en-GB", {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-              unread: c.unread,
-            }))}
-          />
+          <Suspense fallback={<TopbarSkeleton />}>
+            <TopbarWithData viewer={viewer} items={items} />
+          </Suspense>
           {/* The region decides its own light (see accentFor above). */}
-          <main className="min-w-0" data-accent={accentFor(pathname)}>
+          <main
+            id="workspace-content"
+            tabIndex={-1}
+            className="min-w-0"
+            data-accent={accentFor(pathname)}
+          >
             {children}
           </main>
         </div>

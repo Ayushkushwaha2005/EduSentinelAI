@@ -3,6 +3,7 @@ import { Reveal } from "@/components/motion";
 import { Button } from "@/components/button";
 import { PricingHero } from "@/components/pricing-hero";
 import { PricingCards } from "@/components/pricing-cards";
+import { ORG_EMAIL } from "@/lib/org-email";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -28,8 +29,13 @@ export default function PricingPage() {
         <Reveal className="mt-16 text-center">
           <p className="text-sm text-text-muted">
             Indicative early-access pricing — final plans will be announced
-            with our first product launch. Enterprise questions:
-            hello@edusentinel.ai
+            with our first product launch. Enterprise questions:{" "}
+            <a
+              href={`mailto:${ORG_EMAIL.hello}`}
+              className="text-brand-teal underline underline-offset-4"
+            >
+              {ORG_EMAIL.hello}
+            </a>
           </p>
         </Reveal>
 

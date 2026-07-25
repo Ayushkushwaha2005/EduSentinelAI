@@ -61,10 +61,10 @@ export function Sidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="hidden w-[264px] shrink-0 flex-col rounded-card bg-surface-raised md:flex">
+    <aside className="hidden w-[264px] shrink-0 flex-col rounded-panel bg-surface-raised md:flex">
       <div className="px-7 pt-7">
         <Link href="/app" aria-label="EduSentinel AI">
-          <LogoWordmark />
+          <LogoWordmark priority />
         </Link>
       </div>
 

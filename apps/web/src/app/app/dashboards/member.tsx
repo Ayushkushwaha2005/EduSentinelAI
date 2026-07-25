@@ -4,7 +4,7 @@ import type { Viewer } from "@/lib/guard";
 import { greeting } from "@/lib/dashboard";
 import { ROLE_LABELS } from "@/lib/roles";
 import { BoxIcon, ShieldIcon } from "@/components/dashboard/icons";
-import { Breadcrumb, Panel, StatCard } from "@/components/dashboard/widgets";
+import { Breadcrumb, PageHeader, Panel, StatCard } from "@/components/dashboard/widgets";
 
 /*
  * Default member dashboard (role USER) — the account everyone gets on signup.
@@ -26,14 +26,10 @@ export default async function MemberDashboard({ viewer }: { viewer: Viewer }) {
     <div className="flex flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards" }]} />
 
-      <div>
-        <h1 className="text-[26px] font-semibold tracking-[-0.02em]">
-          {greeting(viewer)}
-        </h1>
-        <p className="mt-1 text-[15px] text-text-secondary">
-          Your EduSentinel AI account — one identity for the whole ecosystem.
-        </p>
-      </div>
+      <PageHeader
+        title={greeting(viewer)}
+        subtitle="Your EduSentinel AI account — one identity for the whole ecosystem."
+      />
 
       {/* No avatar stacks here: these cards used to render a stack of the viewer,
           alone — decoration, not information. */}

@@ -46,7 +46,7 @@ export function Topbar({
   unreadNotifications?: number;
 }) {
   return (
-    <header className="flex h-[76px] items-center justify-between gap-3 rounded-card bg-surface-raised px-3 sm:gap-4 sm:px-4 md:px-6">
+    <header className="flex h-[76px] items-center justify-between gap-3 rounded-panel bg-surface-raised px-3 sm:gap-4 sm:px-4 md:px-6">
       <div className="flex items-center gap-3">
         <MobileNav items={nav} />
         <DateCalendar now={new Date().toISOString()} />
