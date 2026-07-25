@@ -66,8 +66,20 @@ export function CardRail({
       </div>
 
       <Stagger className="mt-14">
+        {/*
+         * a11y: a horizontally scrollable region must be reachable by keyboard
+         * (axe `scrollable-region-focusable`, serious). Without tabIndex a
+         * keyboard user could tab to the arrow buttons but never scroll the rail
+         * itself, and a screen-reader user had no way to know it scrolled.
+         *
+         * tabIndex={0} makes it focusable so arrow keys scroll it; the role and
+         * label tell assistive technology what the region is.
+         */}
         <div
           ref={rail}
+          tabIndex={0}
+          role="group"
+          aria-label="Team members, scrollable"
           className="flex snap-x gap-5 overflow-x-auto pb-2 [scrollbar-width:none]"
         >
           {members.map((m) => (

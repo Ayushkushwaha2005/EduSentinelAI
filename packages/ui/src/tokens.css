@@ -31,6 +31,43 @@
   --color-danger: #b91c1c;
 
   /*
+   * AA-SAFE TEXT VARIANTS (Phase 11).
+   *
+   * These are NEW tokens; nothing above them moved, so light mode is still
+   * byte-frozen. They exist because an axe-core audit of every page in both
+   * themes found one violation class left standing, on 40 page/theme
+   * combinations:
+   *
+   *   --color-text-muted   #93969e on paper ≈ 2.9:1
+   *   --color-brand-cyan   #0891b2 on paper ≈ 3.5:1
+   *   --color-brand-teal   #0d9488 on paper ≈ 3.6:1
+   *
+   * All three are below the 4.5:1 AA threshold for normal-size text, and all
+   * three were being used for real content — product status labels, release
+   * dates, empty-state copy, and inline links. The brand ones also break this
+   * project's OWN standing rule, which is that cyan/teal is for accents and
+   * large text only (CLAUDE.md).
+   *
+   * The originals are untouched and remain correct for what they were meant
+   * for: large type, icons, borders, decorative de-emphasis. globals.css maps
+   * only the *text* utilities onto these darker variants, so a heading or an
+   * icon keeps the brand colour exactly as before while body copy becomes
+   * readable. Dark mode overrides them again with its own values.
+   */
+  /*
+   * Computed, not guessed. Muted text appears on three different surfaces, and
+   * the darkest of them (surface-overlay, used by the pill chips) is the binding
+   * constraint — a first attempt at #6e727a cleared the paper base but came in
+   * at 4.08:1 on overlay and still failed. Measured contrast for this value:
+   *   surface-base #f5f4f1 → 4.93:1
+   *   surface-overlay #ececea → 4.59:1   ← the tight one
+   *   surface-raised #ffffff → 5.43:1
+   */
+  --color-text-muted-aa: #666a72;
+  --color-brand-cyan-aa: #0e7490; /* ≈ 4.9:1 */
+  --color-brand-teal-aa: #0f766e; /* ≈ 5.2:1 */
+
+  /*
    * Type (Phase 10, Task 5) — three faces, each with a job.
    *
    * The site ran on Inter alone, which is a fine text face and a characterless
@@ -134,6 +171,17 @@
   --color-success: #34d399;
   --color-warning: #fbbf24;
   --color-danger: #fb7185;
+
+  /*
+   * The AA-safe text variants, dark. On black the brand colours are already
+   * bright enough, so these mostly match — but muted text is lifted, because a
+   * glass panel is lighter than the base and #6f7787 loses contrast on top of
+   * one. Same audit, same 4.5:1 requirement, measured against the panels rather
+   * than the backdrop.
+   */
+  --color-text-muted-aa: #949cad;
+  --color-brand-cyan-aa: #2ee6ff;
+  --color-brand-teal-aa: #35e3c2;
 
   /*
    * ---- The accent triad (from the reference) ----

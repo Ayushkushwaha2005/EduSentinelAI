@@ -100,6 +100,41 @@ Products are **database records, not code**. The Founder adds/edits/publishes/ar
 - **Reduced motion = absent, not slower.** The meteor canvas is not mounted; `--tilt-max` is `0deg`. Tilt goes on glanceable cards, never on tables.
 - Theme is persisted in **localStorage, not the database** — it belongs to the device, not the account.
 
+## Production polish (Phase 10–11)
+
+A frontend-only release: authentication, authorization, permissions, the role
+system, the database schema, Prisma and every API route are byte-identical to
+the `pre-polish-baseline` tag. Verify with `git diff pre-polish-baseline -- <path>`
+before assuming otherwise.
+
+- **The brand mark is a raster, not a vector.** `public/logo.svg` is a bitmap
+  auto-traced into 886 contours — it cannot be hand-redrawn without shipping a
+  subtly wrong logo. UI surfaces use `public/logo-mark.png` through the Next
+  image optimizer; `logo.svg` survives only as the print/large-format master.
+  Regenerate derived assets with `npm run build:brand`, which **trims to the
+  solid artwork and refits** — resizing the tile naively ships the mark 19%
+  small, because the tile carries baked-in margin the SVG does not. `npm run
+  check:logo` fails the build if size, position, aspect or hue drift.
+- **The logo intro samples the real artwork's pixels**; it does not draw an
+  approximation. Canvas work is driven by refs, not state — no setState in an
+  effect, no re-render while animating.
+- **three.js is triple-gated** (`components/sentinel-agent.tsx`): dynamic import,
+  IntersectionObserver, and capability checks. It must never enter an initial
+  bundle. The starfield is gated the same way — it is dark-mode-only, so light
+  visitors must not download it.
+- **Anything that needs a per-request form token is `force-dynamic`.** A static
+  page bakes the token at build time and every submission fails after an hour.
+- **Mail fails loudly in production.** With no `RESEND_API_KEY`, `lib/mail.ts`
+  records a `FAILED` MailLog row instead of writing to the dev outbox and
+  returning success. Operational setup: `docs/email-delivery-setup.md`.
+- **Every organisation email address comes from `lib/org-email.ts`.**
+  `npm run check:emails` fails on a literal `@edusentinel.ai` anywhere in `src/`.
+- **Contrast**: `text-text-muted`, `text-brand-cyan` and `text-brand-teal` are
+  remapped in globals.css onto AA-safe `*-aa` variants **for `color` only**.
+  Borders, fills and large display type keep the original brand values. Do not
+  "fix" this by editing the frozen light tokens.
+- New checks, all in CI: `check:theme`, `check:emails`, `check:logo`.
+
 ## Rules
 
 - All colors/type/spacing/motion come from `packages/ui/src/tokens.css`; never hard-code hex values or durations in app code. Brand cyan/teal is for accents and large text only (fails AA at body size on dark).
