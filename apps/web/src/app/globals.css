@@ -192,6 +192,39 @@ pre {
 }
 
 /*
+ * CONTRAST: map the TEXT utilities onto the AA-safe variants.
+ *
+ * An axe-core pass over every route in both themes left exactly one violation
+ * class standing — `color-contrast`, on 40 page/theme combinations. Three
+ * colours were responsible, all used for real content at body size: muted text
+ * (2.9:1), brand cyan (3.5:1) and brand teal (3.6:1), against a 4.5:1
+ * requirement.
+ *
+ * The tokens themselves are NOT changed — light mode is byte-frozen, and those
+ * values are still right for what they were designed for. Only `color` is
+ * remapped, so:
+ *   - `border-brand-cyan/20`, `bg-brand-cyan/10`, icon fills and every large
+ *     display use keep the original brand colour exactly;
+ *   - text — which is the only thing the contrast rule is about — gets the
+ *     darker variant.
+ *
+ * This is the same technique the dark theme already uses to reinterpret the
+ * brand utilities as accent slots, and the dark block below still wins where it
+ * applies because it comes later in the cascade.
+ */
+.text-text-muted {
+  color: var(--color-text-muted-aa);
+}
+
+.text-brand-cyan {
+  color: var(--color-brand-cyan-aa);
+}
+
+.text-brand-teal {
+  color: var(--color-brand-teal-aa);
+}
+
+/*
  * The skip link. First tabbable element on every page; invisible until focused,
  * then a real, solid control at the top-left. Without it a keyboard user tabs
  * through the entire navigation on every single page load before reaching the
@@ -596,6 +629,22 @@ pre {
   background-color: var(--accent);
   color: #06070a; /* the accent is a LIGHT source; text on it must be the dark */
   box-shadow: 0 0 24px -6px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/*
+ * Same rule, same reason, for the glow fill — the pricing "Most popular" badge
+ * and its CTA.
+ *
+ * Those are written `bg-brand-glow text-ink`, which is correct in light: dark
+ * ink on bright cyan. But `--color-ink` INVERTS in dark mode (it becomes near
+ * white, so every ink button flips without a hand-written variant) — and that
+ * turned the badge into near-white text on bright cyan, the one contrast
+ * failure axe-core still found after everything else was fixed.
+ *
+ * `bg-brand-glow` is bright in BOTH themes, so its text must be dark in both.
+ */
+[data-theme="dark"] .bg-brand-glow {
+  color: #06070a;
 }
 /* The tinted icon tile — the reference's small glowing square on every card. */
 [data-theme="dark"] .bg-brand-cyan\/10,

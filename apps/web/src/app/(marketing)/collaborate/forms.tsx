@@ -54,7 +54,23 @@ export function CollaborationForm({ token }: { token: string }) {
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <input name="org" placeholder="Organization (optional)" className={inputClass} />
-        <select name="kind" required defaultValue="partnership" className={inputClass}>
+        {/*
+         * a11y: this select had no accessible name — axe-core reports it as a
+         * CRITICAL `select-name` violation. A screen reader announced only
+         * "combo box, Partnership", with no indication of what is being chosen.
+         * The visible design has no label here, so the name is provided
+         * off-screen rather than by changing the layout.
+         */}
+        <label htmlFor="collab-kind" className="sr-only">
+          Type of collaboration
+        </label>
+        <select
+          id="collab-kind"
+          name="kind"
+          required
+          defaultValue="partnership"
+          className={inputClass}
+        >
           <option value="partnership">Partnership</option>
           <option value="contributor">Contributor</option>
           <option value="research">Research</option>
@@ -99,7 +115,17 @@ export function AbuseReportForm({ token }: { token: string }) {
     <form action={action} className="relative space-y-3">
       <BotFields token={token} />
       <div className="grid gap-3 sm:grid-cols-2">
-        <select name="targetType" required defaultValue="other" className={inputClass}>
+        {/* Same critical `select-name` violation as the collaboration form above. */}
+        <label htmlFor="abuse-target-type" className="sr-only">
+          What are you reporting?
+        </label>
+        <select
+          id="abuse-target-type"
+          name="targetType"
+          required
+          defaultValue="other"
+          className={inputClass}
+        >
           <option value="collaboration">A collaboration request</option>
           <option value="release">A published release</option>
           <option value="other">Something else</option>

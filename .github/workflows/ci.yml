@@ -81,6 +81,23 @@ jobs:
       # audit hash chain must verify (tamper-evidence)
       - run: npx tsx scripts/verify-audit.mts
         working-directory: apps/web
+      # Phase 10 gates. Each of these exists because the thing it checks was
+      # actually broken once and would not have been caught by lint or types.
+      #
+      #   check:theme  — light mode is byte-frozen and every dark rule is scoped.
+      #                  (test-phase9 asserts this too, but only after a long run
+      #                  of live DB queries; this runs in milliseconds on a diff.)
+      #   check:emails — no literal @edusentinel.ai address outside
+      #                  lib/org-email.ts, so mail routing stays one edit.
+      #   check:logo   — the brand mark still matches the original in size,
+      #                  position, aspect and hue. Caught a regression that
+      #                  shipped the nav logo 19% smaller than it should be.
+      - run: npm run check:theme
+        working-directory: apps/web
+      - run: npm run check:emails
+        working-directory: apps/web
+      - run: npm run check:logo
+        working-directory: apps/web
       - run: npm run build
       # privacy promise, machine-enforced: no third-party trackers in output
       - run: node scripts/check-trackers.mjs

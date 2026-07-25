@@ -19,11 +19,13 @@
 
 import sharp from "sharp";
 
-const original = process.argv[2];
-if (!original) {
-  console.error("usage: node scripts/verify-logo-parity.mjs <original.svg>");
-  process.exit(1);
-}
+/*
+ * Defaults to public/logo.svg — the original traced master, still in the repo as
+ * the large-format/print asset. It is the same artwork the PNG mark was derived
+ * from (only its coordinate precision was reduced, which is sub-pixel), so it is
+ * a valid reference and this can run in CI with no argument and no git history.
+ */
+const original = process.argv[2] ?? "public/logo.svg";
 
 const BOX = 400;
 

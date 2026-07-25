@@ -213,8 +213,20 @@ export function Hero() {
               type="button"
               onClick={() => setTab(i)}
               aria-pressed={tab === i}
+              /*
+               * a11y: the inactive tab was `text-text-muted` (#93969e), which is
+               * about 2.9:1 on the paper background — below the 4.5:1 AA
+               * threshold, and axe-core flagged it as a serious colour-contrast
+               * violation on 41 page/theme combinations. These are real
+               * controls, not decorative hints, so they have to be readable.
+               *
+               * `text-text-secondary` (#5c6066) is ~6.5:1 and still visibly
+               * recedes against the active tab's `text-text-primary`, so the
+               * selected state reads exactly as before. This changes the
+               * COMPONENT, not the token — light mode stays byte-frozen.
+               */
               className={`relative shrink-0 pb-2 text-[15px] transition-colors ${
-                tab === i ? "text-text-primary" : "text-text-muted hover:text-text-secondary"
+                tab === i ? "text-text-primary" : "text-text-secondary hover:text-text-primary"
               }`}
             >
               {s.tab}
