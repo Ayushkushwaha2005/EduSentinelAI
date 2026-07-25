@@ -46,7 +46,17 @@ export function Topbar({
   unreadNotifications?: number;
 }) {
   return (
-    <header className="flex h-[76px] items-center justify-between gap-3 rounded-panel bg-surface-raised px-3 sm:gap-4 sm:px-4 md:px-6">
+    /*
+     * gap-2 / px-2 at the narrowest size, relaxing from `sm` upward.
+     *
+     * Growing the message and notification buttons from 22px to the 24px WCAG
+     * minimum added 4px to this row, which tipped a 320px viewport into 2px of
+     * horizontal overflow — measured, not theorised. Reclaiming it from the
+     * chrome's own padding keeps the accessible tap targets AND fits 320px,
+     * which is the right trade: nobody notices 2px of padding, everybody
+     * notices a page that slides sideways.
+     */
+    <header className="flex h-[76px] items-center justify-between gap-2 rounded-panel bg-surface-raised px-2 sm:gap-4 sm:px-4 md:px-6">
       <div className="flex items-center gap-3">
         <MobileNav items={nav} />
         <DateCalendar now={new Date().toISOString()} />

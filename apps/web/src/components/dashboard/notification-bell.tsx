@@ -60,7 +60,11 @@ export function NotificationBell({
             ? `Notifications, ${unread} unread`
             : "Notifications, none unread"
         }
-        className="relative flex text-text-secondary transition-colors duration-[--duration-fast] hover:text-text-primary"
+        // h-6 w-6: the icon is 22px, which made this a 22x22 tap target — under
+        // the 24x24 minimum of WCAG 2.2 SC 2.5.8 (AA). Measured on a real device
+        // at 375px. Centring the same icon in 24px meets it with a 1px visual
+        // change and no layout shift.
+        className="relative flex h-6 w-6 items-center justify-center text-text-secondary transition-colors duration-[--duration-fast] hover:text-text-primary"
       >
         <BellIcon size={22} />
         {unread > 0 && (
