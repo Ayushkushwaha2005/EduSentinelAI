@@ -98,6 +98,12 @@ jobs:
         working-directory: apps/web
       - run: npm run check:logo
         working-directory: apps/web
+      # Demo Founder Mode (Task 16) must remain unable to reach production data:
+      # no db, no Prisma, no session, no server action anywhere in its tree, and
+      # production importing nothing from it. This is the feature's entire safety
+      # guarantee, so it is asserted mechanically on every PR.
+      - run: npm run check:demo
+        working-directory: apps/web
       - run: npm run build
       # privacy promise, machine-enforced: no third-party trackers in output
       - run: node scripts/check-trackers.mjs
