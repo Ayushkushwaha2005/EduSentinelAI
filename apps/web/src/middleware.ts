@@ -88,6 +88,43 @@ export function middleware(req: NextRequest) {
 
   let res: NextResponse;
   let csp: string;
+
+  /*
+   * DEVELOPMENT ONLY — see the note below. Production is untouched.
+   *
+   * `next dev` serves Hot Module Replacement and React Refresh, both of which
+   * evaluate code at runtime and open a websocket back to the dev server. Under
+   * the production policy (`script-src 'self' 'nonce-…' 'strict-dynamic'` and
+   * `connect-src 'self'`) the browser blocks both, so every page in the
+   * workspace filled the console with CSP violations and hot reload silently
+   * stopped working.
+   *
+   * This branch is gated on NODE_ENV, which `next build` sets to "production"
+   * and cannot be reached from a request — so no deployed response can ever
+   * receive it. The production policy below is byte-for-byte what it always was,
+   * and `npm run test:support` still asserts that the nonced policy never gains
+   * 'unsafe-inline'.
+   */
+  if (process.env.NODE_ENV === "development") {
+    const devCsp =
+      "default-src 'self'; " +
+      "img-src 'self' blob: data:; " +
+      "font-src 'self' data:; " +
+      // HMR's websocket, and Turbopack's blob-backed workers.
+      "connect-src 'self' ws: wss: blob:; " +
+      "worker-src 'self' blob:; " +
+      "style-src 'self' 'unsafe-inline'; " +
+      "object-src 'none'; base-uri 'self'; form-action 'self'; " +
+      // 'unsafe-eval' is what React Refresh needs. Development only.
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:";
+
+    const devHeaders = new Headers(req.headers);
+    devHeaders.set("x-pathname", pathname);
+    res = NextResponse.next({ request: { headers: devHeaders } });
+    res.headers.set("content-security-policy", devCsp);
+    return res;
+  }
+
   if (isDynamic) {
     // Strict nonced CSP; Next.js picks the nonce up from the request CSP
     // header and applies it to its own script tags.

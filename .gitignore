@@ -30,3 +30,6 @@ apps/web/storage/
 
 # Phase 10: local backups of files modified during the polish release
 .backup/
+
+# Local development PostgreSQL cluster (apps/web/scripts/local-db.mjs)
+.local-db/
