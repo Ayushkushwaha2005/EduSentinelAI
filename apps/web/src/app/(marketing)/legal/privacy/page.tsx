@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ORG_EMAIL } from "@/lib/org-email";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -79,7 +80,7 @@ export default function PrivacyPage() {
       </p>
       <h2>Contact</h2>
       <p>
-        Privacy questions: <a href="mailto:hello@edusentinel.ai" className="text-brand-teal underline underline-offset-4">hello@edusentinel.ai</a>
+        Privacy questions: <a href={`mailto:${ORG_EMAIL.hello}`} className="text-brand-teal underline underline-offset-4">{ORG_EMAIL.hello}</a>
       </p>
     </>
   );

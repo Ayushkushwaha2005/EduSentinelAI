@@ -88,7 +88,9 @@ export function MobileNav({ items }: { items: NavItem[] }) {
           >
             <div className="flex items-center justify-between gap-3">
               <Link href="/app" aria-label="EduSentinel AI">
-                <LogoWordmark />
+                {/* Inside a drawer that only exists once opened — no idle here,
+                    and nothing above the fold to prioritise. */}
+                <LogoWordmark idle={false} />
               </Link>
               <button
                 type="button"

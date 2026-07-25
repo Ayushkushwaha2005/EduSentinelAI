@@ -18,10 +18,19 @@ export default function MarketingLayout({
     <>
       <ThemeScript />
       <MeteorField />
+      {/* Task 13: first tabbable element on the page. Without it, reaching the
+          content by keyboard means tabbing past eight nav links every time. */}
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
       {/* The content sits above the field. The field never sits above the work. */}
       <div className="relative z-10">
         <Nav />
-        {children}
+        {/* tabIndex={-1} so the skip link can actually move focus here — a plain
+            anchor jump scrolls without moving the keyboard's position. */}
+        <div id="main-content" tabIndex={-1}>
+          {children}
+        </div>
         <Footer />
       </div>
     </>

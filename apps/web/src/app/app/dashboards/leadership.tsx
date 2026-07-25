@@ -18,6 +18,7 @@ import { Avatar } from "@/components/dashboard/avatar";
 import {
   Breadcrumb,
   GrowthChart,
+  PageHeader,
   Pagination,
   Panel,
   StatCard,
@@ -25,6 +26,8 @@ import {
   TableToolbar,
   TeamCard,
 } from "@/components/dashboard/widgets";
+import { SectionTabs, type Section } from "@/components/dashboard/section-tabs";
+import { ClipboardIcon, UserIcon } from "@/components/dashboard/icons";
 
 /*
  * Founder + Co-Founder dashboard, laid out from the reference: three summary
@@ -59,21 +62,62 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
   const staffNames = staff.map((s) => s.name);
   const isFounder = viewer.role === "FOUNDER";
 
+  /*
+   * The tab row is built from the panels that ACTUALLY RENDERED for this viewer
+   * — every entry below is behind the same capability check as its section, so a
+   * pill can never point at a panel their permissions withheld. See
+   * components/dashboard/section-tabs.tsx for why these are real anchors rather
+   * than the reference's decorative chips.
+   */
+  const sections: Section[] = [
+    ...(viewer.can("users.view") ? [{ id: "people", label: "People" }] : []),
+    { id: "growth", label: "Growth" },
+    { id: "releases", label: "Releases" },
+    ...(hr ? [{ id: "workforce", label: "Workforce" }] : []),
+    ...(viewer.can("audit.read") ? [{ id: "activity", label: "Activity" }] : []),
+    ...(teams.length > 0 ? [{ id: "teams", label: "Teams" }] : []),
+  ];
+
+  /* Headline figures, inline with the greeting (reference layout). Both are
+     measured from data already on this page — no extra query, and nothing here
+     is a placeholder. */
+  const onlineNow = people.filter((p) => p.online).length;
+
   return (
     <div className="flex flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards" }]} />
 
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[26px] font-semibold tracking-[-0.02em]">
-            {greeting(viewer)}
-          </h1>
-          <p className="mt-1 text-[15px] text-text-secondary">
-            {isFounder
-              ? "You hold full authority over EduSentinel AI — access, releases and permissions."
-              : "Co-Founder view. Release signing and access control remain with the Founder."}
-          </p>
-        </div>
+      <PageHeader
+        title={greeting(viewer)}
+        subtitle={
+          isFounder
+            ? "You hold full authority over EduSentinel AI — access, releases and permissions."
+            : "Co-Founder view. Release signing and access control remain with the Founder."
+        }
+        stats={[
+          {
+            icon: <ClipboardIcon size={19} />,
+            label: "Open tasks",
+            value: stats.openTasks,
+            unit: stats.openTasks === 1 ? "task" : "tasks",
+          },
+          // Presence is measured from lastSeenAt (Phase 6.1) — this only counts
+          // people genuinely seen in the last five minutes.
+          ...(viewer.can("users.view")
+            ? [
+                {
+                  icon: <UserIcon size={19} />,
+                  label: "On the platform now",
+                  value: onlineNow,
+                  unit: onlineNow === 1 ? "person" : "people",
+                },
+              ]
+            : []),
+        ]}
+      />
+
+      <div className="mt-1">
+        <SectionTabs sections={sections} />
       </div>
 
       {/* ---- summary cards. The faces on a card are the people behind ITS number
@@ -105,7 +149,7 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
 
       {/* ---- directory (reference's main table) ---- */}
       {viewer.can("users.view") && (
-        <Panel>
+        <Panel id="people">
           <TableToolbar
             title="People"
             onAddHref={viewer.can("users.manage_roles") ? "/app/access" : undefined}
@@ -184,7 +228,7 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
       )}
 
       {/* ---- growth chart + staff panel ---- */}
-      <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
+      <div id="growth" className="scroll-mt-24 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
         <div className="flex flex-col gap-2">
           <GrowthChart
             title="Account Growth"
@@ -243,7 +287,7 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
       </div>
 
       {/* ---- release pipeline ---- */}
-      <Panel>
+      <Panel id="releases">
         <TableToolbar
           title="Release Pipeline"
           onAddHref={viewer.can("releases.upload") ? "/app/products" : undefined}
@@ -307,7 +351,7 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
 
       {/* ---- HR overview (hr.view) ---- */}
       {hr && (
-        <Panel>
+        <Panel id="workforce">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <h2 className="text-[19px] font-semibold tracking-[-0.01em]">Workforce today</h2>
             <span className="flex items-center gap-4 text-sm font-medium">
@@ -352,7 +396,7 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
 
       {/* ---- recent activity ---- */}
       {viewer.can("audit.read") && (
-        <Panel>
+        <Panel id="activity">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-[19px] font-semibold tracking-[-0.01em]">
               Recent Activity
@@ -393,7 +437,7 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
       )}
 
       {/* ---- teams grid ---- */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div id="teams" className="scroll-mt-24 grid gap-4 lg:grid-cols-3">
         {teams.map((t) => (
           <TeamCard key={t.id} team={t} />
         ))}

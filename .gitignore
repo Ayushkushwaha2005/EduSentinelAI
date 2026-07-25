@@ -27,3 +27,6 @@ build/
 storage/
 apps/web/storage/
 .env*
+
+# Phase 10: local backups of files modified during the polish release
+.backup/

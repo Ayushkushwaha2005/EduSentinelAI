@@ -3,6 +3,8 @@
  * without it (local dev, no provider configured) the message is logged to
  * the server console so flows remain fully testable (SN-004).
  */
+import { mailFrom } from "./org-email";
+
 export async function sendMail(to: string, subject: string, text: string) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -16,7 +18,8 @@ export async function sendMail(to: string, subject: string, text: string) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: process.env.MAIL_FROM ?? "EduSentinel AI <no-reply@edusentinel.ai>",
+      // One place for the From: address — see lib/org-email.ts (Task 12).
+      from: mailFrom(),
       to,
       subject,
       text,

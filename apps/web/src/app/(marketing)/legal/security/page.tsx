@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { issueFormToken } from "@/lib/bot-defense";
+import { ORG_EMAIL } from "@/lib/org-email";
+import { SecurityReportForm } from "../../contact/forms";
 
 export const metadata: Metadata = {
   title: "Security & Responsible Disclosure",
@@ -6,7 +9,13 @@ export const metadata: Metadata = {
     "EduSentinel AI security practices and how to report vulnerabilities responsibly.",
 };
 
+/* The disclosure form carries a per-render signed timing token, so this page
+   cannot be statically cached (Phase 10, Task 11). */
+export const dynamic = "force-dynamic";
+
 export default function SecurityPage() {
+  const token = issueFormToken();
+
   return (
     <>
       <h1>Security &amp; Responsible Disclosure</h1>
@@ -23,12 +32,29 @@ export default function SecurityPage() {
       <h2>Reporting a vulnerability</h2>
       <p>
         If you believe you have found a security issue in any EduSentinel AI
-        property or product, email{" "}
-        <a href="mailto:security@edusentinel.ai" className="text-brand-teal underline underline-offset-4">
-          security@edusentinel.ai
-        </a>{" "}
-        with a description, reproduction steps, and impact assessment.
+        property or product, use the form below. It reaches the same inbox as{" "}
+        <a
+          href={`mailto:${ORG_EMAIL.security}`}
+          className="text-brand-teal underline underline-offset-4"
+        >
+          {ORG_EMAIL.security}
+        </a>
+        , which you are equally welcome to email directly — the form simply asks
+        for the details we need to triage a report quickly.
       </p>
+      <p>
+        You may report anonymously. Please do not include live credentials or
+        third-party personal data in your report.
+      </p>
+
+      {/*
+       * Phase 10, Task 11. `not-prose` because this page renders inside the
+       * legal layout's prose styles, which would otherwise restyle the form
+       * controls as article typography.
+       */}
+      <div className="not-prose my-10 rounded-card border border-border-subtle bg-surface-raised p-8 md:p-10">
+        <SecurityReportForm token={token} />
+      </div>
       <h2>Our commitment to researchers</h2>
       <ul>
         <li>Acknowledgement of your report within 72 hours.</li>

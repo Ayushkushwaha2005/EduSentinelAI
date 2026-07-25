@@ -5,6 +5,7 @@ import { productsFor } from "@/lib/products";
 import { ClipboardIcon, UsersIcon, BoxIcon } from "@/components/dashboard/icons";
 import {
   Breadcrumb,
+  PageHeader,
   Pagination,
   Panel,
   StatCard,
@@ -39,14 +40,10 @@ export default async function EmployeeDashboard({ viewer }: { viewer: Viewer }) 
     <div className="flex flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards" }]} />
 
-      <div>
-        <h1 className="text-[26px] font-semibold tracking-[-0.02em]">
-          {greeting(viewer)}
-        </h1>
-        <p className="mt-1 text-[15px] text-text-secondary">
-          Your work at EduSentinel AI — assigned tasks, teams and products.
-        </p>
-      </div>
+      <PageHeader
+        title={greeting(viewer)}
+        subtitle="Your work at EduSentinel AI — assigned tasks, teams and products."
+      />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <StatCard

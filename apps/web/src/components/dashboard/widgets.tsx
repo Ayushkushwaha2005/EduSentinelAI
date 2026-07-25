@@ -10,14 +10,88 @@ import { Tilt } from "./tilt";
 export function Panel({
   children,
   className = "",
+  id,
 }: {
   children: React.ReactNode;
   className?: string;
+  /** Anchor target, so SectionTabs can jump to (and highlight) this panel. */
+  id?: string;
 }) {
   return (
-    <section className={`rounded-card bg-surface-raised p-6 ${className}`}>
+    <section
+      id={id}
+      // rounded-panel (Phase 10, Task 3): the reference's softer corner. Applied
+      // via its own token so the marketing site's cards are untouched.
+      // scroll-mt clears the sticky top bar when a tab jumps here.
+      className={`scroll-mt-24 rounded-panel bg-surface-raised p-6 ${className}`}
+    >
       {children}
     </section>
+  );
+}
+
+/*
+ * The page header from the reference (Phase 10, Task 3).
+ *
+ * The reference leads with a very large display headline and hangs its headline
+ * statistics INLINE beside it — "Verification stats · ⏱ 124 hours online · 🌐 315
+ * sites" — rather than stacking another row of cards under it. It reads as one
+ * sentence about the state of things, which is what a dashboard headline should
+ * be, and it recovers a whole band of vertical space.
+ *
+ * `stats` is optional and every entry must be a measured value. A stat with
+ * nothing behind it is not passed in — it is not rendered as a zero (CLAUDE.md:
+ * a metric that cannot be measured is reported as unmeasured, never as zero).
+ */
+export function PageHeader({
+  title,
+  subtitle,
+  stats = [],
+  action,
+}: {
+  title: string;
+  subtitle?: string;
+  stats?: { icon: React.ReactNode; label: string; value: string | number; unit?: string }[];
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-x-10 gap-y-6">
+      <div className="min-w-0">
+        <h1 className="font-display text-[34px] font-semibold leading-[1.05] tracking-[-0.035em] md:text-[44px]">
+          {title}
+        </h1>
+        {subtitle && (
+          <p className="mt-2.5 max-w-2xl text-[15px] leading-relaxed text-text-secondary">
+            {subtitle}
+          </p>
+        )}
+      </div>
+
+      {stats.length > 0 && (
+        <dl className="flex flex-wrap items-center gap-x-8 gap-y-5">
+          {stats.map((s) => (
+            <div key={s.label} className="flex items-center gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border-subtle text-text-secondary">
+                {s.icon}
+              </span>
+              <span>
+                <dt className="text-xs leading-tight text-text-secondary">{s.label}</dt>
+                <dd className="flex items-baseline gap-1.5">
+                  <span className="font-display text-[26px] font-semibold leading-none tracking-[-0.02em]">
+                    {s.value}
+                  </span>
+                  {s.unit && (
+                    <span className="text-xs text-text-muted">{s.unit}</span>
+                  )}
+                </dd>
+              </span>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {action}
+    </div>
   );
 }
 
@@ -80,11 +154,13 @@ export function StatCard({
     <Tilt>
       <Panel>
         <div className="flex items-start gap-4">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-card bg-brand-cyan/10 text-brand-cyan">
+        {/* rounded-[18px]: the reference's icon tile is a squircle, noticeably
+            rounder than the card token but not a circle. */}
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] bg-brand-cyan/10 text-brand-cyan">
           {icon}
         </span>
         <span>
-          <span className="block text-[19px] font-semibold tracking-[-0.01em]">
+          <span className="block font-display text-[19px] font-semibold tracking-[-0.015em]">
             {title}
           </span>
           <span className="mt-0.5 block text-sm text-text-secondary">{subtitle}</span>

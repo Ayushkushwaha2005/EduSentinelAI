@@ -5,6 +5,7 @@ import { greeting, myCollaborations } from "@/lib/dashboard";
 import { ChatIcon, BoxIcon, ShieldIcon } from "@/components/dashboard/icons";
 import {
   Breadcrumb,
+  PageHeader,
   Panel,
   StatCard,
   StatusDot,
@@ -28,14 +29,10 @@ export default async function CollaboratorDashboard({ viewer }: { viewer: Viewer
     <div className="flex flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards" }]} />
 
-      <div>
-        <h1 className="text-[26px] font-semibold tracking-[-0.02em]">
-          {greeting(viewer)}
-        </h1>
-        <p className="mt-1 text-[15px] text-text-secondary">
-          Your collaboration with EduSentinel AI.
-        </p>
-      </div>
+      <PageHeader
+        title={greeting(viewer)}
+        subtitle="Your collaboration with EduSentinel AI."
+      />
 
       {/* Each card used to carry an avatar stack of the viewer, and "My Requests"
           linked to the page it was already on. Both removed. */}

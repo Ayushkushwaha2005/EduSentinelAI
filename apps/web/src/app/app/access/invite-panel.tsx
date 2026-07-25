@@ -55,7 +55,7 @@ export function InviteForm({
   return (
     <form action={action}>
       <div className="flex flex-wrap items-end gap-3">
-        <div className="min-w-[220px] flex-1">
+        <div className="w-full min-w-0 flex-1 sm:w-auto sm:min-w-[220px]">
           <label className="block text-sm font-medium text-text-secondary" htmlFor="invite-email">
             Email
           </label>
@@ -82,7 +82,7 @@ export function InviteForm({
           </select>
         </div>
 
-        <div className="min-w-[200px] flex-1">
+        <div className="w-full min-w-0 flex-1 sm:w-auto sm:min-w-[200px]">
           <label className="block text-sm font-medium text-text-secondary" htmlFor="invite-message">
             Message (optional)
           </label>
@@ -317,7 +317,7 @@ export function AccessReview({
           name="note"
           maxLength={300}
           placeholder="Note (optional)"
-          className={`min-w-[240px] flex-1 ${input}`}
+          className={`w-full min-w-0 flex-1 sm:w-auto sm:min-w-[240px] ${input}`}
         />
         <button type="submit" disabled={pending} className={primary}>
           {pending ? "Recording…" : "Record access review"}

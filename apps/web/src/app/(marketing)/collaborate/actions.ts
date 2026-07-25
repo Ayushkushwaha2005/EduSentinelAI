@@ -6,6 +6,8 @@ import { audit, requestContext } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
 import { checkHuman } from "@/lib/bot-defense";
 import { sanitizeLine, sanitizeUserText } from "@/lib/sanitize";
+import { abuseReportEmail, collaborationEmail, send } from "@/lib/mail";
+import { inboxFor } from "@/lib/org-email";
 
 export type SubmitState = { error?: string; ok?: boolean };
 
@@ -68,6 +70,36 @@ export async function submitCollaborationAction(
     ip,
     userAgent,
   });
+
+  /*
+   * TELL SOMEBODY (Phase 10, Task 11).
+   *
+   * This request used to be written to the database and the audit log, and then
+   * nothing happened. No email existed anywhere in this action — the submitter
+   * saw "thank you", and the request waited in a table for someone to open the
+   * right page and notice it. That is not a working contact channel.
+   *
+   * The DB row remains the record of truth; the mail is the notification. It is
+   * sent AFTER the row is committed and its result is deliberately not checked:
+   * `send` never throws, records every attempt in MailLog, and surfaces failures
+   * in Access Control. A mail outage must not turn a successfully-recorded
+   * request into an error message for the person who sent it.
+   */
+  const mail = collaborationEmail({
+    name: request.name,
+    email: request.email,
+    org: request.org,
+    kind: request.kind,
+    message: request.message,
+  });
+  await send(
+    inboxFor("collaboration"),
+    mail.subject,
+    mail.body,
+    "collaboration",
+    request.email, // Reply-To: hitting reply reaches the person who wrote in
+  );
+
   return { ok: true };
 }
 
@@ -101,7 +133,7 @@ export async function submitAbuseReportAction(
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  await db.abuseReport.create({
+  const report = await db.abuseReport.create({
     data: {
       targetType: parsed.data.targetType,
       targetRef: parsed.data.targetRef ? sanitizeLine(parsed.data.targetRef, 300) : null,
@@ -115,5 +147,23 @@ export async function submitAbuseReportAction(
     ip,
     userAgent,
   });
+
+  /*
+   * Same gap as collaboration requests above, and a worse one to have: an abuse
+   * report is a safety matter with an implicit clock on it, and it was reaching
+   * nobody. It goes to the security inbox rather than the general one (see
+   * lib/org-email.ts) for the same reason.
+   *
+   * No Reply-To: the reporter field is free text and optional, and may not be an
+   * address at all. Whoever handles it can see what was given.
+   */
+  const mail = abuseReportEmail({
+    targetType: report.targetType,
+    targetRef: report.targetRef,
+    reporter: report.reporter,
+    reason: report.reason,
+  });
+  await send(inboxFor("abuse"), mail.subject, mail.body, "abuse-report");
+
   return { ok: true };
 }
