@@ -291,12 +291,28 @@ export const OrbitingCircles = memo(function OrbitingCircles({
           {
             "--duration": duration,
             "--radius": radius,
-            "--delay": -delay,
+            /*
+             * The starting angle, as a real value.
+             *
+             * The reference sets `--delay` and applies it through a Tailwind
+             * arbitrary class, `[animation-delay:calc(var(--delay)*1000ms)]`.
+             * That silently did nothing here — measured in the browser, every
+             * orbiting element computed `animation-delay: 0s`, so all nine
+             * glyphs sat at 0° and rendered as a vertical column stacked on top
+             * of the wordmark instead of a constellation. Paired icons were
+             * exactly superimposed.
+             *
+             * animationDelay is now set directly, which does not depend on the
+             * arbitrary-property class being generated. `--angle` is the same
+             * offset expressed statically, for the reduced-motion case where
+             * there is no animation to be delayed.
+             */
+            "--angle": `${((((delay % duration) + duration) % duration) / duration) * 360}deg`,
+            animationDelay: `${-delay}s`,
           } as React.CSSProperties
         }
         className={cn(
           "animate-orbit absolute flex size-full transform-gpu items-center justify-center rounded-full",
-          "[animation-delay:calc(var(--delay)*1000ms)]",
           reverse && "[animation-direction:reverse]",
           className,
         )}

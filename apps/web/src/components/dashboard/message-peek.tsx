@@ -28,7 +28,9 @@ export function MessagePeek({ items, unread }: { items: PeekItem[]; unread: numb
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={unread ? `Messages, ${unread} unread` : "Messages"}
-        className="relative text-text-secondary transition-colors duration-[--duration-fast] hover:text-text-primary"
+        // h-6 w-6 — same 22x22 tap target as the notification bell beside it;
+        // see the note there. WCAG 2.2 SC 2.5.8 (AA) minimum is 24x24.
+        className="relative flex h-6 w-6 items-center justify-center text-text-secondary transition-colors duration-[--duration-fast] hover:text-text-primary"
       >
         <ChatIcon size={22} />
         {unread > 0 && (

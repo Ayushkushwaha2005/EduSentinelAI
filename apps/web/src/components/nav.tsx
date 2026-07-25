@@ -53,8 +53,24 @@ export function Nav() {
           <LogoWordmark priority />
         </Link>
 
-        {/* center links, reference-style */}
-        <div className="mx-auto hidden items-center gap-10 md:flex">
+        {/*
+         * Center links.
+         *
+         * BREAKPOINT: xl (1280px), not md (768px).
+         *
+         * Eight links plus the wordmark plus a three-item right cluster do not
+         * fit in 768px, and they do not fit in 1024px either. Below 1280 the row
+         * overflowed its container: "Solutions" ran into the wordmark, "Contact"
+         * was clipped by the viewport edge, and the theme toggle, Sign in and
+         * Get started were pushed entirely off-screen — present in the DOM,
+         * unreachable by any pointer. Measured at 768 and 1024 with a real
+         * browser.
+         *
+         * Nothing is lost by handing those widths to the mobile menu: it already
+         * carries every link plus Sign in, the theme toggle and Get started.
+         * gap-7 rather than gap-10 so the full row actually fits at 1280.
+         */}
+        <div className="mx-auto hidden items-center gap-7 xl:flex">
           {links.map((l) => (
             <Link
               key={l.href}
@@ -70,7 +86,7 @@ export function Nav() {
           ))}
         </div>
 
-        <div className="hidden shrink-0 items-center gap-5 md:flex">
+        <div className="hidden shrink-0 items-center gap-5 xl:flex">
           <ThemeToggle />
           <Link
             href="/login"
@@ -88,7 +104,7 @@ export function Nav() {
 
         <button
           type="button"
-          className="ml-auto p-2 md:hidden"
+          className="ml-auto p-2 xl:hidden"
           aria-expanded={open}
           aria-label="Toggle menu"
           onClick={() => setOpen(!open)}
@@ -106,7 +122,7 @@ export function Nav() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="overflow-hidden border-t border-border-subtle bg-surface-base md:hidden"
+            className="overflow-hidden border-t border-border-subtle bg-surface-base xl:hidden"
             initial={{ height: 0 }}
             animate={{ height: "auto" }}
             exit={{ height: 0 }}
