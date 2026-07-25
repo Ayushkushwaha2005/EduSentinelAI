@@ -14,20 +14,32 @@ Planning documents: [ROADMAP.md](./ROADMAP.md) (master phase plan, security-inte
 
 ```bash
 npm install          # install all workspaces (run at repo root)
-npm run dev          # start apps/web dev server
+npm run dev          # everything: local database + dev server
+```
+
+Then open <http://localhost:3000>. That is the entire setup.
+
+`npm run dev` starts a real PostgreSQL for you (official binaries — no Docker,
+no service, no account), syncs the schema, creates a founder account on an empty
+database and prints the credentials, then runs `next dev`. The database is
+persistent and lives in `apps/web/.local-db`.
+
+Already have a database? Put its URL in `apps/web/.env` as `DATABASE_URL` and
+the dev server will use it instead of starting its own.
+
+**Full guide, including how to sign in and the known local-only quirks:
+[docs/local-development.md](./docs/local-development.md).**
+
+```bash
 npm run lint         # eslint
 npm run typecheck    # tsc --noEmit
 npm run build        # production build
 ```
 
-First-time setup for the app/auth area (Phase 2):
-
-```bash
-cd apps/web
-cp .env.example .env         # then fill in AUTH_SECRET (see file comments)
-npx prisma db push           # creates the local SQLite dev database
-npm run db:seed              # optional: bootstrap founder account from env vars
-```
+> **Note:** `DATABASE_URL` must be a `postgres://` / `postgresql://` URL —
+> `prisma/schema.prisma` declares `provider = "postgresql"`. A SQLite path such
+> as `file:./dev.db`, which earlier versions of `.env.example` suggested, makes
+> every request fail with `PrismaClientInitializationError`.
 
 Auth: Auth.js v5 (credentials + argon2id), 8h JWT sessions, roles
 USER/EMPLOYEE/ADMIN/FOUNDER, audit log on security-relevant actions.

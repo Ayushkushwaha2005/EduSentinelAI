@@ -12,8 +12,31 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+
+    # The schema is `provider = "postgresql"`, so CI needs a real PostgreSQL.
+    # This env block used to say `DATABASE_URL: file:./ci.db`, left over from
+    # before the Postgres migration — which meant `prisma db push` and every
+    # suite after it failed with "the URL must start with the protocol
+    # postgresql://". Same root cause as the local .env.
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: edusentinel
+        ports:
+          - 5432:5432
+        # Do not start the job until the server actually accepts connections.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
-      DATABASE_URL: file:./ci.db
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/edusentinel
+      DATABASE_URL_UNPOOLED: postgresql://postgres:postgres@localhost:5432/edusentinel
       AUTH_SECRET: ci-only-secret-not-used-in-production
       AUTH_TRUST_HOST: "true"
       # dummy 32-byte key for CI only
