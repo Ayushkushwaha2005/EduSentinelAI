@@ -248,6 +248,32 @@ export default async function AnalyticsPage({
           </div>
         )}
       </Panel>
+
+      {/*
+       * The Knowledge Center, at the foot of Analytics as specified.
+       *
+       * A pointer rather than a copy: the guide filters itself by the reader's
+       * capabilities, so duplicating any of it here would mean a second place
+       * that has to be kept in step and a second chance to show someone
+       * instructions for something they cannot do.
+       */}
+      <Panel>
+        <h2 className="text-[19px] font-semibold tracking-[-0.01em]">Portal Guide</h2>
+        <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-text-secondary">
+          How this workspace works, what your account can do, and where things
+          live — including how these numbers are produced and why a metric that
+          cannot be measured is reported as unmeasured rather than as zero. It
+          adapts to your permissions, and it has an assistant you can ask
+          directly.
+        </p>
+        <Link
+          href="/app/guide"
+          prefetch
+          className="mt-5 inline-flex h-11 items-center rounded-control bg-ink px-5 text-sm font-medium text-surface-raised transition-colors hover:bg-ink-hover"
+        >
+          Open the Portal Guide
+        </Link>
+      </Panel>
     </div>
   );
 }

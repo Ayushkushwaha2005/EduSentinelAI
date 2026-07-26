@@ -132,6 +132,13 @@ export const NAV: NavItem[] = [
   // No capability: managing your own identity is not a privilege the Founder
   // grants, it is what having an account means. Every role sees these two.
   { label: "Profile", href: "/app/profile", icon: "user" },
+  // Phase 17: account behaviour (password, notifications, appearance, privacy)
+  // split out of Profile, which now holds identity only.
+  { label: "Settings", href: "/app/settings", icon: "key" },
+  // Phase 17: the Knowledge Center. No capability — everyone with an account is
+  // entitled to know how the thing they are using works; the ARTICLES inside it
+  // are what get filtered.
+  { label: "Portal Guide", href: "/app/guide", icon: "report" },
   { label: "Security", href: "/app/security", icon: "shield" },
 ];
 

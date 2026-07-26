@@ -114,11 +114,16 @@ export function WsActivityPanel({
   title,
   series,
   caption,
+  more,
   children,
 }: {
   title: string;
   series: { label: string; value: number }[];
   caption?: string;
+  /* Where "more" actually goes. The reference has a lilac pill here; a pill that
+     looks like a control and does nothing is worse than no pill, so it renders
+     only when there is a real destination — and it renders as a link. */
+  more?: { label: string; href: string };
   children?: React.ReactNode;
 }) {
   const max = Math.max(1, ...series.map((d) => d.value));
@@ -128,12 +133,20 @@ export function WsActivityPanel({
   return (
     <section className="ws-panel ws-mint relative overflow-hidden p-6 md:p-7">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="ws-pill flex h-8 items-center gap-1.5 bg-ws-lilac px-4 text-[13px] font-medium text-ws-ink">
-          More
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
+        {more ? (
+          <Link
+            href={more.href}
+            prefetch
+            className="ws-pill flex h-8 items-center gap-1.5 bg-ws-lilac px-4 text-[13px] font-medium text-ws-ink transition-opacity hover:opacity-80"
+          >
+            {more.label}
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+        ) : (
+          <span />
+        )}
         {caption && (
           <span className="text-[12px] font-medium text-ws-ink/55">{caption}</span>
         )}
@@ -365,9 +378,16 @@ export function WsAddCard({
   );
 }
 
-/** The mint-bordered avatar cluster. */
+/**
+ * The mint-bordered avatar cluster.
+ *
+ * The reference puts three dots at the right of this pill, which read as
+ * pagination. There are no pages, so they are replaced by the one thing that
+ * position can honestly say: how many more people there are than fit.
+ */
 export function WsAvatarCluster({ names }: { names: string[] }) {
   const shown = names.slice(0, 3);
+  const rest = names.length - shown.length;
 
   return (
     <div className="flex items-center justify-between gap-2 rounded-full border-2 border-ws-mint bg-white p-1.5">
@@ -378,16 +398,21 @@ export function WsAvatarCluster({ names }: { names: string[] }) {
           </span>
         ))}
       </span>
-      <span className="flex items-center gap-1 pr-2.5" aria-hidden="true">
-        <span className="h-1.5 w-1.5 rounded-full bg-ws-ink" />
-        <span className="h-1.5 w-1.5 rounded-full bg-ws-line" />
-        <span className="h-1.5 w-1.5 rounded-full bg-ws-line" />
+      <span className="pr-3 text-[11px] font-medium text-ws-dim">
+        {rest > 0 ? `+${rest} more` : names.length === 1 ? "1 person" : `${names.length} people`}
       </span>
     </div>
   );
 }
 
-/** A resource row: name, state pill, and a status toggle. */
+/**
+ * A resource row: name and its lifecycle state.
+ *
+ * The state is a small dot, deliberately not a 22px circle at the end of a row —
+ * at that size beside a label it reads as a switch, and clicking it would not
+ * publish anything. Publishing happens on the product console, where the
+ * capability is checked.
+ */
 export function WsResourceRow({
   label,
   state,
@@ -403,19 +428,19 @@ export function WsResourceRow({
       : state === "limited"
         ? "bg-ws-lilac"
         : "bg-ws-ink";
+  const word = state === "on" ? "live" : state === "limited" ? "draft" : "archived";
   return (
     <Link
       href={href}
       prefetch
-      className="ws-pill flex h-[46px] items-center justify-between gap-2 px-4"
+      className="ws-pill ws-lift flex h-[46px] items-center justify-between gap-2 px-4"
     >
       <span className="min-w-0 truncate text-[14px] font-medium text-ws-ink">
         {label}
       </span>
-      <span className="flex shrink-0 items-center gap-2">
-        <span aria-hidden="true" className="text-ws-dim">···</span>
-        <span className={`h-[22px] w-[22px] rounded-full ${tone}`} />
-        <span className="w-[42px] text-[11px] text-ws-dim">{state}</span>
+      <span className="flex shrink-0 items-center gap-1.5">
+        <span aria-hidden="true" className={`h-2 w-2 rounded-full ${tone}`} />
+        <span className="text-[11px] text-ws-dim">{word}</span>
       </span>
     </Link>
   );

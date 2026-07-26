@@ -127,6 +127,14 @@ jobs:
       # guarantee, so it is asserted mechanically on every PR.
       - run: npm run check:demo
         working-directory: apps/web
+      # Phase 13. The Knowledge Center's safety argument is that it is static
+      # prose: it cannot leak a record because it holds none and has no way to
+      # fetch one. That survives only as long as nobody adds a database import or
+      # a template expression "just for this one number", so it is enforced
+      # rather than remembered — including on the assistant's server action,
+      # which may read the viewer to filter by capability but must never query.
+      - run: npm run check:knowledge
+        working-directory: apps/web
       - run: npm run build
       # privacy promise, machine-enforced: no third-party trackers in output
       - run: node scripts/check-trackers.mjs

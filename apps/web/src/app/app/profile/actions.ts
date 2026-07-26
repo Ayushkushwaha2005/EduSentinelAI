@@ -86,7 +86,16 @@ export async function updateProfile(
   const ctx = await requestContext();
   await audit("user.profile_updated", { actorId: viewer.id, ...ctx });
   revalidatePath("/app/profile");
-  revalidatePath("/app");
+  /*
+   * "layout", not the default page scope.
+   *
+   * The name and avatar live in the workspace SHELL (rail + top bar), which is
+   * the /app layout — and App Router preserves a layout across navigation, so
+   * a page-scoped revalidate leaves the old photo sitting in the corner until a
+   * full reload. Revalidating the layout segment refreshes the chrome and every
+   * page beneath it, which is what "updates everywhere" actually requires.
+   */
+  revalidatePath("/app", "layout");
   return { notice: "Profile saved." };
 }
 
@@ -160,7 +169,7 @@ export async function uploadAvatar(
   const ctx = await requestContext();
   await audit("user.avatar_updated", { actorId: viewer.id, ...ctx });
   revalidatePath("/app/profile");
-  revalidatePath("/app");
+  revalidatePath("/app", "layout");
   return { notice: "Photo updated." };
 }
 
@@ -182,7 +191,7 @@ export async function removeAvatar(): Promise<void> {
   const ctx = await requestContext();
   await audit("user.avatar_removed", { actorId: viewer.id, ...ctx });
   revalidatePath("/app/profile");
-  revalidatePath("/app");
+  revalidatePath("/app", "layout");
 }
 
 /**
