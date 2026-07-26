@@ -3,7 +3,12 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
 import { db } from "./db";
-import { effectiveCapabilities, type Capability } from "./permissions";
+import {
+  FOUNDER_APPROVAL_REQUIRED,
+  effectiveCapabilities,
+  isFounderReserved,
+  type Capability,
+} from "./permissions";
 import { isAdminRole, type Role } from "./roles";
 
 /*
@@ -91,7 +96,20 @@ export async function requireFounder(): Promise<Viewer> {
 /** For server actions, where redirecting is wrong — throw instead. */
 export async function assertCapability(cap: Capability): Promise<Viewer> {
   const viewer = await requireViewer();
-  if (!viewer.can(cap)) throw new Error("Not permitted.");
+  if (!viewer.can(cap)) {
+    /*
+     * A founder-reserved power says so by name. The distinction matters to the
+     * reader: "Founder approval required." tells them the action exists, is
+     * legitimate, and has an owner to ask — whereas a plain refusal reads as a
+     * bug or a missing feature and sends them looking for a workaround.
+     *
+     * It is only ever a MESSAGE. The refusal itself is identical either way,
+     * and it happens here on the server, before the action runs.
+     */
+    throw new Error(
+      isFounderReserved(cap) ? FOUNDER_APPROVAL_REQUIRED : "Not permitted.",
+    );
+  }
   if (isAdminRole(viewer.role) && !viewer.mfaEnabled)
     throw new Error("MFA is required for this action.");
   return viewer;

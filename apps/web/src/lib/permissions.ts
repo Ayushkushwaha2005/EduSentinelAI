@@ -52,6 +52,22 @@ export const CAPABILITIES = [
   // broadcasting is a capability rather than an assumption about seniority.
   "support.respond", // see the support queue, reply, assign, resolve
   "notifications.broadcast", // send a notification to everyone
+  /*
+   * ── Phase 14: the remaining founder-only powers, named ────────────────────
+   *
+   * These five had no capability key, which meant they could not be *checked*
+   * and so could not be *refused* by the same machinery as everything else.
+   * Naming them makes them enforceable and makes the reserved list the complete
+   * answer to "what can only the Founder do?" rather than a partial one.
+   *
+   * All five are FOUNDER_RESERVED below, so `effectiveCapabilities` strips them
+   * for every other role on every check — no grant row can produce them.
+   */
+  "founder.transfer", // hand the FOUNDER role to another account (founder-reserved)
+  "org.delete", // delete the organization and its records (founder-reserved)
+  "billing.manage", // billing owner: plan, payment method, invoices (founder-reserved)
+  "secrets.manage", // environment secrets and signing material (founder-reserved)
+  "security.policy", // security policy, disclosure contact, retention (founder-reserved)
 ] as const;
 export type Capability = (typeof CAPABILITIES)[number];
 
@@ -84,11 +100,41 @@ export const FOUNDER_RESERVED: readonly Capability[] = [
   // because handing out access is the Founder's alone, then taking it away — which
   // is also how you silence someone who has noticed something — must be too.
   "people.offboard",
+  /*
+   * Phase 14. "Production publishing" — making a product live on the public
+   * site — moves here from the Co-Founder's default set.
+   *
+   * This is a TIGHTENING and it is deliberate: a Co-Founder may now build and
+   * edit the catalogue but not push it to the world. It follows directly from
+   * the rule that a Co-Founder exercises the workspace for review while actions
+   * that permanently affect production stay with the Founder, and publishing to
+   * the public site is the definition of one.
+   *
+   * `releases.publish` (sign + publish an artifact) was already reserved and
+   * still is; the two together are the whole publishing path.
+   */
+  "products.publish",
+  // The five named in Phase 14. Never grantable, by construction.
+  "founder.transfer",
+  "org.delete",
+  "billing.manage",
+  "secrets.manage",
+  "security.policy",
 ];
 
 export function isFounderReserved(cap: Capability): boolean {
   return FOUNDER_RESERVED.includes(cap);
 }
+
+/**
+ * The one sentence a blocked action says.
+ *
+ * Every refusal of a founder-reserved power uses this exact string, so the
+ * product never has two different ways of saying the same thing and a reader
+ * never has to wonder whether "Not permitted." and "Founder approval required."
+ * mean different outcomes. They did not; now there is only one.
+ */
+export const FOUNDER_APPROVAL_REQUIRED = "Founder approval required.";
 
 /** Default capability set per role. Additive up the ladder, but not implicitly:
  *  each role spells out its own set so a new role cannot inherit by accident. */
@@ -137,7 +183,12 @@ const BASE_ADMIN: Capability[] = [
 const BASE_CO_FOUNDER: Capability[] = [
   ...BASE_ADMIN,
   "team.manage",
-  "products.publish",
+  /*
+   * `products.publish` used to be here. It is FOUNDER_RESERVED as of Phase 14
+   * ("production publishing"), so listing it would be a lie the reserved-list
+   * backstop silently corrects. Removed at the source instead, so this array
+   * says what a Co-Founder actually gets.
+   */
   "collab.manage",
   "calendar.manage",
   "notifications.broadcast",

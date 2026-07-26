@@ -453,9 +453,29 @@ assert.ok(
   !defaultCapabilities("CO_FOUNDER").includes("products.delete"),
   "a co-founder cannot delete products",
 );
+/*
+ * Phase 14 INVERTED THIS ASSERTION, deliberately.
+ *
+ * It used to read "a co-founder can publish products (grantable, not
+ * reserved)". Production publishing — putting a product live on the public
+ * site — is now founder-reserved, which is the whole point of Founder View
+ * Mode: a Co-Founder exercises the entire workspace for review, and the actions
+ * that permanently affect production stay with the Founder.
+ *
+ * The assertion is kept rather than deleted, and strengthened, so the tightening
+ * cannot be quietly undone later.
+ */
 assert.ok(
-  defaultCapabilities("CO_FOUNDER").includes("products.publish"),
-  "a co-founder can publish products (grantable, not reserved)",
+  isFounderReserved("products.publish"),
+  "production publishing is founder-reserved (Phase 14)",
+);
+assert.ok(
+  !defaultCapabilities("CO_FOUNDER").includes("products.publish"),
+  "a co-founder cannot publish to production",
+);
+assert.ok(
+  defaultCapabilities("CO_FOUNDER").includes("products.manage"),
+  "a co-founder can still build and edit the catalogue",
 );
 assert.ok(
   !defaultCapabilities("EMPLOYEE").includes("products.manage"),
@@ -531,6 +551,75 @@ for (const file of walk(APP_DIR)) {
     !/session\??\.user\??\.role/.test(src),
     `${rel}: authorize via lib/guard.ts, never by reading the role off the session`,
   );
+}
+
+
+/* ─────────────────────────── Phase 14: the named founder-only powers ──── */
+//
+// Requirement: these can never be granted, to anyone, by any means. They are
+// asserted here rather than trusted, because the entire Founder Trust Model
+// rests on FOUNDER_RESERVED being complete and enforced rather than merely
+// documented.
+{
+  const NAMED_FOUNDER_ONLY = [
+    "founder.transfer",
+    "org.delete",
+    "releases.publish", // release signing
+    "products.publish", // production publishing
+    "users.manage_roles", // role promotion
+    "permissions.grant", // permission engine management
+    "billing.manage",
+    "secrets.manage",
+    "security.policy",
+  ] as const;
+
+  for (const cap of NAMED_FOUNDER_ONLY) {
+    assert.ok(isFounderReserved(cap), `${cap} must be founder-reserved`);
+    for (const role of ["USER", "COLLABORATOR", "EMPLOYEE", "ADMIN", "CO_FOUNDER"]) {
+      assert.ok(
+        !defaultCapabilities(role).includes(cap),
+        `${role} must not hold ${cap} by default`,
+      );
+    }
+  }
+
+  // A FORGED GRANT ROW MUST NOT WORK. This is the real test: the row is written
+  // directly to the database, bypassing every action and every form, and the
+  // capability still must not appear in the effective set.
+  const victim = await db.user.create({
+    data: {
+      email: `p14-${Date.now()}@example.test`,
+      name: "Phase 14 probe",
+      passwordHash: "x",
+      role: "CO_FOUNDER",
+    },
+  });
+  try {
+    await db.permissionGrant.createMany({
+      data: NAMED_FOUNDER_ONLY.map((capability) => ({
+        userId: victim.id,
+        capability,
+        allow: true,
+        grantedBy: "forged",
+      })),
+    });
+    const effective = await effectiveCapabilities(victim.id, "CO_FOUNDER");
+    for (const cap of NAMED_FOUNDER_ONLY) {
+      assert.ok(
+        !effective.has(cap),
+        `a forged grant row must not yield ${cap} to a CO_FOUNDER`,
+      );
+    }
+
+    // And the Founder still holds every one of them — requirement 8.
+    const founderCaps = await effectiveCapabilities(victim.id, "FOUNDER");
+    for (const cap of NAMED_FOUNDER_ONLY) {
+      assert.ok(founderCaps.has(cap), `the FOUNDER must still hold ${cap}`);
+    }
+  } finally {
+    await db.permissionGrant.deleteMany({ where: { userId: victim.id } });
+    await db.user.delete({ where: { id: victim.id } }).catch(() => null);
+  }
 }
 
 console.log(
