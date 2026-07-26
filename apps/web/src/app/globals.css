@@ -24,6 +24,144 @@ body {
 }
 
 /* ==========================================================================
+ * THE WORKSPACE SURFACE — the approved dashboard reference.
+ *
+ * Scoped entirely to `.workspace`, which only the /app shell sets. The marketing
+ * site never matches any rule here, and none of the frozen light tokens are
+ * touched — the palette comes from the --color-ws-* tokens added alongside them.
+ *
+ * The reference's construction, which these rules reproduce:
+ *   a cool grey page → a rounded white device frame → a grey canvas inside it →
+ *   white cards on the canvas → mint and black panels inside the cards.
+ * Four levels of nesting, each a step lighter or darker than its parent, is what
+ * gives the design its depth. Flattening any level loses it.
+ * ========================================================================== */
+
+.workspace {
+  background: var(--color-ws-page);
+  min-height: 100vh;
+}
+
+/* The device frame: a near-white shell with a hairline inset, which is what
+   produces the reference's "double border" edge. */
+.ws-frame {
+  background: var(--color-ws-frame);
+  border-radius: var(--radius-ws-frame);
+  box-shadow:
+    var(--shadow-ws-frame),
+    inset 0 0 0 1px rgb(255 255 255 / 90%);
+}
+
+.ws-canvas {
+  background: var(--color-ws-canvas);
+  border-radius: calc(var(--radius-ws-frame) - 0.5rem);
+}
+
+.ws-card {
+  background: var(--color-ws-card);
+  border-radius: var(--radius-ws-card);
+  box-shadow: var(--shadow-ws-card);
+}
+
+.ws-panel {
+  border-radius: var(--radius-ws-panel);
+}
+
+.ws-mint {
+  background: var(--color-ws-mint);
+}
+
+.ws-ink {
+  background: var(--color-ws-ink);
+  color: #fff;
+}
+
+/* The meter track. Its own class so dark mode can take it back — a hard-coded
+   light grey here showed up as five white columns on the meteor field. */
+.ws-track {
+  background: #eaebee;
+}
+
+/* The pill vocabulary. Every control in the reference is one of these three. */
+.ws-pill {
+  border-radius: var(--radius-ws-pill);
+  background: var(--color-ws-card);
+  border: 1px solid var(--color-ws-line);
+  transition:
+    background-color var(--duration-fast) var(--ease-brand),
+    border-color var(--duration-fast) var(--ease-brand),
+    transform var(--duration-fast) var(--ease-brand);
+}
+
+.ws-pill:hover {
+  background: #fff;
+  border-color: #d7d9dd;
+}
+
+.ws-pill-active {
+  background: var(--color-ws-mint);
+  border-color: transparent;
+}
+
+.ws-pill-ink {
+  background: var(--color-ws-ink);
+  border-color: transparent;
+  color: #fff;
+}
+
+/*
+ * The hatched bars. In the reference, "no data yet" columns are drawn as
+ * diagonal stripes rather than as zero-height bars — a genuinely good idea,
+ * because a floor-height bar reads as "we measured almost nothing" when the
+ * truth is "there is nothing here". It is also exactly what this codebase
+ * already requires of empty series (CLAUDE.md), so it is reproduced literally.
+ */
+.ws-hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(16 17 20 / 7%) 0 2px,
+    transparent 2px 7px
+  );
+  border: 1px solid rgb(16 17 20 / 7%);
+}
+
+/* The left rail's active marker: a small dot to the LEFT of the icon. */
+.ws-rail-item {
+  position: relative;
+  transition: color var(--duration-fast) var(--ease-brand);
+}
+
+.ws-rail-item[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: -0.75rem;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  margin-top: -2.5px;
+  border-radius: 999px;
+  background: var(--color-ws-ink);
+}
+
+/* Cards lift very slightly on hover — the only motion the reference implies. */
+.ws-lift {
+  transition:
+    transform var(--duration-base) var(--ease-brand),
+    box-shadow var(--duration-base) var(--ease-brand);
+}
+
+.ws-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px -20px rgb(16 17 20 / 26%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws-lift:hover {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
  * TYPOGRAPHY (Phase 10, Task 5)
  *
  * Hierarchy from CONTRAST BETWEEN FACES, not from weight alone. Headings take
@@ -513,6 +651,149 @@ pre {
   opacity: 0.035;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   mix-blend-mode: overlay;
+}
+
+/* ==========================================================================
+ * THE WORKSPACE SURFACE, IN DARK MODE.
+ *
+ * The reference's mint-and-paper surface is a LIGHT MODE design. In dark it
+ * would be a second, generic dark theme sitting on top of the meteor shower —
+ * which is exactly what it must not be.
+ *
+ * So every workspace surface hands itself back to the original theme here: the
+ * page becomes transparent so the meteor field shows through it, and the frame,
+ * canvas and cards become the Phase 9.4 glass. Nothing about the meteor field,
+ * the nebula, the light shafts or the accent triad changed — this simply stops
+ * the new light chrome painting over them.
+ *
+ * Light mode never matches a single rule below.
+ * ========================================================================== */
+
+[data-theme="dark"] .workspace {
+  /* transparent, so body's graded backdrop and the meteor canvas are the page */
+  background: transparent;
+}
+
+[data-theme="dark"] .ws-frame {
+  background: color-mix(in srgb, var(--color-surface-raised) 55%, transparent);
+  backdrop-filter: blur(26px) saturate(1.3);
+  -webkit-backdrop-filter: blur(26px) saturate(1.3);
+  border: 1px solid var(--glass-edge);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 8%),
+    0 30px 60px -40px rgb(0 0 0 / 95%);
+}
+
+[data-theme="dark"] .ws-canvas {
+  background: color-mix(in srgb, var(--color-surface-base) 40%, transparent);
+}
+
+[data-theme="dark"] .ws-card {
+  background: color-mix(in srgb, var(--color-surface-raised) 72%, transparent);
+  background-image: var(--glass-tint);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.25);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.25);
+  border: 1px solid var(--glass-edge);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Mint and black panels become accent-lit glass rather than flat fills. */
+[data-theme="dark"] .ws-mint {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .ws-ink {
+  background: color-mix(in srgb, var(--color-surface-overlay) 60%, transparent);
+  border: 1px solid var(--glass-edge);
+}
+
+[data-theme="dark"] .ws-pill {
+  background: color-mix(in srgb, var(--color-surface-overlay) 55%, transparent);
+  border-color: var(--glass-edge);
+  color: var(--color-text-secondary);
+}
+
+[data-theme="dark"] .ws-pill:hover {
+  background: color-mix(in srgb, var(--color-surface-overlay) 80%, transparent);
+  border-color: var(--accent-edge);
+}
+
+[data-theme="dark"] .ws-pill-active {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border-color: var(--accent-edge);
+  color: var(--color-text-primary);
+}
+
+/* Text and hairlines follow the dark palette rather than the light one. */
+[data-theme="dark"] .text-ws-ink {
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .text-ws-dim {
+  color: var(--color-text-secondary);
+}
+
+[data-theme="dark"] .border-ws-line,
+[data-theme="dark"] .ring-ws-line {
+  border-color: var(--glass-edge);
+}
+
+[data-theme="dark"] .bg-ws-canvas {
+  background-color: color-mix(in srgb, var(--color-surface-overlay) 55%, transparent);
+}
+
+/* The white pill wells in the rail and top bar are glass in the dark. */
+[data-theme="dark"] .ws-frame .bg-white {
+  background-color: color-mix(in srgb, var(--color-surface-overlay) 55%, transparent);
+}
+
+/*
+ * The remaining light-mode literals, handed back.
+ *
+ * These are the values the reference bakes in as light greys and mint fills —
+ * meter tracks, the white wells inside the mint panel, and the mint UTILITY
+ * (`bg-ws-mint`, which is a different selector from the `.ws-mint` class above
+ * and needs its own rule). Left alone they punched five white columns and a
+ * glowing block through the meteor field.
+ */
+[data-theme="dark"] .ws-track {
+  background: color-mix(in srgb, var(--color-surface-overlay) 70%, transparent);
+}
+
+[data-theme="dark"] .bg-ws-mint {
+  background-color: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+[data-theme="dark"] .bg-ws-lilac {
+  background-color: color-mix(in srgb, var(--color-accent-violet) 20%, transparent);
+}
+
+[data-theme="dark"] .bg-ws-ink {
+  background-color: color-mix(in srgb, var(--color-surface-overlay) 65%, transparent);
+}
+
+/* White wells inside panels — any opacity variant. */
+[data-theme="dark"] .ws-frame [class*="bg-white/"] {
+  background-color: color-mix(in srgb, var(--color-surface-overlay) 45%, transparent);
+}
+
+/* Text that the reference sets on a mint field reads as ink; in the dark that
+   field is translucent accent, so the text follows the dark palette instead. */
+[data-theme="dark"] .ws-mint .text-ws-ink,
+[data-theme="dark"] .bg-ws-mint,
+[data-theme="dark"] .ws-mint {
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .ws-hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgb(255 255 255 / 8%) 0 2px,
+    transparent 2px 7px
+  );
+  border-color: rgb(255 255 255 / 8%);
 }
 
 /* The glass surface. This single rule is the theme. */

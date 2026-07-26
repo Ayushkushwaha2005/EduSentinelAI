@@ -2,51 +2,51 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import type { Viewer } from "@/lib/guard";
 import {
-  greeting,
-  leadershipStats,
-  productOwners,
-  recentAudit,
-  releasePublishers,
-  staffWithWork,
-  teamCards,
+  greeting, leadershipStats, recentAudit, staffWithWork, teamCards,
 } from "@/lib/dashboard";
 import { growth } from "@/lib/analytics";
 import { hrSummary } from "@/lib/hr";
 import { directory } from "@/lib/people";
-import { BoxIcon, ServerIcon, UsersIcon } from "@/components/dashboard/icons";
 import { Avatar } from "@/components/dashboard/avatar";
+import { ClockIcon, GlobeIcon } from "@/components/dashboard/icons";
 import {
-  Breadcrumb,
-  GrowthChart,
-  PageHeader,
-  Pagination,
-  Panel,
-  StatCard,
-  StatusDot,
-  TableToolbar,
-  TeamCard,
-} from "@/components/dashboard/widgets";
-import { SectionTabs, type Section } from "@/components/dashboard/section-tabs";
-import { ClipboardIcon, UserIcon } from "@/components/dashboard/icons";
+  WsActivityPanel, WsAddCard, WsAvatarCluster, WsHeadline, WsInkStat,
+  WsInnerCard, WsMeters, WsMintStat, WsQuotaCard, WsResourceRow, WsTabs,
+} from "@/components/dashboard/ws-widgets";
 
 /*
- * Founder + Co-Founder dashboard, laid out from the reference: three summary
- * cards, a directory table, the growth chart beside a staff panel, then the team
- * grid. Identical operational view for both roles — the difference is authority,
- * not information: founder-reserved actions (sign, revoke, manage roles and
- * permissions) are absent for the Co-Founder because lib/permissions.ts never
- * puts those capabilities in their effective set.
+ * Founder + Co-Founder dashboard, rebuilt to the approved reference.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * LAYOUT IS THE REFERENCE'S. DATA IS THIS PLATFORM'S.
+ *
+ * Every construction below maps one-for-one onto the screenshot — the enormous
+ * headline with statistics hung beside it, the pill filter row, the mint
+ * activity panel with its blocked bar chart, the three-column band of meters and
+ * stat cards, and the right rail of add-card, resources and quota.
+ *
+ * What is NOT copied is the reference's content. This codebase forbids rendering
+ * any number, name or state in /app that was not read from the database
+ * (CLAUDE.md, enforced by `npm run test:data`), so "124 hours online" and "315
+ * sites" are not reproduced as decoration — each slot is bound to the closest
+ * real measurement this platform actually has. A dashboard that looks right and
+ * lies is worse than one that looks wrong.
+ *
+ * Authority is unchanged: the same capability checks gate the same panels, and
+ * founder-reserved actions are absent for a Co-Founder exactly as before,
+ * because lib/permissions.ts never puts them in their effective set.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }) {
-  const [stats, teams, series, audit, releases, people, staff, owners, publishers, hr] =
+  const [stats, teams, series, audit, releases, people, staff, hr] =
     await Promise.all([
       leadershipStats(),
       teamCards(),
-      growth("7d"),
+      growth("30d"),
       recentAudit(5),
       db.release.findMany({
         orderBy: { createdAt: "desc" },
-        take: 5,
+        take: 6,
         include: {
           product: { select: { name: true } },
           artifact: { select: { scanStatus: true } },
@@ -54,394 +54,400 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
       }),
       viewer.can("users.view") ? directory("ALL") : [],
       staffWithWork(6),
-      productOwners(),
-      releasePublishers(),
-      hrSummary(viewer), // null without hr.view — the panel simply does not render
+      hrSummary(viewer),
     ]);
 
-  const staffNames = staff.map((s) => s.name);
   const isFounder = viewer.role === "FOUNDER";
-
-  /*
-   * The tab row is built from the panels that ACTUALLY RENDERED for this viewer
-   * — every entry below is behind the same capability check as its section, so a
-   * pill can never point at a panel their permissions withheld. See
-   * components/dashboard/section-tabs.tsx for why these are real anchors rather
-   * than the reference's decorative chips.
-   */
-  const sections: Section[] = [
-    ...(viewer.can("users.view") ? [{ id: "people", label: "People" }] : []),
-    { id: "growth", label: "Growth" },
-    { id: "releases", label: "Releases" },
-    ...(hr ? [{ id: "workforce", label: "Workforce" }] : []),
-    ...(viewer.can("audit.read") ? [{ id: "activity", label: "Activity" }] : []),
-    ...(teams.length > 0 ? [{ id: "teams", label: "Teams" }] : []),
-  ];
-
-  /* Headline figures, inline with the greeting (reference layout). Both are
-     measured from data already on this page — no extra query, and nothing here
-     is a placeholder. */
   const onlineNow = people.filter((p) => p.online).length;
 
+  /* The chart. `growth("30d")` returns a cumulative series; the reference shows
+     nine labelled columns, so it is thinned to the same shape rather than
+     squeezing thirty into the space. */
+  const step = Math.max(1, Math.ceil(series.cumulative.length / 9));
+  const chart = series.cumulative.filter((_, i) => i % step === 0).slice(0, 9);
+
+  /* "Most used" — real products ranked by how many releases they carry. */
+  const products = await db.product.findMany({
+    select: { id: true, name: true, status: true, _count: { select: { releases: true } } },
+    orderBy: { releases: { _count: "desc" } },
+    take: 5,
+  });
+  const topReleases = Math.max(1, ...products.map((p) => p._count.releases));
+
+  /* Release health, measured — not invented. */
+  const published = releases.filter((r) => r.status === "PUBLISHED").length;
+  const cleanScans = releases.filter((r) => r.artifact?.scanStatus === "CLEAN").length;
+  const scanPct = releases.length ? Math.round((cleanScans / releases.length) * 100) : 0;
+  const mfaPct = people.length
+    ? Math.round((people.filter((p) => p.mfaEnabled).length / people.length) * 100)
+    : 0;
+
+  const tabs = [
+    { id: "overview", label: "All", href: "/app" },
+    { id: "activity", label: "Activity", href: "/app" },
+    ...(viewer.can("users.view") ? [{ id: "people", label: "People", href: "/app/people" }] : []),
+    { id: "products", label: "Products", href: "/app/products" },
+    { id: "releases", label: "Releases", href: "/app/admin/releases" },
+  ];
+
   return (
-    <div className="flex flex-col gap-4">
-      <Breadcrumb trail={[{ label: "Dashboards" }]} />
-
-      <PageHeader
-        title={greeting(viewer)}
-        subtitle={
-          isFounder
-            ? "You hold full authority over EduSentinel AI — access, releases and permissions."
-            : "Co-Founder view. Release signing and access control remain with the Founder."
-        }
-        stats={[
-          {
-            icon: <ClipboardIcon size={19} />,
-            label: "Open tasks",
-            value: stats.openTasks,
-            unit: stats.openTasks === 1 ? "task" : "tasks",
-          },
-          // Presence is measured from lastSeenAt (Phase 6.1) — this only counts
-          // people genuinely seen in the last five minutes.
-          ...(viewer.can("users.view")
-            ? [
-                {
-                  icon: <UserIcon size={19} />,
-                  label: "On the platform now",
-                  value: onlineNow,
-                  unit: onlineNow === 1 ? "person" : "people",
-                },
-              ]
-            : []),
-        ]}
-      />
-
-      <div className="mt-1">
-        <SectionTabs sections={sections} />
-      </div>
-
-      {/* ---- summary cards. The faces on a card are the people behind ITS number
-              (owners, publishers, staff) — all three used to show the same
-              unrelated stack. ---- */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <StatCard
-          icon={<BoxIcon size={26} />}
-          title="Products"
-          subtitle={`${stats.liveProducts} live · ${stats.draftProducts} draft`}
-          people={owners}
-          href="/app/products"
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_248px]">
+      {/* ─────────────────── main card ─────────────────── */}
+      <div className="ws-card min-w-0 p-6 md:p-8">
+        <WsHeadline
+          title={greeting(viewer)}
+          stats={[
+            {
+              icon: <ClockIcon size={20} />,
+              label: "On the platform now",
+              value: onlineNow,
+              unit: onlineNow === 1 ? "person" : "people",
+            },
+            {
+              icon: <GlobeIcon size={20} />,
+              label: "Published releases",
+              value: stats.releases,
+              unit: stats.releases === 1 ? "release" : "releases",
+            },
+          ]}
         />
-        <StatCard
-          icon={<ServerIcon size={26} />}
-          title="Releases"
-          subtitle={`${stats.releases} published`}
-          people={publishers}
-          href="/app/admin/releases"
-        />
-        <StatCard
-          icon={<UsersIcon size={26} />}
-          title="Team"
-          subtitle={`${stats.staff} staff · ${stats.openTasks} open tasks`}
-          people={staffNames}
-          href="/app/people"
-        />
-      </div>
 
-      {/* ---- directory (reference's main table) ---- */}
-      {viewer.can("users.view") && (
-        <Panel id="people">
-          <TableToolbar
-            title="People"
-            onAddHref={viewer.can("users.manage_roles") ? "/app/access" : undefined}
-            addLabel="Manage"
-            searchPath="/app/people"
-            exportName="edusentinel-people"
-            exportRows={people.map((p) => ({
-              name: p.name,
-              email: p.email,
-              role: p.roleLabel,
-              team: p.team ?? "",
-              twoFactor: p.mfaEnabled ? "on" : "off",
-            }))}
+        <div className="mt-7">
+          <WsTabs
+            tabs={tabs}
+            activeId="activity"
+            action={
+              <span className="flex items-center gap-1.5 rounded-full border border-ws-line bg-white p-1.5">
+                <Link
+                  href="/app/analytics"
+                  prefetch
+                  aria-label="Open analytics"
+                  title="Analytics"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-ws-dim transition-colors hover:bg-ws-canvas hover:text-ws-ink"
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" />
+                  </svg>
+                </Link>
+                <Link
+                  href="/app/audit"
+                  prefetch
+                  aria-label="Open the audit log"
+                  title="Audit log"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-ws-ink text-white transition-transform hover:scale-105"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M4 7h16M4 12h16M4 17h10" />
+                  </svg>
+                </Link>
+              </span>
+            }
           />
-          <div className="mt-5 overflow-x-auto">
-            <table className="w-full min-w-[820px] text-left">
-              <thead>
-                <tr className="bg-surface-overlay/60 text-sm text-text-secondary">
-                  <th className="rounded-l-card px-5 py-3.5 font-medium">#</th>
-                  <th className="px-5 py-3.5 font-medium">Name</th>
-                  <th className="px-5 py-3.5 font-medium">Email</th>
-                  <th className="px-5 py-3.5 font-medium">Role</th>
-                  <th className="px-5 py-3.5 font-medium">Team</th>
-                  <th className="px-5 py-3.5 font-medium">Security</th>
-                  <th className="rounded-r-card px-5 py-3.5 font-medium">Action</th>
-                </tr>
-              </thead>
-              <tbody className="text-[15px]">
-                {people.slice(0, 5).map((p, i) => (
-                  <tr key={p.id} className="border-b border-border-subtle last:border-0">
-                    <td className="px-5 py-4 text-text-muted">
-                      {String(i + 1).padStart(2, "0")}
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="flex items-center gap-2.5">
-                        <Avatar name={p.name} size={30} src={p.avatarUrl} online={p.online} />
-                        <span className="font-medium">{p.name}</span>
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-text-secondary">{p.email}</td>
-                    <td className="px-5 py-4">
-                      <span className="rounded-full bg-surface-overlay px-2.5 py-1 text-xs font-semibold text-text-secondary">
-                        {p.roleLabel}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-text-secondary">{p.team ?? "—"}</td>
-                    <td className="px-5 py-4">
-                      <StatusDot status={p.mfaEnabled ? "Active" : "PENDING"} />
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className="flex items-center gap-3 text-sm font-medium">
-                        <Link href="/app/people" className="text-brand-cyan hover:text-brand-teal">
-                          View
-                        </Link>
-                        {viewer.can("users.manage_roles") && p.role !== "FOUNDER" && (
-                          <Link href="/app/access" className="text-brand-cyan hover:text-brand-teal">
-                            Manage
-                          </Link>
-                        )}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {people.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-5 py-10 text-center text-text-muted">
-                      No accounts yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <Pagination shown={Math.min(5, people.length)} total={people.length} />
-        </Panel>
-      )}
+        </div>
 
-      {/* ---- growth chart + staff panel ---- */}
-      <div id="growth" className="scroll-mt-24 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-        <div className="flex flex-col gap-2">
-          <GrowthChart
-            title="Account Growth"
-            caption="Last 7 days"
-            data={series.cumulative}
-            emptyNote="No accounts yet — the first signup starts this chart."
-          />
-          {viewer.can("analytics.read") && (
-            <Link
-              href="/app/analytics"
-              className="self-end text-sm font-medium text-brand-cyan hover:text-brand-teal"
+        {/* ── activity panel ── */}
+        <div className="mt-5">
+          <WsActivityPanel
+            title="Account growth"
+            caption="Last 30 days"
+            series={chart}
+          >
+            <WsInnerCard
+              title="Your team"
+              subtitle={`${stats.staff} staff · ${onlineNow} online now`}
+              action={
+                <Link
+                  href="/app/people"
+                  prefetch
+                  aria-label="Open the directory"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-ws-line text-ws-ink transition-colors hover:bg-ws-canvas"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                </Link>
+              }
             >
-              Open analytics →
+              <span className="mt-3 flex -space-x-2">
+                {staff.slice(0, 5).map((s) => (
+                  <span key={s.id} className="ring-2 ring-white" style={{ borderRadius: 999 }}>
+                    <Avatar name={s.name} size={28} src={s.avatarUrl} online={s.online} />
+                  </span>
+                ))}
+              </span>
+            </WsInnerCard>
+
+            {hr && (
+              <WsInnerCard
+                title="Decisions waiting"
+                subtitle={
+                  hr.pendingRequests + hr.pendingFixes > 0
+                    ? `${hr.pendingRequests + hr.pendingFixes} need an answer`
+                    : "nothing pending"
+                }
+              >
+                <span className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    href="/app/leave"
+                    prefetch
+                    className="ws-pill flex h-8 items-center gap-2 px-3 text-[12px] font-medium text-ws-ink"
+                  >
+                    <span className="h-2 w-2 rounded-full bg-ws-lilac" />
+                    Leave · {hr.pendingRequests}
+                  </Link>
+                  <Link
+                    href="/app/attendance"
+                    prefetch
+                    className="ws-pill flex h-8 items-center gap-2 px-3 text-[12px] font-medium text-ws-ink"
+                  >
+                    <span className="h-2 w-2 rounded-full bg-ws-mint" />
+                    Corrections · {hr.pendingFixes}
+                  </Link>
+                </span>
+              </WsInnerCard>
+            )}
+          </WsActivityPanel>
+        </div>
+
+        {/* ── three-column band ── */}
+        <div className="mt-7 grid gap-7 lg:grid-cols-3">
+          <section>
+            <h2 className="font-display text-[26px] font-semibold tracking-[-0.03em] text-ws-ink">
+              Most used
+            </h2>
+            <p className="mt-0.5 text-[12px] text-ws-dim">
+              {products.length} products by release count
+            </p>
+            <div className="mt-6">
+              {products.length > 0 ? (
+                <WsMeters
+                  items={products.map((p) => ({
+                    label: p.name,
+                    percent: (p._count.releases / topReleases) * 100,
+                  }))}
+                />
+              ) : (
+                <p className="py-10 text-center text-[13px] text-ws-dim">
+                  No products yet.
+                </p>
+              )}
+            </div>
+          </section>
+
+          <section>
+            <h2 className="font-display text-[26px] font-semibold tracking-[-0.03em] text-ws-ink">
+              Protection
+            </h2>
+            <p className="mt-0.5 text-[12px] text-ws-dim">Measured from our own records</p>
+            <div className="mt-6 flex flex-col gap-3">
+              <WsMintStat
+                label="Two-factor coverage"
+                note={`${people.filter((p) => p.mfaEnabled).length} of ${people.length} accounts`}
+                value={`${mfaPct}%`}
+              />
+              <WsInkStat
+                label="Clean scans"
+                note={`${cleanScans} of ${releases.length} recent artifacts`}
+                value={`${scanPct}%`}
+                /* The waveform is drawn from the real scan outcomes, so a run of
+                   flagged artifacts visibly dents it. */
+                bars={releases.flatMap((r) =>
+                  r.artifact?.scanStatus === "CLEAN" ? [90, 70, 100, 60] : [22, 14, 30, 12],
+                )}
+              />
+            </div>
+          </section>
+
+          <section>
+            <h2 className="font-display text-[26px] font-semibold tracking-[-0.03em] text-ws-ink">
+              Pipeline
+            </h2>
+            <p className="mt-0.5 text-[12px] text-ws-dim">
+              {published} published · {releases.length - published} in review
+            </p>
+            <div className="mt-6 flex flex-col gap-2.5">
+              {releases.slice(0, 4).map((r) => (
+                <Link
+                  key={r.id}
+                  href="/app/admin/releases"
+                  prefetch
+                  className="ws-pill ws-lift flex items-center justify-between gap-3 px-4 py-3"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-[14px] font-medium text-ws-ink">
+                      {r.product.name}
+                    </span>
+                    <span className="block font-mono text-[11px] text-ws-dim">
+                      v{r.version}
+                    </span>
+                  </span>
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                      r.status === "PUBLISHED"
+                        ? "bg-ws-mint text-ws-ink"
+                        : r.status === "REVOKED"
+                          ? "bg-ws-ink text-white"
+                          : "bg-ws-lilac text-ws-ink"
+                    }`}
+                  >
+                    {r.status}
+                  </span>
+                </Link>
+              ))}
+              {releases.length === 0 && (
+                <p className="py-10 text-center text-[13px] text-ws-dim">
+                  No releases yet.
+                </p>
+              )}
+            </div>
+          </section>
+        </div>
+
+        {/* ── recent activity ── */}
+        {viewer.can("audit.read") && (
+          <section className="mt-7">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="font-display text-[22px] font-semibold tracking-[-0.02em] text-ws-ink">
+                Recent activity
+              </h2>
+              <Link href="/app/audit" prefetch className="text-[13px] font-medium text-ws-ink underline underline-offset-4">
+                Audit log
+              </Link>
+            </div>
+            <ul className="mt-4 flex flex-col">
+              {audit.map((e) => (
+                <li
+                  key={e.id}
+                  className="flex items-center justify-between gap-4 border-b border-ws-line py-3 last:border-0"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-mono text-[13px] font-medium text-ws-ink">
+                      {e.action}
+                    </span>
+                    <span className="block truncate text-[11px] text-ws-dim">
+                      {e.actorEmail ?? "system"}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-[11px] text-ws-dim">
+                    {e.createdAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </li>
+              ))}
+              {audit.length === 0 && (
+                <li className="py-8 text-center text-[13px] text-ws-dim">
+                  No activity recorded.
+                </li>
+              )}
+            </ul>
+          </section>
+        )}
+      </div>
+
+      {/* ─────────────────── right rail ─────────────────── */}
+      <aside className="flex min-w-0 flex-col gap-3">
+        {viewer.can("people.invite") && (
+          <WsAddCard
+            title="Add user"
+            subtitle="Invite someone to the workspace"
+            href="/app/access"
+          />
+        )}
+
+        {staff.length > 0 && <WsAvatarCluster names={staff.map((s) => s.name)} />}
+
+        <div className="flex items-center justify-between gap-2 px-1">
+          <span className="text-[12px] text-ws-dim">
+            {stats.staff} {stats.staff === 1 ? "person" : "people"} on the team
+          </span>
+          <Link
+            href="/app/people"
+            prefetch
+            className="ws-pill flex h-8 items-center gap-1 px-3 text-[12px] font-medium text-ws-ink"
+          >
+            view all
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+        </div>
+
+        <div className="mt-2 flex items-baseline justify-between px-1">
+          <h2 className="text-[14px] font-semibold text-ws-ink">Products</h2>
+          <span className="text-[11px] text-ws-dim">{products.length} listed</span>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          {products.map((p) => (
+            <WsResourceRow
+              key={p.id}
+              label={p.name}
+              state={p.status === "PUBLISHED" ? "on" : p.status === "DRAFT" ? "limited" : "off"}
+              href="/app/products"
+            />
+          ))}
+          {products.length === 0 && (
+            <p className="px-1 py-4 text-[12px] text-ws-dim">No products yet.</p>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href="/app/products"
+            prefetch
+            className="ws-pill flex h-9 flex-1 items-center justify-center gap-1 text-[12px] font-medium text-ws-ink"
+          >
+            view all
+          </Link>
+          {viewer.can("products.manage") && (
+            <Link
+              href="/app/products"
+              prefetch
+              className="ws-pill flex h-9 flex-1 items-center justify-center gap-1 text-[12px] font-medium text-ws-ink"
+            >
+              add
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+              </svg>
             </Link>
           )}
         </div>
 
-        <Panel>
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-[19px] font-semibold tracking-[-0.01em]">Team</h2>
-            <Link href="/app/people" className="text-sm font-medium text-brand-cyan">
-              View all
-            </Link>
-          </div>
-          <ul className="mt-4 flex flex-col gap-3">
-            {staff.map((s) => (
-              <li
-                key={s.id}
-                className="flex items-center gap-3 rounded-card border border-border-subtle p-3"
-              >
-                <Avatar name={s.name} size={38} src={s.avatarUrl} online={s.online} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px] font-medium">{s.name}</span>
-                  <span className="block truncate text-xs text-text-muted">
-                    {s.title ?? s.role} {s.team ? `· ${s.team}` : ""}
-                  </span>
-                  {s.task && (
-                    <span className="mt-0.5 block truncate text-xs text-text-secondary">
-                      {s.task.title}
-                    </span>
-                  )}
-                </span>
-                <Link
-                  href="/app/tasks"
-                  className="shrink-0 text-sm font-medium text-brand-cyan hover:text-brand-teal"
-                >
-                  Details
-                </Link>
-              </li>
-            ))}
-            {staff.length === 0 && (
-              <li className="py-6 text-center text-sm text-text-muted">No staff yet.</li>
-            )}
-          </ul>
-        </Panel>
-      </div>
-
-      {/* ---- release pipeline ---- */}
-      <Panel id="releases">
-        <TableToolbar
-          title="Release Pipeline"
-          onAddHref={viewer.can("releases.upload") ? "/app/products" : undefined}
-          addLabel="Upload"
-          exportName="edusentinel-releases"
-          exportRows={releases.map((r) => ({
-            product: r.product.name,
-            version: r.version,
-            status: r.status,
-            scan: r.artifact?.scanStatus ?? "PENDING",
-          }))}
+        <WsQuotaCard
+          used={stats.liveProducts}
+          total={products.length || stats.liveProducts}
+          unit="products live"
+          title={isFounder ? "You hold full authority" : "Co-Founder view"}
+          body={
+            isFounder
+              ? "Access, releases and permissions are yours. Signing stays with you alone."
+              : "Release signing and access control remain with the Founder."
+          }
+          href={isFounder ? "/app/access" : "/app/products"}
         />
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left">
-            <thead>
-              <tr className="bg-surface-overlay/60 text-sm text-text-secondary">
-                <th className="rounded-l-card px-5 py-3.5 font-medium">#</th>
-                <th className="px-5 py-3.5 font-medium">Product</th>
-                <th className="px-5 py-3.5 font-medium">Version</th>
-                <th className="px-5 py-3.5 font-medium">Scan</th>
-                <th className="px-5 py-3.5 font-medium">Status</th>
-                <th className="rounded-r-card px-5 py-3.5 font-medium">Action</th>
-              </tr>
-            </thead>
-            <tbody className="text-[15px]">
-              {releases.map((r, i) => (
-                <tr key={r.id} className="border-b border-border-subtle last:border-0">
-                  <td className="px-5 py-4 text-text-muted">
-                    {String(i + 1).padStart(2, "0")}
-                  </td>
-                  <td className="px-5 py-4 font-medium">{r.product.name}</td>
-                  <td className="px-5 py-4 text-text-secondary">{r.version}</td>
-                  <td className="px-5 py-4">
-                    <StatusDot status={r.artifact?.scanStatus ?? "PENDING"} />
-                  </td>
-                  <td className="px-5 py-4">
-                    <StatusDot status={r.status} />
-                  </td>
-                  <td className="px-5 py-4">
-                    <Link
-                      href="/app/admin/releases"
-                      className="text-sm font-medium text-brand-cyan hover:text-brand-teal"
-                    >
-                      {isFounder && r.status === "QUARANTINED" ? "Sign & publish" : "View"}
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-              {releases.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-text-muted">
-                    No releases yet — upload one from a product to start the pipeline.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        <Pagination shown={releases.length} total={stats.releases} />
-      </Panel>
 
-      {/* ---- HR overview (hr.view) ---- */}
-      {hr && (
-        <Panel id="workforce">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 className="text-[19px] font-semibold tracking-[-0.01em]">Workforce today</h2>
-            <span className="flex items-center gap-4 text-sm font-medium">
-              <Link href="/app/attendance" className="text-brand-cyan hover:text-brand-teal">
-                Attendance
-              </Link>
-              <Link href="/app/leave" className="text-brand-cyan hover:text-brand-teal">
-                Leave
-              </Link>
-              <Link href="/app/calendar" className="text-brand-cyan hover:text-brand-teal">
-                Calendar
-              </Link>
-            </span>
-          </div>
-
-          <dl className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { label: "At work", value: hr.present, of: `of ${hr.staff} staff` },
-              { label: "On leave", value: hr.onLeave, of: "today" },
-              {
-                label: "Requests waiting",
-                value: hr.pendingRequests,
-                of: hr.pendingRequests > 0 ? "need a decision" : "nothing pending",
-              },
-              {
-                label: "Corrections waiting",
-                value: hr.pendingFixes,
-                of: hr.pendingFixes > 0 ? "need a decision" : "nothing pending",
-              },
-            ].map((s) => (
-              <div key={s.label} className="rounded-card border border-border-subtle p-4">
-                <dt className="text-sm text-text-secondary">{s.label}</dt>
-                <dd className="mt-1 text-[26px] font-semibold tabular-nums tracking-[-0.02em]">
-                  {s.value}
-                </dd>
-                <dd className="text-xs text-text-muted">{s.of}</dd>
-              </div>
-            ))}
-          </dl>
-        </Panel>
-      )}
-
-      {/* ---- recent activity ---- */}
-      {viewer.can("audit.read") && (
-        <Panel id="activity">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-[19px] font-semibold tracking-[-0.01em]">
-              Recent Activity
-            </h2>
-            <Link href="/app/audit" className="text-sm font-medium text-brand-cyan">
-              Audit log
-            </Link>
-          </div>
-          <ul className="mt-4 flex flex-col">
-            {audit.map((e) => (
-              <li
-                key={e.id}
-                className="flex items-center justify-between gap-4 border-b border-border-subtle py-3 last:border-0"
+        {teams.length > 0 && (
+          <div className="mt-2 flex flex-col gap-2">
+            <h2 className="px-1 text-[14px] font-semibold text-ws-ink">Teams</h2>
+            {teams.slice(0, 3).map((t) => (
+              <Link
+                key={t.id}
+                href={`/app/teams/${t.id}`}
+                prefetch
+                className="ws-pill ws-lift flex items-center justify-between gap-2 px-4 py-3"
               >
                 <span className="min-w-0">
-                  <span className="block truncate font-mono text-sm font-medium">
-                    {e.action}
+                  <span className="block truncate text-[14px] font-medium text-ws-ink">
+                    {t.name}
                   </span>
-                  <span className="block truncate text-xs text-text-muted">
-                    {e.actorEmail ?? "system"}
+                  <span className="block text-[11px] text-ws-dim">
+                    {t.memberCount} {t.memberCount === 1 ? "member" : "members"}
                   </span>
                 </span>
-                <span className="shrink-0 text-xs text-text-muted">
-                  {e.createdAt.toLocaleTimeString("en-GB", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              </li>
+              </Link>
             ))}
-            {audit.length === 0 && (
-              <li className="py-6 text-center text-sm text-text-muted">
-                No activity recorded.
-              </li>
-            )}
-          </ul>
-        </Panel>
-      )}
-
-      {/* ---- teams grid ---- */}
-      <div id="teams" className="scroll-mt-24 grid gap-4 lg:grid-cols-3">
-        {teams.map((t) => (
-          <TeamCard key={t.id} team={t} />
-        ))}
-      </div>
+          </div>
+        )}
+      </aside>
     </div>
   );
 }
