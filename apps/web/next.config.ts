@@ -18,6 +18,18 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 31536000,
   },
 
+  /*
+   * Next.js will not serve a `public/` path whose segment starts with a dot, so
+   * `public/.well-known/security.txt` deployed but 404'd — while the footer and
+   * /legal/security both linked to it. The route handler generates it from
+   * lib/org-email.ts instead; this makes it reachable at the RFC 9116 location.
+   */
+  async rewrites() {
+    return [
+      { source: "/.well-known/security.txt", destination: "/api/security-txt" },
+    ];
+  },
+
   experimental: {
     /*
      * framer-motion is imported by a dozen components, most of which want two or
