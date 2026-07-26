@@ -30,6 +30,49 @@ audit totals are byte-identical to the `pre-polish-baseline` tag
 | `sharp` | High | Inherited libvips CVEs | Used at **build time only** (`scripts/build-brand-assets.mjs`) and by Next's image optimizer on trusted, repo-committed assets. No user-supplied image reaches it. |
 | `eslint` toolchain (`minimatch`, `brace-expansion`, `eslint-*`) | High | ReDoS / unbounded expansion | Development dependencies; never shipped or executed against untrusted input. |
 
+### Pre-deployment update (production release)
+
+The two **critical** advisories are now **resolved**. `npm audit fix` moved the
+lockfile — and only the lockfile; no `package.json` range changed — to:
+
+| Package | Was | Now | Effect |
+|---------|-----|-----|--------|
+| `next-auth` | 5.0.0-beta.31 | **5.0.0-beta.32** | Critical resolved |
+| `@auth/core` | (vulnerable) | **0.41.3** | Critical resolved |
+| `next` | 16.2.10 | **16.2.12** | Latest 16.x patch |
+
+Because this touches the authentication stack, it was verified rather than
+assumed: all eight phase-invariant suites pass, and a live end-to-end sign-in was
+run against the dev server — Founder (with TOTP) reaches every page including the
+founder-only `/app/access`, Co-Founder authenticates with role `CO_FOUNDER`, and
+a wrong password yields no session at all.
+
+**Audit totals: 14 (12 high, 2 critical) → 12 (12 high, 0 critical).**
+
+#### Why the remaining 12 highs are not fixable today
+
+They are not being ignored — there is no version to move to:
+
+- **`next`, `sharp`, `postcss` (3 findings).** npm reports `fixAvailable:
+  next@9.3.3`, i.e. a **downgrade to Next 9** — the advisory range
+  (`9.3.4-canary.0 - 16.3.0-preview.7`) covers every release in the 16.x line,
+  so no fixed 16.x exists yet. `sharp` and `postcss` are pinned transitively by
+  Next and cannot be raised independently. Downgrading eight major versions of
+  the framework to clear an advisory would break the application entirely and is
+  not a serious option. Mitigations in the table above still hold: middleware is
+  a UX gate only, and real enforcement is `auth()` plus `lib/guard.ts`.
+- **`eslint` toolchain (8 findings + `brace-expansion`).** Development
+  dependencies. They are never shipped, never executed in production and never
+  run against untrusted input. Clearing them needs `eslint@10` /
+  `eslint-config-next@0.2.4` — a major upgrade of the lint toolchain, which is
+  not something to attempt on a feature-frozen app in the same change as its
+  production deployment.
+
+**Revisit condition:** when Next.js publishes a 16.x release outside the advisory
+range, bump `next` and re-run the full suite. Track the eslint majors separately.
+
+---
+
 **Recommended next action (separate change, requires two-person review):** upgrade
 `next` and `next-auth` to versions carrying these fixes, then re-run the full
 phase-invariant suite. This was deliberately left out of Phase 10, which was a
