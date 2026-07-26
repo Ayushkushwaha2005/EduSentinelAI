@@ -201,3 +201,22 @@ export function TrashIcon(p: IconProps) {
     </Svg>
   );
 }
+
+/* The two glyphs the reference hangs its headline statistics off. */
+export function ClockIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5V12l3 1.8" />
+    </Svg>
+  );
+}
+
+export function GlobeIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18" />
+    </Svg>
+  );
+}

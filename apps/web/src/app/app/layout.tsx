@@ -4,10 +4,10 @@ import { redirect } from "next/navigation";
 import { requireViewer } from "@/lib/guard";
 import { isAdminRole } from "@/lib/roles";
 import {
-  SidebarSkeleton,
-  SidebarWithData,
-  TopbarSkeleton,
-  TopbarWithData,
+  RailSkeleton,
+  RailWithData,
+  WsTopbarSkeleton,
+  WsTopbarWithData,
 } from "@/components/dashboard/shell-chrome";
 import { navFor } from "@/components/dashboard/nav-config";
 import { MeteorField } from "@/components/meteors";
@@ -105,34 +105,69 @@ export default async function AppLayout({
   // to a policy this platform spent Phase 2.1 tightening.
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
+  /*
+   * THE REFERENCE SHELL.
+   *
+   * The approved dashboard reference nests four surfaces, and the depth of the
+   * design comes entirely from that nesting:
+   *
+   *   .workspace  the cool grey page
+   *     .ws-frame   a rounded near-white device frame floating on it
+   *       rail      the icon-only navigation column, inside the frame
+   *       .ws-canvas  a grey canvas holding the cards
+   *
+   * The meteor field is not mounted here any more: the reference has a flat grey
+   * page, and a starfield behind a light dashboard was never what it showed.
+   * It remains on the marketing site and in dark mode, untouched.
+   */
   return (
-    <div className="relative min-h-screen bg-surface-base p-3 md:p-4">
+    /*
+     * FULL WIDTH. The frame spans the viewport with only breathing room at the
+     * edge — no max-width, no centred column, no wasted margin. On a wide
+     * monitor the workspace is the whole monitor.
+     */
+    <div className="workspace relative min-h-screen p-2 sm:p-3">
       <ThemeScript nonce={nonce} />
+      {/*
+       * THE METEOR FIELD IS BACK.
+       *
+       * Removing it was a mistake: it is the dark theme, not decoration on top
+       * of one. Light mode now wears the reference's surface and dark mode wears
+       * the original meteor shower exactly as it did — the field only ever
+       * paints when `data-theme="dark"` (see .meteor-field in globals.css and
+       * the gate in components/meteors.tsx), so the two never collide.
+       */}
       <MeteorField />
-      {/* Task 13: the workspace sidebar is a dozen links deep, so skipping it
-          matters more here than anywhere on the marketing site. */}
       <a href="#workspace-content" className="skip-link">
         Skip to content
       </a>
 
-      {/* The workspace sits above the sky, never in it. */}
-      <div className="relative z-10 flex gap-4">
-        {/* Navigation is the workflow, always — it must not change colour under
-            you as you move between regions. Only the CONTENT takes the accent. */}
-        <div data-accent="azure" className="contents">
-          <Suspense fallback={<SidebarSkeleton />}>
-            <SidebarWithData viewer={viewer} items={items} />
+      {/*
+       * The frame is SIZED TO THE VIEWPORT and scrolls internally, which is how
+       * the reference's device behaves — its rail and top bar stay put while the
+       * cards move under them.
+       *
+       * It also fixes a real bug: with the rail as a plain flex column, fifteen
+       * nav items made it 1561px tall on a 1050px screen, pushing the theme
+       * toggle and the avatar 500px below the fold where they could not be
+       * reached. Bounding the height gives `overflow-y-auto` on the nav
+       * something to scroll against.
+       */}
+      <div className="ws-frame relative z-10 flex h-[calc(100vh-1rem)] w-full gap-0 overflow-hidden p-2 sm:h-[calc(100vh-1.5rem)] sm:p-2.5">
+        <Suspense fallback={<RailSkeleton />}>
+          <RailWithData viewer={viewer} items={items} />
+        </Suspense>
+
+        <div className="ws-canvas flex min-w-0 flex-1 flex-col overflow-hidden px-3 py-3 sm:px-5 sm:py-4">
+          <Suspense fallback={<WsTopbarSkeleton />}>
+            <WsTopbarWithData viewer={viewer} items={items} />
           </Suspense>
-        </div>
-        <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <Suspense fallback={<TopbarSkeleton />}>
-            <TopbarWithData viewer={viewer} items={items} />
-          </Suspense>
-          {/* The region decides its own light (see accentFor above). */}
+
+          {/* Only the content scrolls. */}
           <main
             id="workspace-content"
             tabIndex={-1}
-            className="min-w-0"
+            className="min-w-0 flex-1 overflow-y-auto pb-2 pr-1"
             data-accent={accentFor(pathname)}
           >
             {children}

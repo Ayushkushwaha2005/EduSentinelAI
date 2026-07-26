@@ -1,110 +1,107 @@
 /*
- * The workspace loading state (Phase 10, Tasks 8 + 9).
+ * The workspace loading state.
  *
- * There was no loading.tsx anywhere in this application. Every navigation —
- * including the one straight after a 2FA code is accepted — held the previous
- * screen, motionless, until every query for the next one had returned. On a
- * serverless Postgres that is the entire "verification succeeded, then a long
- * unexplained wait" complaint in Task 9: the work was never the bottleneck, the
- * absence of a boundary to stream into was.
+ * WHY THIS IS THE MAIN PERFORMANCE LEVER.
  *
- * With this file present, Next.js wraps the route in a Suspense boundary and
- * paints this skeleton the instant navigation starts. The shape below is
- * deliberately the shape of the real dashboard — header, tab row, three summary
- * cards, a table — so the transition is a fill-in rather than a flash of
- * something else.
+ * Every /app route is a server component that reads the database, so a click can
+ * never be answered in zero milliseconds — the payload has to come back. What it
+ * CAN be answered with instantly is the shape of the answer. Next.js paints this
+ * the moment navigation starts, so the click feels acknowledged immediately and
+ * the real content fills in underneath it.
  *
- * `animate-pulse` is a Tailwind built-in and is switched off by the global
- * reduced-motion block in globals.css.
+ * The shape below is deliberately the shape of the real dashboard — headline,
+ * pill row, mint activity panel, three-column band, right rail — so switching
+ * pages reads as content arriving rather than as the page being replaced. A
+ * generic spinner here would be worse than nothing: it would announce a wait.
+ *
+ * The rail and top bar are NOT in this file, on purpose. They live in the layout
+ * and App Router preserves a layout across navigations within it, so they never
+ * unmount, never re-fetch and never flicker. Only this region changes.
  */
 
 function Bar({ className = "" }: { className?: string }) {
-  return <div className={`rounded-full bg-surface-overlay ${className}`} />;
-}
-
-function Card() {
-  return (
-    <div className="rounded-panel bg-surface-raised p-6">
-      <div className="flex items-start gap-4">
-        <div className="h-14 w-14 shrink-0 rounded-[18px] bg-surface-overlay" />
-        <div className="flex-1">
-          <Bar className="h-4 w-1/2" />
-          <Bar className="mt-2.5 h-3 w-3/4" />
-        </div>
-      </div>
-      <div className="mt-6 flex items-center justify-between">
-        <Bar className="h-7 w-24" />
-        <Bar className="h-3 w-12" />
-      </div>
-    </div>
-  );
+  return <div className={`rounded-full bg-black/[0.055] ${className}`} />;
 }
 
 export default function Loading() {
   return (
-    // aria-busy + a polite status role: someone using a screen reader is told the
-    // page is loading, which is the half of this fix that is not visual.
     <div
-      className="flex animate-pulse flex-col gap-4"
+      className="grid animate-pulse gap-4 xl:grid-cols-[minmax(0,1fr)_248px]"
       role="status"
       aria-busy="true"
-      aria-label="Loading your workspace"
+      aria-label="Loading"
     >
-      {/* breadcrumb */}
-      <Bar className="h-4 w-28" />
-
-      {/* page header: headline + inline stats */}
-      <div className="flex flex-wrap items-start justify-between gap-6">
-        <div className="min-w-0 flex-1">
-          <Bar className="h-10 w-72 max-w-full" />
-          <Bar className="mt-3 h-4 w-96 max-w-full" />
+      <div className="ws-card min-w-0 p-6 md:p-8">
+        {/* headline + inline stats */}
+        <div className="flex flex-wrap items-center gap-x-12 gap-y-6">
+          <Bar className="h-12 w-[420px] max-w-full" />
+          <div className="flex gap-10">
+            {[0, 1].map((i) => (
+              <div key={i} className="flex items-center gap-3.5">
+                <div className="h-[52px] w-[52px] rounded-full bg-black/[0.055]" />
+                <div>
+                  <Bar className="h-3 w-28" />
+                  <Bar className="mt-2 h-7 w-16" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-8">
-          {[0, 1].map((i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-full bg-surface-overlay" />
-              <div>
-                <Bar className="h-3 w-16" />
-                <Bar className="mt-2 h-5 w-10" />
+
+        {/* pill row */}
+        <div className="mt-7 flex gap-2.5">
+          {["w-20", "w-24", "w-24", "w-28", "w-24"].map((w, i) => (
+            <Bar key={i} className={`h-[42px] ${w}`} />
+          ))}
+        </div>
+
+        {/* activity panel */}
+        <div className="ws-panel ws-mint mt-5 p-6 md:p-7">
+          <Bar className="h-8 w-24 bg-black/[0.06]" />
+          <Bar className="mt-5 h-9 w-64 bg-black/[0.06]" />
+          <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,300px)_1fr]">
+            <div className="flex flex-col gap-3">
+              <div className="h-[104px] rounded-[16px] bg-white/60" />
+              <div className="h-[104px] rounded-[16px] bg-white/60" />
+            </div>
+            <div className="flex h-[190px] items-end gap-2.5">
+              {[3, 5, 2, 4, 5, 3, 4, 2, 3].map((cells, i) => (
+                <div key={i} className="flex flex-1 flex-col-reverse gap-1.5">
+                  {Array.from({ length: cells }).map((_, c) => (
+                    <span key={c} className="aspect-square w-full rounded-[9px] bg-white/45" />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* three-column band */}
+        <div className="mt-7 grid gap-7 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i}>
+              <Bar className="h-7 w-40" />
+              <Bar className="mt-2 h-3 w-48" />
+              <div className="mt-6 flex flex-col gap-2.5">
+                <Bar className="h-[86px] rounded-[20px]" />
+                <Bar className="h-[86px] rounded-[20px]" />
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* tab row — varied widths so it reads as words, not as four identical pills */}
-      <div className="mt-1 flex gap-2">
-        {["w-20", "w-16", "w-24", "w-20", "w-16"].map((w, i) => (
-          <Bar key={i} className={`h-9 ${w}`} />
+      {/* right rail */}
+      <aside className="hidden flex-col gap-3 xl:flex">
+        <Bar className="h-[170px] rounded-[22px]" />
+        <Bar className="h-[52px]" />
+        {[0, 1, 2, 3, 4].map((i) => (
+          <Bar key={i} className="h-[46px]" />
         ))}
-      </div>
+        <Bar className="mt-2 h-[190px] rounded-[20px]" />
+      </aside>
 
-      {/* summary cards */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card />
-        <Card />
-        <Card />
-      </div>
-
-      {/* the main table */}
-      <div className="rounded-panel bg-surface-raised p-6">
-        <div className="flex items-center justify-between">
-          <Bar className="h-5 w-32" />
-          <Bar className="h-9 w-40" />
-        </div>
-        <div className="mt-6 flex flex-col gap-4">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="flex items-center gap-4">
-              <div className="h-8 w-8 shrink-0 rounded-full bg-surface-overlay" />
-              <Bar className="h-4 flex-1" />
-              <Bar className="hidden h-4 w-40 sm:block" />
-              <Bar className="hidden h-4 w-24 md:block" />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <span className="sr-only">Loading your workspace…</span>
+      <span className="sr-only">Loading…</span>
     </div>
   );
 }

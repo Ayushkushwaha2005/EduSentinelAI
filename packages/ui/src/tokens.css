@@ -64,6 +64,40 @@
    *   surface-raised #ffffff → 5.43:1
    */
   --color-text-muted-aa: #666a72;
+
+  /*
+   * ── WORKSPACE SURFACE (the dashboard reference) ─────────────────────────
+   *
+   * The approved dashboard reference is built on a mint/sage palette over a
+   * cool grey page, with black as the accent — a different surface language
+   * from the marketing site's warm paper.
+   *
+   * These are NEW tokens. The eight frozen light tokens above are untouched, so
+   * `check:theme` still passes and nothing on the public site moves. They are
+   * applied only inside the workspace shell (see .workspace in globals.css),
+   * which is the only place the reference governs.
+   */
+  --color-ws-page: #d9dbe1; /* the grey the device frame floats on */
+  --color-ws-frame: #fdfdfd; /* the rounded outer frame */
+  --color-ws-canvas: #f0f1f3; /* inside the frame, behind the cards */
+  --color-ws-card: #ffffff;
+  --color-ws-mint: #cfe7dc; /* the activity panel, filled pills, on-toggles */
+  --color-ws-mint-deep: #b6dbca; /* hover / stronger fill */
+  --color-ws-lilac: #ded2f2; /* the second data colour */
+  --color-ws-ink: #101114; /* black cards, filled buttons, the dark toggle */
+  --color-ws-line: #e6e7ea; /* hairlines and pill outlines */
+  --color-ws-dim: #8b8f98; /* secondary label text on the canvas */
+
+  /* Reference geometry — measured off the image, not guessed. */
+  --radius-ws-frame: 2.5rem; /* the device frame */
+  --radius-ws-card: 1.75rem; /* the big white content card */
+  --radius-ws-panel: 1.25rem; /* the mint activity panel, black cards */
+  --radius-ws-pill: 999px;
+
+  /* The reference's shadows are soft, wide and very low-contrast. */
+  --shadow-ws-frame: 0 24px 60px -30px rgb(16 17 20 / 28%);
+  --shadow-ws-card: 0 10px 30px -18px rgb(16 17 20 / 18%);
+  --shadow-ws-pill: 0 2px 8px -4px rgb(16 17 20 / 16%);
   --color-brand-cyan-aa: #0e7490; /* ≈ 4.9:1 */
   --color-brand-teal-aa: #0f766e; /* ≈ 5.2:1 */
 

@@ -20,10 +20,19 @@ export function Panel({
   return (
     <section
       id={id}
-      // rounded-panel (Phase 10, Task 3): the reference's softer corner. Applied
-      // via its own token so the marketing site's cards are untouched.
-      // scroll-mt clears the sticky top bar when a tab jumps here.
-      className={`scroll-mt-24 rounded-panel bg-surface-raised p-6 ${className}`}
+      /*
+       * `ws-card` — the reference's card: white, generously rounded, soft wide
+       * shadow. Every other /app page is built out of Panel, so restyling it
+       * here is what makes the whole workspace consistent with the redesigned
+       * dashboard rather than only the dashboard itself matching.
+       *
+       * It also inherits the dark-mode override for free: `.ws-card` becomes
+       * Phase 9.4 glass under `[data-theme="dark"]`, so the meteor theme reads
+       * through every page, not just this one.
+       *
+       * scroll-mt clears the top bar when a section anchor jumps here.
+       */
+      className={`scroll-mt-24 ws-card p-6 ${className}`}
     >
       {children}
     </section>
@@ -57,7 +66,9 @@ export function PageHeader({
   return (
     <div className="flex flex-wrap items-start justify-between gap-x-10 gap-y-6">
       <div className="min-w-0">
-        <h1 className="font-display text-[34px] font-semibold leading-[1.05] tracking-[-0.035em] md:text-[44px]">
+        {/* Matched to the reference's headline scale, so a section page and the
+            dashboard share one typographic voice. */}
+        <h1 className="font-display text-[36px] font-semibold leading-[0.98] tracking-[-0.04em] md:text-[48px]">
           {title}
         </h1>
         {subtitle && (
