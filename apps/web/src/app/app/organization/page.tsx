@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { requireCapability } from "@/lib/guard";
+import { requireExecutiveView } from "@/lib/executive";
 import { orgDirectory, unlinkedAccounts } from "@/lib/org";
 import { assignTeamDepartment } from "./actions";
 import { AddMember, DepartmentForm, MemberRow } from "./forms";
@@ -20,7 +20,7 @@ import { Breadcrumb, Panel } from "@/components/dashboard/widgets";
 export const metadata = { title: "Organization" };
 
 export default async function OrganizationPage() {
-  await requireCapability("org.manage");
+  await requireExecutiveView("org.manage");
 
   const [directory, accounts, teams] = await Promise.all([
     orgDirectory(),

@@ -13,6 +13,14 @@ export type NavItem = {
   icon: NavIcon;
   cap?: Capability; // undefined = visible to every signed-in user
   founderOnly?: boolean;
+  /*
+   * Executive Workspace: a LEADERSHIP surface. Executives (Founder, Co-Founder)
+   * may open it whether or not they hold the capability it is about — the page
+   * behind it decides what they may do there, and every action on it still
+   * calls assertCapability. This flag widens VISIBILITY only, and only by one
+   * role; it is not, and must never become, an authority check.
+   */
+  executive?: boolean;
   children?: NavChild[];
 };
 
@@ -111,6 +119,7 @@ export const NAV: NavItem[] = [
     href: "/app/organization",
     icon: "users",
     cap: "org.manage",
+    executive: true,
     children: [
       { label: "Org chart", href: "/app/organization", cap: "org.manage" },
       { label: "Company profile", href: "/app/company", cap: "company.manage" },
@@ -123,7 +132,10 @@ export const NAV: NavItem[] = [
     href: "/app/access",
     icon: "key",
     cap: "permissions.grant",
-    founderOnly: true,
+    // Was founderOnly. A Co-Founder now opens it in review mode and sees the
+    // permission matrix; granting still requires `permissions.grant`, which is
+    // founder-reserved and stripped in code for every other role.
+    executive: true,
     children: [
       { label: "People", href: "/app/access" },
       { label: "Permissions", href: "/app/access#permissions" },
@@ -139,18 +151,35 @@ export const NAV: NavItem[] = [
   // entitled to know how the thing they are using works; the ARTICLES inside it
   // are what get filtered.
   { label: "Portal Guide", href: "/app/guide", icon: "report" },
+  {
+    label: "Session Center",
+    href: "/app/sessions",
+    icon: "shield",
+    cap: "sessions.manage",
+    // A leadership surface: both executives open it, only the Founder can end
+    // anyone's session (sessions.manage is founder-reserved).
+    executive: true,
+  },
   { label: "Security", href: "/app/security", icon: "shield" },
 ];
 
 /** Filter the nav down to what this viewer may actually use. */
 export function navFor(caps: Set<string>, role: string): NavItem[] {
-  const allowed = (cap?: Capability, founderOnly?: boolean) => {
+  const executive = role === "FOUNDER" || role === "CO_FOUNDER";
+
+  const allowed = (cap?: Capability, founderOnly?: boolean, exec?: boolean) => {
     if (founderOnly && role !== "FOUNDER") return false;
+    // A leadership surface opens for an executive even without the capability.
+    if (exec && executive) return true;
     return !cap || caps.has(cap);
   };
 
-  return NAV.filter((item) => allowed(item.cap, item.founderOnly)).map((item) => ({
-    ...item,
-    children: item.children?.filter((c) => allowed(c.cap)),
-  }));
+  return NAV.filter((item) => allowed(item.cap, item.founderOnly, item.executive)).map(
+    (item) => ({
+      ...item,
+      children: item.children?.filter((c) =>
+        allowed(c.cap, undefined, item.executive),
+      ),
+    }),
+  );
 }

@@ -276,3 +276,80 @@ export async function revokeAllFor(userId: string, actorId: string): Promise<num
   });
   return res.count;
 }
+
+/* ────────────────────────────────────── the Organization Session Center ──── */
+
+export type OrgSessionRow = SessionRow & {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userRole: string;
+};
+
+/**
+ * Every live session in the organization.
+ *
+ * Read-only, and deliberately NOT scoped by the caller — the caller is checked
+ * before this runs (`requireExecutiveView`), because the whole point of the
+ * Session Center is the org-wide view. Ending any of them is a separate,
+ * founder-reserved act (`sessions.manage`).
+ */
+export async function organizationSessions(
+  currentSid: string | null,
+): Promise<OrgSessionRow[]> {
+  const rows = await db.userSession.findMany({
+    where: { revokedAt: null },
+    orderBy: { lastSeenAt: "desc" },
+    take: 300,
+    include: {
+      user: { select: { id: true, name: true, email: true, role: true } },
+    },
+  });
+
+  return rows.map((r) => ({
+    id: r.id,
+    sid: r.sid,
+    browser: r.browser ?? "Unknown",
+    os: r.os ?? "Unknown",
+    device: r.device ?? "Desktop",
+    ip: r.ip,
+    location: r.location,
+    createdAt: r.createdAt,
+    lastSeenAt: r.lastSeenAt,
+    current: !!currentSid && r.sid === currentSid,
+    userId: r.user.id,
+    userName: r.user.name,
+    userEmail: r.user.email,
+    userRole: r.user.role,
+  }));
+}
+
+/**
+ * Recent sign-in and session history, from the audit log.
+ *
+ * The audit log already records every login, new device and revocation with a
+ * timestamp and an actor, so login history needs no second table and cannot
+ * disagree with what actually happened.
+ */
+export async function sessionHistory(take = 40) {
+  return db.auditLog.findMany({
+    where: { action: { in: ["user.login", "session.new_device", "session.revoked", "session.revoked_others", "session.revoked_all"] } },
+    orderBy: { createdAt: "desc" },
+    take,
+    select: { id: true, action: true, actorEmail: true, detail: true, ip: true, createdAt: true },
+  });
+}
+
+/** End one session belonging to ANY account. Founder-reserved at the caller. */
+export async function adminRevokeSession(
+  sessionId: string,
+  actorId: string,
+): Promise<boolean> {
+  const res = await db.userSession.updateMany({
+    where: { id: sessionId, revokedAt: null },
+    data: { revokedAt: new Date(), revokedBy: actorId },
+  });
+  if (res.count === 0) return false;
+  await audit("session.revoked", { actorId, detail: `admin ended session ${sessionId}` });
+  return true;
+}
