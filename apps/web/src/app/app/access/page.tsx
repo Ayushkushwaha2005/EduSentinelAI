@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
-import { requireFounder } from "@/lib/guard";
+import { isReviewMode, requireExecutiveView } from "@/lib/executive";
+import { ReviewNotice } from "@/components/dashboard/approval";
+import { PermissionMatrix } from "./permission-matrix";
 import { grantableRoles } from "@/lib/authz";
 import {
   CAPABILITIES,
@@ -25,7 +27,15 @@ import { failedMail } from "@/lib/mail";
  * capabilities are decided.
  */
 export default async function AccessPage() {
-  const founder = await requireFounder();
+  /* Widened to VIEW only (Executive Workspace). The Founder passes exactly as
+     before; a Co-Founder may now open this page and see the state of access,
+     while every action below still calls assertCapability and still refuses
+     them. Nothing about the Founder's path changed. */
+  const founder = await requireExecutiveView();
+  /* Review mode is a PRESENTATION flag: it decides whether the notice renders,
+     never whether an action runs. Every action on this page independently calls
+     assertCapability on the server. */
+  const reviewing = isReviewMode(founder, "permissions.grant");
 
   const [users, grants, invitations, elevated, lastReview, failures] = await Promise.all([
     db.user.findMany({
@@ -75,6 +85,13 @@ export default async function AccessPage() {
     });
     grantsByUser.set(g.userId, list);
   }
+
+  /* The matrix shows the accounts that actually carry authority. Members and
+     collaborators hold only dashboard.view and would be columns of dashes,
+     which makes the grid harder to read without telling anyone anything. */
+  const matrixPeople = users
+    .filter((u) => ["FOUNDER", "CO_FOUNDER", "ADMIN", "EMPLOYEE"].includes(u.role))
+    .map((u) => ({ id: u.id, name: u.name, role: u.role }));
 
   // Reserved capabilities are never offered in the UI — and the server rejects
   // them too, so hiding them here is convenience, not the control.
@@ -176,6 +193,22 @@ export default async function AccessPage() {
             }
           />
         </div>
+      </Panel>
+
+      {/*
+        * Executive Workspace: the review notice, shown only to someone who may
+        * open this page but not act on it. The Founder never sees it, because
+        * for the Founder nothing here is in review.
+        */}
+      {reviewing && (
+        <ReviewNotice
+          surface="Access Control"
+          detail="You can review every role, grant and session here. Changing a role or a permission is a Founder authorization."
+        />
+      )}
+
+      <Panel>
+        <PermissionMatrix people={matrixPeople} grants={grantsByUser} />
       </Panel>
 
       <Panel>

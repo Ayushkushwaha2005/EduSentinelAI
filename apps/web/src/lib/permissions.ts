@@ -68,6 +68,7 @@ export const CAPABILITIES = [
   "billing.manage", // billing owner: plan, payment method, invoices (founder-reserved)
   "secrets.manage", // environment secrets and signing material (founder-reserved)
   "security.policy", // security policy, disclosure contact, retention (founder-reserved)
+  "sessions.manage", // end another account's sessions (founder-reserved)
 ] as const;
 export type Capability = (typeof CAPABILITIES)[number];
 
@@ -120,6 +121,10 @@ export const FOUNDER_RESERVED: readonly Capability[] = [
   "billing.manage",
   "secrets.manage",
   "security.policy",
+  /* Ending someone else's session is the mirror of offboarding: it is how you
+     remove a person from the running system right now. If people.offboard is
+     reserved because taking access away is the Founder's alone, this is too. */
+  "sessions.manage",
 ];
 
 export function isFounderReserved(cap: Capability): boolean {

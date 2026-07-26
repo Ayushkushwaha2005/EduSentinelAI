@@ -502,6 +502,13 @@ const GUARDS = [
   "requireViewer",
   "requireCapability",
   "requireFounder",
+  /* Phase 15. `requireExecutiveView` (lib/executive.ts) is a guard: it calls
+     requireViewer, enforces MFA for privileged roles, and redirects anyone who
+     is neither an executive nor a holder of the capability. It widens WHO MAY
+     OPEN a leadership surface and nothing else — every action on those surfaces
+     still calls assertCapability. Recognised here so the deny-by-default sweep
+     keeps passing without being loosened. */
+  "requireExecutiveView",
   "assertCapability",
 ];
 
@@ -619,6 +626,73 @@ for (const file of walk(APP_DIR)) {
   } finally {
     await db.permissionGrant.deleteMany({ where: { userId: victim.id } });
     await db.user.delete({ where: { id: victim.id } }).catch(() => null);
+  }
+}
+
+
+/* ───────────────────── Phase 15: Executive Workspace boundary ──────────── */
+//
+// The Executive Workspace widens VIEW to the Co-Founder. These assertions exist
+// to prove it widened nothing else — that "may open Access Control" did not
+// quietly become "may grant permissions".
+{
+  const { isExecutive, isReviewMode } = await import("../src/lib/executive");
+
+  assert.ok(isExecutive("FOUNDER"), "the Founder is an executive");
+  assert.ok(isExecutive("CO_FOUNDER"), "the Co-Founder is an executive");
+  for (const role of ["ADMIN", "EMPLOYEE", "COLLABORATOR", "USER"]) {
+    assert.ok(!isExecutive(role), `${role} is NOT an executive — view is not widened to them`);
+  }
+
+  // THE FOUNDER IS NEVER IN REVIEW MODE. If this ever flips, the Founder's own
+  // workspace has started rendering approval affordances, which is exactly the
+  // regression this phase was told not to cause.
+  const founderViewer = {
+    role: "FOUNDER",
+    can: () => true,
+  } as unknown as Parameters<typeof isReviewMode>[0];
+  assert.ok(
+    !isReviewMode(founderViewer, "permissions.grant"),
+    "the Founder must never be shown review mode",
+  );
+
+  // The Co-Founder IS, for every reserved capability.
+  const coViewer = {
+    role: "CO_FOUNDER",
+    can: (c: string) => !FOUNDER_RESERVED.includes(c as never),
+  } as unknown as Parameters<typeof isReviewMode>[0];
+  for (const cap of FOUNDER_RESERVED) {
+    assert.ok(
+      isReviewMode(coViewer, cap),
+      `a Co-Founder must be in review mode for ${cap}`,
+    );
+  }
+
+  // Session management is reserved: viewing the Session Center is leadership,
+  // ending somebody's session is authority.
+  assert.ok(isFounderReserved("sessions.manage"), "sessions.manage is founder-reserved");
+  assert.ok(
+    !defaultCapabilities("CO_FOUNDER").includes("sessions.manage"),
+    "a Co-Founder cannot end another account's sessions",
+  );
+  assert.ok(
+    defaultCapabilities("FOUNDER").includes("sessions.manage"),
+    "the Founder can end sessions",
+  );
+}
+
+/* ─────────── Phase 15: the Founder's capability set did not shrink ──────── */
+//
+// Requirement: "Founder must continue working EXACTLY as it does today." The
+// Founder holds every capability that exists — asserted against CAPABILITIES
+// itself, so adding a capability without giving it to the Founder fails here.
+{
+  const founderCaps = defaultCapabilities("FOUNDER");
+  for (const cap of CAPABILITIES) {
+    assert.ok(
+      founderCaps.includes(cap),
+      `the FOUNDER must hold every capability — missing ${cap}`,
+    );
   }
 }
 

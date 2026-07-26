@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireCapability } from "@/lib/guard";
+import { requireExecutiveView } from "@/lib/executive";
 import { getCompany } from "@/lib/company";
 import { Breadcrumb, Panel } from "@/components/dashboard/widgets";
 import { CompanyForm, LogoForm } from "./forms";
@@ -14,7 +14,7 @@ import { CompanyForm, LogoForm } from "./forms";
 export const metadata = { title: "Company" };
 
 export default async function CompanyConsole() {
-  await requireCapability("company.manage");
+  await requireExecutiveView("company.manage");
   const company = await getCompany();
 
   return (
