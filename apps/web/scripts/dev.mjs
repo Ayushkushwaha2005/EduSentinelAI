@@ -18,7 +18,13 @@ import { spawn, spawnSync } from "child_process";
 import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { isPostgresUrl, startLocalDb, LOCAL_DB_URL, LOCAL_DB_PORT } from "./local-db.mjs";
+import {
+  describeError,
+  isPostgresUrl,
+  startLocalDb,
+  LOCAL_DB_URL,
+  LOCAL_DB_PORT,
+} from "./local-db.mjs";
 
 const WEB_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -91,7 +97,12 @@ if (usingOwnDb) {
   try {
     pg = await startLocalDb();
   } catch (err) {
-    console.error(`\n  Could not start the local database.\n  ${err.message}\n`);
+    /* `err.message` used to be read directly here. embedded-postgres rejects
+       with `undefined` when the postmaster exits early, so the error path
+       itself threw `Cannot read properties of undefined (reading 'message')` —
+       destroying the only diagnostic the developer had. describeError renders
+       anything, including nothing. */
+    console.error(`\n  Could not start the local database.\n\n  ${describeError(err)}\n`);
     process.exit(1);
   }
   databaseUrl = LOCAL_DB_URL;
@@ -115,7 +126,11 @@ const push = run("npx", ["prisma", "db", "push", "--skip-generate"], ENV, { capt
 if (push.status !== 0) {
   console.error("\n  prisma db push failed:\n");
   console.error(((push.stdout ?? "") + (push.stderr ?? "")).trim());
-  if (pg) await pg.stop();
+  // Only tear down a server this process started, and never let the cleanup
+  // throw over the top of the failure it is cleaning up after.
+  if (pg && !pg.reused) {
+    try { await pg.stop(); } catch {}
+  }
   process.exit(1);
 }
 console.log("  schema: up to date");
@@ -149,15 +164,49 @@ const DEMO = {
 // the dev server needs these in its environment, not just the seed step.
 ENV.DEMO_FOUNDER_EMAIL = DEMO.DEMO_FOUNDER_EMAIL ?? "";
 
-const count = run(
-  "npx",
-  ["tsx", "-e", "import{PrismaClient}from'@prisma/client';const d=new PrismaClient();console.log(await d.user.count());await d.$disconnect()"],
-  ENV,
-  { capture: true },
-);
-const userCount = Number((count.stdout ?? "").trim().split("\n").pop());
+/*
+ * Counting the accounts already present.
+ *
+ * This used to shell out to `npx tsx -e "<one-liner>"`, which was broken three
+ * times over and silently so:
+ *
+ *   1. The snippet used TOP-LEVEL AWAIT, but `tsx -e` evaluates as CJS, where
+ *      that is a syntax error.
+ *   2. `run()` passes `shell: true`, so on Windows cmd.exe concatenated the
+ *      argument unescaped and truncated the snippet mid-string ("Unexpected end
+ *      of file" at column 50). Even the corrected snippet could not survive the
+ *      round trip.
+ *   3. Worst of all, the failure was indistinguishable from success:
+ *      `Number("".trim())` is `0`, which is finite and equals zero — so a probe
+ *      that never ran read as "the database is empty", and the seed fired
+ *      against populated databases on every single `npm run dev`. Exactly the
+ *      surprise the comment above promises to avoid. It went unnoticed only
+ *      because the seed scripts happen to be idempotent.
+ *
+ * Asking Prisma directly, in this process, removes the shell, the quoting, the
+ * CJS/ESM mismatch and ~2s of npx startup at the same time. And the answer is
+ * now three-valued: a count, or `null` for "could not tell" — never a zero we
+ * invented. Guessing "empty" is the one answer with a destructive edge, so it
+ * is the one answer we refuse to guess.
+ */
+let userCount = null;
+let countError = null;
+try {
+  const { PrismaClient } = await import("@prisma/client");
+  const probe = new PrismaClient({ datasourceUrl: databaseUrl });
+  try {
+    userCount = await probe.user.count();
+  } finally {
+    await probe.$disconnect();
+  }
+} catch (err) {
+  countError = describeError(err);
+}
 
-if (Number.isFinite(userCount) && userCount === 0) {
+if (userCount === null) {
+  console.log("  seed: could not read the account count — not seeding.");
+  if (countError) console.log(`        ${countError.split("\n")[0]}`);
+} else if (userCount === 0) {
   if (!FOUNDER.FOUNDER_EMAIL || !FOUNDER.FOUNDER_PASSWORD) {
     console.log(
       "  seed: no FOUNDER_EMAIL / FOUNDER_PASSWORD in apps/web/.env — no account created.",
@@ -208,9 +257,15 @@ async function shutdown(code = 0) {
   if (shuttingDown) return;
   shuttingDown = true;
   try { next.kill(); } catch {}
-  if (pg) {
+  if (pg?.reused) {
+    // Adopted, not started here. Another session owns it; stopping it would
+    // take the database out from under whoever is still using it.
+    console.log("\n  leaving the local database running (it was already up).");
+  } else if (pg) {
     console.log("\n  stopping local database…");
-    try { await pg.stop(); } catch {}
+    try { await pg.stop(); } catch (err) {
+      console.log(`  (it did not stop cleanly: ${describeError(err)})`);
+    }
   }
   process.exit(code);
 }

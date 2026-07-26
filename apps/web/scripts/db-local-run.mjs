@@ -10,17 +10,31 @@
  *   DATABASE_URL="postgresql://postgres:postgres@localhost:54329/edusentinel" npm run test:permissions
  */
 
-import { startLocalDb, LOCAL_DB_URL } from "./local-db.mjs";
+import { describeError, startLocalDb, LOCAL_DB_URL } from "./local-db.mjs";
 
-const pg = await startLocalDb();
+let pg;
+try {
+  pg = await startLocalDb();
+} catch (err) {
+  console.error(`\n  Could not start the local database.\n\n  ${describeError(err)}\n`);
+  process.exit(1);
+}
 
 console.log(`\n  DATABASE_URL="${LOCAL_DB_URL}"\n`);
-console.log("  Ctrl-C to stop.\n");
+if (pg.reused) {
+  console.log("  This server was already running — Ctrl-C here will leave it up.\n");
+} else {
+  console.log("  Ctrl-C to stop.\n");
+}
 
 let stopping = false;
 async function stop() {
   if (stopping) return;
   stopping = true;
+  if (pg.reused) {
+    console.log("\n  leaving the database running (it was already up).");
+    process.exit(0);
+  }
   console.log("\n  stopping…");
   try {
     await pg.stop();
