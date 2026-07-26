@@ -72,23 +72,24 @@ for (const file of STATIC_MODULES) {
   }
 }
 
-/* 3. The server action may authenticate, but must not query. */
-const action = path.join(SRC, "app", "app", "guide", "assistant-action.ts");
+/* 3. The server action may authenticate, but must not query.
+      Lives at the root of /app since Sentinel Mini answers from every page. */
+const action = path.join(SRC, "app", "app", "sentinel-action.ts");
 if (existsSync(action)) {
   const src = readFileSync(action, "utf8");
   for (const mod of FORBIDDEN) {
     const re = new RegExp(`from\\s+["']${mod.replace(/[/@]/g, "\\$&")}["']`);
     if (re.test(src)) {
       problems.push(
-        `app/guide/assistant-action.ts imports ${mod} — the assistant answers from the guide, never from data`,
+        `app/sentinel-action.ts imports ${mod} — the assistant answers from the guide, never from data`,
       );
     }
   }
   if (/\bdb\s*\./.test(src)) {
-    problems.push("app/guide/assistant-action.ts queries the database — it must not");
+    problems.push("app/sentinel-action.ts queries the database — it must not");
   }
 } else {
-  problems.push("app/guide/assistant-action.ts is missing");
+  problems.push("app/sentinel-action.ts is missing");
 }
 
 if (problems.length > 0) {

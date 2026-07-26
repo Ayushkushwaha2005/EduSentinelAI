@@ -126,7 +126,7 @@ export function LeaveTypeForm({
           type="checkbox"
           name="paid"
           defaultChecked={type?.paid ?? true}
-          className="h-4 w-4 accent-[--color-brand-cyan]"
+          className="h-4 w-4 accent-brand-cyan"
         />
         Paid
       </label>

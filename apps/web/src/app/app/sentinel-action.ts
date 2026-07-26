@@ -4,7 +4,7 @@ import { requireViewer } from "@/lib/guard";
 import { retrieve, suggestionsFor } from "@/lib/assistant";
 
 /*
- * The assistant's only server entry point.
+ * Sentinel Mini's only server entry point.
  *
  * It re-derives the viewer and their capabilities on the server for every
  * question — the browser never tells it who is asking. That is the whole reason
@@ -13,6 +13,11 @@ import { retrieve, suggestionsFor } from "@/lib/assistant";
  *
  * It touches no database. `lib/assistant.ts` imports only `lib/knowledge.ts`,
  * which is static prose, so there is no query for a crafted question to reach.
+ *
+ * It lives here, at the root of /app, rather than under /app/guide: the
+ * assistant is now mounted in the workspace shell and answers from every page,
+ * so filing it under one page's folder would misdescribe it. The behaviour is
+ * byte-for-byte what the guide page called — this was a move, not a rewrite.
  */
 
 export type AssistantReply = {

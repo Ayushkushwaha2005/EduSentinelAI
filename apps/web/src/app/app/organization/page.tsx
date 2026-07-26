@@ -59,7 +59,7 @@ export default async function OrganizationPage() {
   const publicCount = directory.members.filter((m) => m.visibility === "PUBLIC").length;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb
         trail={[{ label: "Dashboards", href: "/app" }, { label: "Organization" }]}
       />

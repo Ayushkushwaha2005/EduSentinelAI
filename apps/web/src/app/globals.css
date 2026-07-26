@@ -584,6 +584,81 @@ pre {
   }
 }
 
+/* ─────────────────────────────────────────────────────────── Sentinel Mini ──
+ *
+ * The assistant popover. Light mode keeps the reference's soft white card;
+ * dark mode inherits the glass treatment automatically, because the panel is
+ * built from `bg-surface-raised` and `border-ws-line` — both already redefined
+ * under [data-theme="dark"] above. Nothing here needs a dark-scoped rule for
+ * COLOUR; the one dark rule below is for the shadow, which must not be a black
+ * bloom on an already-dark surface.
+ */
+.sentinel-pop {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.97);
+  pointer-events: none;
+  transition:
+    opacity var(--duration-fast) var(--ease-brand),
+    transform var(--duration-base) var(--ease-brand);
+}
+
+.sentinel-pop-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.sentinel-spin {
+  animation: sentinel-spin 0.7s linear infinite;
+}
+
+@keyframes sentinel-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Present or absent, never a slow slide: the popover simply appears. */
+  .sentinel-pop {
+    transition: none;
+    transform: none;
+  }
+  .sentinel-pop-open {
+    transform: none;
+  }
+  .sentinel-spin {
+    animation: none;
+  }
+}
+
+.shadow-ws-pop {
+  box-shadow: var(--shadow-ws-pop);
+}
+
+/* ──────────────────────────────────────────────── workspace page filling ──
+ *
+ * Next.js inserts an UNCLASSED wrapper <div> between <main id="workspace-content">
+ * and a page's own root element. That wrapper has `height: auto`, which is why
+ * `min-h-full` on a page root silently resolved to zero: a percentage height
+ * needs a parent with a definite one, and the wrapper is not it.
+ *
+ * Verified in the browser, not assumed:
+ *   MAIN  .min-w-0.flex-1.overflow-y-auto   h=928
+ *     DIV (no class)                        h=491   ← the wrapper
+ *       DIV .flex.min-h-full.flex-col       h=491   ← min-height did nothing
+ *
+ * Making the wrapper a full-height flex column gives every page a container it
+ * can actually fill. Pages opt in with `grow` (flex-grow, basis auto) rather
+ * than `flex-1` (basis 0), because basis-0 would clamp a long page to the
+ * viewport and hide the overflow.
+ */
+#workspace-content > * {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
 /* ==========================================================================
  * DARK MODE (Phase 9.4)
  *
@@ -1247,4 +1322,33 @@ pre {
   .tilt {
     transform: none !important;
   }
+}
+
+
+[data-theme="dark"] .shadow-ws-pop {
+  /* A shadow on a dark surface reads as a hole. The lift comes from a hairline
+     of light at the edge instead, matching the glass treatment. */
+  box-shadow:
+    0 24px 64px -24px rgb(0 0 0 / 66%),
+    inset 0 1px 0 0 rgb(255 255 255 / 8%);
+}
+
+/*
+ * The popover must be OPAQUE in dark mode.
+ *
+ * Dark mode redefines `.bg-surface-raised` as glass (72% + blur), which is right
+ * for a Panel sitting in the page — the room's light shows through it. It is
+ * wrong for a popover floating OVER content: the dashboard's headings and chart
+ * read straight through the answer text, which was plainly unreadable in
+ * testing.
+ *
+ * So this one surface opts out of the translucency while keeping the rest of the
+ * glass language: same tint, same blur behind it, same hairline edge — but a
+ * background you cannot see the page through. `--color-surface-raised` at 100%
+ * is exactly the glass colour with the transparency taken out, so it still
+ * belongs to the theme rather than being a new colour.
+ */
+[data-theme="dark"] .sentinel-surface.bg-surface-raised {
+  background-color: var(--color-surface-raised);
+  background-image: var(--glass-tint);
 }

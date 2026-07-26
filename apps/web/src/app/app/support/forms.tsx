@@ -154,7 +154,7 @@ export function ReplyForm({
             <input
               type="checkbox"
               name="internal"
-              className="h-4 w-4 accent-[--color-brand-cyan]"
+              className="h-4 w-4 accent-brand-cyan"
             />
             Internal note — the requester never sees this
           </label>

@@ -68,7 +68,7 @@ export default async function TasksPage({
     : [[], []];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards", href: "/app" }, { label: "Tasks" }]} />
 
       <div>
@@ -158,7 +158,7 @@ export default async function TasksPage({
               })}
               {tasks.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-text-muted">
+                  <td colSpan={8} className="px-5 py-10 text-center text-text-secondary">
                     {query ? `Nothing matched “${query}”.` : "No tasks."}
                   </td>
                 </tr>

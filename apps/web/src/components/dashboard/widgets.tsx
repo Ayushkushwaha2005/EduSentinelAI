@@ -475,3 +475,108 @@ export function GrowthChart({
     </Panel>
   );
 }
+
+/* ------------------------------------------------------- empty states ---- */
+
+/**
+ * A designed empty state.
+ *
+ * Panels used to report "nothing here" as a single line of muted text inside a
+ * full-height card, which is why short pages read as broken rather than as
+ * finished-but-quiet. The rule in this codebase is that we never invent data to
+ * fill a space — so the space has to be made deliberate instead: an icon, a
+ * sentence that says why it is empty, and, where one exists, the action that
+ * would fill it.
+ *
+ * `action` is optional and should be omitted when the viewer lacks the
+ * capability to perform it — offering a button that leads to a refusal is the
+ * dead-control problem again.
+ */
+export function EmptyState({
+  icon,
+  title,
+  body,
+  action,
+  compact = false,
+}: {
+  icon?: React.ReactNode;
+  title: string;
+  body: string;
+  action?: React.ReactNode;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={`flex flex-col items-center justify-center rounded-card border border-dashed border-border-subtle px-6 text-center ${
+        compact ? "py-8" : "py-14"
+      }`}
+    >
+      {icon && (
+        <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-overlay text-text-muted">
+          {icon}
+        </span>
+      )}
+      <p className="text-[15px] font-semibold tracking-[-0.01em] text-text-primary">{title}</p>
+      <p className="mt-1.5 max-w-md text-sm leading-relaxed text-text-secondary">{body}</p>
+      {action && <div className="mt-5">{action}</div>}
+    </div>
+  );
+}
+
+/**
+ * The workspace's page rhythm.
+ *
+ * Every /app page is a vertical stack of Panels. On a wide monitor a stack of
+ * short panels leaves a large dead region below the fold — measured at 528px of
+ * empty canvas on Collaboration at 1920x1080, which is what "there is a huge
+ * blank space" means concretely.
+ *
+ * `PageColumns` is the fix, and it is a LAYOUT fix rather than a stretch: on
+ * wide viewports the stack becomes two columns, so the same content is wider
+ * and roughly half as tall, and the page fills the fold because it is better
+ * arranged — not because anything was padded out. Below `xl` it collapses back
+ * to the single stack, which is correct on a laptop and required on a phone.
+ */
+/*
+ * The ratios are STATIC CLASS STRINGS, deliberately.
+ *
+ * `xl:grid-cols-[${ratio}]` would be a dynamic class name, and Tailwind extracts
+ * classes by scanning source text — an interpolated one is never generated and
+ * the column split silently does not happen. Same family of bug as the v3
+ * `bg-[--var]` shorthand that produced transparent backgrounds here before.
+ */
+const COLUMN_RATIOS = {
+  balanced: "xl:grid-cols-2",
+  mainWide: "xl:grid-cols-[1.35fr_1fr]",
+  sideWide: "xl:grid-cols-[1fr_1.35fr]",
+} as const;
+
+export function PageColumns({
+  main,
+  side,
+  ratio = "mainWide",
+  fill = true,
+}: {
+  main: React.ReactNode;
+  side: React.ReactNode;
+  ratio?: keyof typeof COLUMN_RATIOS;
+  /**
+   * Grow to fill the page's remaining height, so the columns end at the fold
+   * instead of leaving bare canvas beneath them. The panels inside decide what
+   * to do with that height — an empty state centres in it; a list simply starts
+   * at the top as it always did. Set false for a short section that should keep
+   * its natural height.
+   */
+  fill?: boolean;
+}) {
+  return (
+    <div
+      className={`grid gap-4 ${COLUMN_RATIOS[ratio]} ${
+        fill ? "grow items-stretch" : "items-start"
+      }`}
+    >
+      <div className="flex min-w-0 flex-col gap-4">{main}</div>
+      <div className="flex min-w-0 flex-col gap-4">{side}</div>
+    </div>
+  );
+}

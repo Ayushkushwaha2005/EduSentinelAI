@@ -25,7 +25,7 @@ export default async function CollaborationInbox() {
   const openReports = reports.filter((r) => r.status === "OPEN");
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards", href: "/app" }, { label: "Collaboration" }]} />
       <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Collaboration inbox</h1>
       <p className="max-w-3xl text-[15px] text-text-secondary">

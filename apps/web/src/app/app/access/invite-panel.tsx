@@ -127,7 +127,7 @@ export function InviteForm({
                       type="checkbox"
                       name="capabilities"
                       value={cap}
-                      className="h-4 w-4 accent-[--color-brand-cyan]"
+                      className="h-4 w-4 accent-brand-cyan"
                     />
                     <span className="truncate font-mono text-xs">{cap}</span>
                   </label>
@@ -288,7 +288,7 @@ export function AccessReview({
                 name="revoke"
                 value={g.id}
                 id={`rev-${g.id}`}
-                className="h-4 w-4 accent-[--color-danger]"
+                className="h-4 w-4 accent-danger"
               />
               <label htmlFor={`rev-${g.id}`} className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium">

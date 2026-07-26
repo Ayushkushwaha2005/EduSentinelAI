@@ -3,6 +3,7 @@ import { Avatar } from "./avatar";
 import { SearchIcon } from "./icons";
 import { MobileNav } from "./mobile-nav";
 import { NotificationBell, type BellItem } from "./notification-bell";
+import { SentinelMini } from "./sentinel-mini";
 import { SignOutButton } from "./sign-out";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
 import type { NavItem } from "./nav-config";
@@ -66,7 +67,19 @@ export function WsTopbar({
         <SignOutButton />
       </div>
 
-      <div className="ml-auto flex items-center gap-3">
+      <div className="ml-auto flex items-center gap-2 sm:gap-3">
+        {/*
+         * Sentinel Mini sits beside Online support on purpose: the two are the
+         * same question asked at different costs. "How does this work" is
+         * answered here in a second, from the guide; "something is wrong" goes
+         * to a person. Putting them side by side makes that choice obvious and
+         * keeps the cheaper one first.
+         *
+         * It is mounted in the SHELL, so it is available from every page — not
+         * only the guide.
+         */}
+        <SentinelMini />
+
         <Link
           href="/app/support"
           prefetch

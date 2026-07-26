@@ -197,3 +197,103 @@ export function greeting(viewer: Viewer): string {
   const part = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
   return `${part}, ${viewer.name.split(" ")[0]}`;
 }
+
+/*
+ * ── The release pipeline, as a measurable thing ──────────────────────────────
+ *
+ * The dashboard's Pipeline card used to render a list of the four most recent
+ * releases, and nothing at all when there were none — a tall, empty column on a
+ * new installation, which is exactly when someone is most likely to be looking.
+ *
+ * The replacement is not decoration and not a placeholder. Phase 3 defines a
+ * real, fixed sequence every artifact travels:
+ *
+ *     upload → quarantine → scan → sign (founder) → publish
+ *
+ * Those stages exist whether or not anything is in them, so showing them with
+ * their REAL occupancy is honest at zero and immediately useful at one. A count
+ * of 0 against "Awaiting scan" is a fact about this platform; it is not a
+ * fabricated number, which is what CLAUDE.md forbids and `test:data` enforces.
+ *
+ * The activity series is likewise real: it counts release events already in the
+ * audit log, bucketed by week. No sample data, no smoothing, no invented trend.
+ */
+export type PipelineStage = {
+  key: string;
+  label: string;
+  hint: string;
+  count: number;
+};
+
+export async function releasePipeline() {
+  const [quarantined, pendingScan, cleanUnsigned, published, revoked, rejected] =
+    await Promise.all([
+      db.release.count({ where: { status: "QUARANTINED" } }),
+      db.artifact.count({ where: { scanStatus: "PENDING" } }),
+      // Scanned clean, not yet signed: the founder-only step, and the one place
+      // work actually waits on a person.
+      db.artifact.count({
+        where: { scanStatus: "CLEAN", signature: null },
+      }),
+      db.release.count({ where: { status: "PUBLISHED" } }),
+      db.release.count({ where: { status: "REVOKED" } }),
+      db.release.count({ where: { status: "REJECTED" } }),
+    ]);
+
+  const stages: PipelineStage[] = [
+    { key: "quarantine", label: "In quarantine", hint: "uploaded, not yet cleared", count: quarantined },
+    { key: "scan", label: "Awaiting scan", hint: "magic-byte checked, scanning", count: pendingScan },
+    { key: "sign", label: "Awaiting signature", hint: "clean, needs the Founder", count: cleanUnsigned },
+    { key: "published", label: "Published", hint: "signed and downloadable", count: published },
+  ];
+
+  return { stages, revoked, rejected, total: quarantined + published + revoked + rejected };
+}
+
+/**
+ * Release activity by week, counted from the audit log.
+ *
+ * The audit log is the one record that already holds every pipeline event with a
+ * timestamp, so this needs no new table and cannot disagree with what actually
+ * happened. `weeks` is how far back to look.
+ */
+export async function releaseActivity(weeks = 8) {
+  const since = new Date();
+  since.setDate(since.getDate() - weeks * 7);
+  since.setHours(0, 0, 0, 0);
+
+  const rows = await db.auditLog.findMany({
+    where: {
+      createdAt: { gte: since },
+      action: { startsWith: "release." },
+    },
+    select: { action: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const buckets = Array.from({ length: weeks }, (_, i) => {
+    const start = new Date(since);
+    start.setDate(start.getDate() + i * 7);
+    return { start, published: 0, other: 0 };
+  });
+
+  for (const r of rows) {
+    const idx = Math.min(
+      weeks - 1,
+      Math.floor((r.createdAt.getTime() - since.getTime()) / (7 * 86_400_000)),
+    );
+    if (idx < 0) continue;
+    if (r.action.includes("publish")) buckets[idx].published += 1;
+    else buckets[idx].other += 1;
+  }
+
+  return {
+    measured: rows.length > 0,
+    weeks: buckets.map((b) => ({
+      label: b.start.toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
+      published: b.published,
+      other: b.other,
+    })),
+    total: rows.length,
+  };
+}

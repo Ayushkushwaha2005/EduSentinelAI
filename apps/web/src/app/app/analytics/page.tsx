@@ -45,7 +45,7 @@ export default async function AnalyticsPage({
   const totalDownloads = downloads.reduce((sum, d) => sum + d.downloads, 0);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards", href: "/app" }, { label: "Analytics" }]} />
 
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -263,8 +263,8 @@ export default async function AnalyticsPage({
           How this workspace works, what your account can do, and where things
           live — including how these numbers are produced and why a metric that
           cannot be measured is reported as unmeasured rather than as zero. It
-          adapts to your permissions, and it has an assistant you can ask
-          directly.
+          adapts to your permissions, and Sentinel Mini in the top bar answers
+          from it on any page.
         </p>
         <Link
           href="/app/guide"
