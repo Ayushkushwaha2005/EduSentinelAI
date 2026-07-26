@@ -3,7 +3,10 @@ import { requireViewer } from "@/lib/guard";
 import { isAdminRole } from "@/lib/roles";
 import { MfaPanel } from "./mfa-panel";
 import { Breadcrumb } from "@/components/dashboard/widgets";
-import { revokeAllSessions, resendVerification } from "./actions";
+import { resendVerification } from "./actions";
+import { auth } from "@/lib/auth";
+import { sessionsFor } from "@/lib/sessions";
+import { SessionsPanel } from "./sessions-panel";
 
 /*
  * Own-account security. Deliberately gated on requireViewer, not a capability:
@@ -17,6 +20,14 @@ export default async function SecurityPage({
 }) {
   const viewer = await requireViewer();
   const { mfa, next } = await searchParams;
+
+  /* The current device is identified by the `sid` claim already in the token —
+     nothing new is sent by the browser to work this out. */
+  const session = await auth();
+  const sessions = await sessionsFor(
+    viewer.id,
+    (session as { sid?: string } | null)?.sid ?? null,
+  );
   const account = await db.user.findUnique({
     where: { id: viewer.id },
     select: { mfaEnabled: true, emailVerified: true },
@@ -111,22 +122,17 @@ export default async function SecurityPage({
         )}
       </section>
 
+      {/*
+        * Active sessions (Phase 14).
+        *
+        * This replaces a single "sign out everywhere" button. That button still
+        * exists inside the panel and behaves identically — it bumps
+        * sessionVersion as it always did — but it is no longer the only thing
+        * you can do, because "something is wrong" and "sign me out of the laptop
+        * I left at the office" are different problems.
+        */}
       <section className="mt-6 rounded-card border border-border-subtle bg-surface-raised p-7">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.08em] text-text-muted">
-          Sessions
-        </h2>
-        <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-text-secondary">
-          Sign out of every device, including this one. Use this immediately if
-          you suspect your account is compromised.
-        </p>
-        <form action={revokeAllSessions}>
-          <button
-            type="submit"
-            className="mt-4 h-11 rounded-control border border-danger/40 px-5 text-sm font-medium text-danger transition-colors hover:bg-danger/5"
-          >
-            Sign out everywhere
-          </button>
-        </form>
+        <SessionsPanel sessions={sessions} />
       </section>
     </div>
   );

@@ -33,6 +33,7 @@ model User {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   authTokens     AuthToken[]
+  sessions       UserSession[]
 
   // ---- Phase 6.2: profile ----
   // Self-service for every role. Free text is sanitized on write (lib/sanitize.ts)
@@ -839,4 +840,47 @@ model CalendarAttendee {
 
   @@unique([eventId, userId])
   @@index([userId])
+}
+
+// ---------- Phase 14: active sessions ----------
+//
+// SESSIONS STAY STATELESS JWT. This table does not replace them.
+//
+// Auth.js is configured `strategy: "jwt"`, and that is deliberate — argon2 is
+// Node-only and must not enter the Edge bundle, and a database-session strategy
+// would be a rewrite of authentication rather than an addition to it. But a
+// stateless token cannot answer "which devices am I signed in on?" or "sign out
+// THAT one", because nothing server-side knows a given token exists.
+//
+// So the JWT gains one claim — `sid`, a random session id — and each sign-in
+// writes a row here. The jwt callback already re-reads the user on every request
+// to compare `sessionVersion`; it now checks this row in the same round trip. A
+// revoked row makes the token invalid immediately, exactly like a bumped
+// sessionVersion, but for ONE device instead of all of them.
+//
+// What is stored is what a person needs in order to recognise their own devices
+// and no more. The IP is kept because "someone signed in from an address you
+// have never used" is the whole point of the feature; it is truncated for the
+// coarse location label and never sent to a third-party geolocation service —
+// that would be a tracker, and `npm run check:trackers` is a CI invariant.
+model UserSession {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Opaque id carried in the JWT as `sid`. Random, never derived from anything.
+  sid          String    @unique
+  userAgent    String? // raw UA, for parsing; display uses browser/os below
+  browser      String?
+  os           String?
+  device       String?
+  ip           String?
+  // Coarse only ("Mumbai, IN" / "IN" / null). Derived from request headers the
+  // platform already provides — never a lookup against an external service.
+  location     String?
+  createdAt    DateTime  @default(now())
+  lastSeenAt   DateTime  @default(now())
+  revokedAt    DateTime?
+  revokedBy    String? // actor id, when an admin ended it rather than the person
+  @@index([userId, revokedAt])
+  @@index([lastSeenAt])
 }

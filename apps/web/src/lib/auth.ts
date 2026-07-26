@@ -2,11 +2,14 @@ import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { verify } from "@node-rs/argon2";
 import { TOTP } from "otpauth";
+import { randomUUID } from "node:crypto";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { db } from "./db";
 import { audit } from "./audit";
 import { decryptSecret } from "./crypto";
 import { lockoutMs } from "./rate-limit";
+import { ipFrom, isSessionLive, locationFrom, recordSignIn } from "./sessions";
 
 const credentialsSchema = z.object({
   email: z.string().email().toLowerCase(),
@@ -142,6 +145,35 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.uid = user.id;
         token.role = (user as { role?: string }).role ?? "USER";
         token.sv = (user as { sessionVersion?: number }).sessionVersion ?? 0;
+
+        /*
+         * Phase 14 — per-device sessions.
+         *
+         * A random `sid` is minted here and recorded against the account, which
+         * is what makes "sign out THAT device" possible without abandoning the
+         * stateless JWT strategy. Everything above is unchanged: this claim is
+         * additive, and a token that predates it still validates (see
+         * isSessionLive, which treats a missing row as live rather than signing
+         * existing users out on deploy).
+         *
+         * Recording must never be able to block a sign-in — if the write fails,
+         * the person still gets their session and simply does not see that
+         * device listed.
+         */
+        const sid = randomUUID();
+        token.sid = sid;
+        try {
+          const h = await headers();
+          await recordSignIn({
+            userId: user.id as string,
+            sid,
+            userAgent: h.get("user-agent"),
+            ip: ipFrom(h),
+            location: locationFrom(h),
+          });
+        } catch {
+          /* never fail a login over telemetry */
+        }
         return token;
       }
       if (token.uid) {
@@ -150,6 +182,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           select: { role: true, sessionVersion: true },
         });
         if (!current || current.sessionVersion !== token.sv) return null;
+
+        /* A revoked device is refused exactly like a stale sessionVersion —
+           same mechanism, one device instead of all of them. */
+        if (token.sid && !(await isSessionLive(token.sid as string))) return null;
+
         token.role = current.role;
       }
       return token;
@@ -158,6 +195,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = token.uid as string;
         (session.user as { role?: string }).role = token.role as string;
+        // Exposed so the sessions page can mark "this device". It is an opaque
+        // id, already held by the client in its own cookie.
+        (session as { sid?: string }).sid = token.sid as string | undefined;
       }
       return session;
     },

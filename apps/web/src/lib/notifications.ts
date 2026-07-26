@@ -41,6 +41,11 @@ export const NOTIFICATION_KINDS = [
   "support.resolved",
   "invite.accepted",
   "release.quarantined",
+  // Phase 14. Security events about the recipient's OWN account: a new device
+  // signed in, a session was ended. Never about anyone else's account.
+  "security.new_device",
+  "security.session_revoked",
+  "security.suspicious_login",
   "broadcast",
 ] as const;
 export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
