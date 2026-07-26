@@ -92,7 +92,10 @@ export function ApprovalDialog({
     <dialog
       ref={ref}
       onClose={onClose}
-      className="approval-dialog max-w-[440px] rounded-[22px] border border-ws-line bg-surface-raised p-0 text-text-primary backdrop:bg-black/45"
+      /* `m-auto` is load-bearing: the page CSS reset zeroes margins, which strips
+         the auto margins a modal <dialog> relies on to centre itself, so it
+         rendered pinned to the top-left corner. */
+      className="approval-dialog m-auto w-[min(440px,calc(100vw-2rem))] rounded-[22px] border border-ws-line bg-surface-raised p-0 text-text-primary backdrop:bg-black/45"
       aria-labelledby="approval-title"
     >
       <div className="p-6">

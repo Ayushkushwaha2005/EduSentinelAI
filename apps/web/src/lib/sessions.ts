@@ -52,13 +52,22 @@ export type SessionRow = {
 export function parseUserAgent(ua: string | null | undefined) {
   const s = (ua ?? "").slice(0, 400);
 
+  /*
+   * Order matters; word boundaries do not.
+   *
+   * `\bChrome/` looked tidy and was wrong: Chromium builds identify as
+   * "HeadlessChrome/141" and vendor builds prepend their own token, so the
+   * boundary fails and the chain falls through to Safari — every such session
+   * was being labelled "Safari on Windows" on the Session Center. Matching the
+   * substring and relying on the ORDER is what actually holds, because each
+   * entry below carries the tokens of the ones after it.
+   */
   const browser =
-    /\bEdg\//.test(s) ? "Edge"
-    : /\bOPR\/|\bOpera/.test(s) ? "Opera"
-    : /\bFirefox\//.test(s) ? "Firefox"
-    : /\bChrome\/|\bCriOS\//.test(s) ? "Chrome"
-    // Safari must come last: Chrome and Edge both carry "Safari" in their UA.
-    : /\bSafari\//.test(s) ? "Safari"
+    /Edg\//.test(s) ? "Edge"
+    : /OPR\/|Opera/.test(s) ? "Opera"
+    : /Firefox\//.test(s) ? "Firefox"
+    : /Chrome\/|CriOS\//.test(s) ? "Chrome"
+    : /Safari\//.test(s) ? "Safari"
     : "Unknown";
 
   const os =

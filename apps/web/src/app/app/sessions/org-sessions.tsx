@@ -8,11 +8,17 @@ import { adminEndSessionAction, type OrgSessionState } from "./actions";
 /*
  * Presentation for the Session Center.
  *
- * `canManage` decides whether the end-session controls RENDER — it never
- * decides whether they work. The action re-checks `sessions.manage` on the
- * server every time, so a control forced into the DOM still ends nothing, and
- * an executive without the capability sees the approval dialog instead of an
- * error.
+ * THE CONTROLS ARE NOT HIDDEN FROM AN EXECUTIVE WHO CANNOT USE THEM.
+ *
+ * Hiding them would make the workspace feel smaller for a Co-Founder than for
+ * the Founder, and would teach nothing about why. Instead the whole workflow
+ * runs — the row is selected, the request reaches the server, the server checks
+ * `sessions.manage` — and stops at the last step with an approval dialog.
+ *
+ * That is safe precisely because the refusal already happened server-side:
+ * `sessions.manage` is founder-reserved and stripped in effectiveCapabilities
+ * before the check runs, so a rendered button ends nothing. The dialog is what
+ * the refusal looks like, not what causes it.
  */
 
 const when = (d: Date) =>
@@ -23,6 +29,9 @@ const when = (d: Date) =>
     minute: "2-digit",
   });
 
+/* See the note in sessions-panel.tsx: the element carrying this is marked
+   suppressHydrationWarning, because a relative time is meant to differ between
+   the server render and hydration. */
 function ago(d: Date) {
   const mins = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
   if (mins < 2) return "active now";
@@ -37,6 +46,8 @@ export function OrgSessions({
   canManage,
 }: {
   groups: OrgSessionRow[][];
+  /** Whether the viewer may actually END a session. Controls still render
+      without it — see the note above — and the server decides the outcome. */
   canManage: boolean;
 }) {
   const [state, act, pending] = useActionState<OrgSessionState, FormData>(
@@ -59,6 +70,7 @@ export function OrgSessions({
           <p className="mt-1 text-sm text-text-secondary">
             {total} live {total === 1 ? "session" : "sessions"} across{" "}
             {groups.length} {groups.length === 1 ? "account" : "accounts"}.
+            {!canManage && " Ending a session completes as an executive review and is applied on Founder approval."}
           </p>
         </div>
       </div>
@@ -100,19 +112,17 @@ export function OrgSessions({
                     </span>
                   </span>
 
-                  {canManage && (
-                    <form action={act}>
-                      <input type="hidden" name="scope" value="user" />
-                      <input type="hidden" name="userId" value={person.userId} />
-                      <button
-                        type="submit"
-                        disabled={pending}
-                        className="h-9 rounded-control border border-danger/40 px-3.5 text-sm font-medium text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
-                      >
-                        End all
-                      </button>
-                    </form>
-                  )}
+                  <form action={act}>
+                    <input type="hidden" name="scope" value="user" />
+                    <input type="hidden" name="userId" value={person.userId} />
+                    <button
+                      type="submit"
+                      disabled={pending}
+                      className="h-9 rounded-control border border-danger/40 px-3.5 text-sm font-medium text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
+                    >
+                      End all
+                    </button>
+                  </form>
                 </div>
 
                 <ul className="mt-3 flex flex-col gap-2">
@@ -135,13 +145,13 @@ export function OrgSessions({
                             </span>
                           )}
                         </span>
-                        <span className="mt-0.5 block text-xs text-text-muted">
+                        <span suppressHydrationWarning className="mt-0.5 block text-xs text-text-muted">
                           {s.location ?? "Location unknown"}
                           {s.ip && ` · ${s.ip}`} · in {when(s.createdAt)} · {ago(s.lastSeenAt)}
                         </span>
                       </span>
 
-                      {canManage && !s.current && (
+                      {!s.current && (
                         <form action={act}>
                           <input type="hidden" name="scope" value="one" />
                           <input type="hidden" name="sessionId" value={s.id} />

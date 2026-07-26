@@ -20,6 +20,17 @@ const when = (d: Date) =>
     minute: "2-digit",
   });
 
+/*
+ * Relative time.
+ *
+ * The server renders this and the client hydrates it milliseconds later, which
+ * is enough to produce "1 min ago" then "2 min ago" and fail hydration. The
+ * element carries `suppressHydrationWarning` — React's sanctioned escape hatch
+ * for exactly this case, content that is *supposed* to differ between the two
+ * passes. Threading a server clock down as a prop was the alternative, and it
+ * makes every page holding a timestamp carry a `now` it does not otherwise
+ * need.
+ */
 function ago(d: Date) {
   const mins = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
   if (mins < 2) return "active now";
@@ -134,7 +145,7 @@ export function SessionsPanel({ sessions }: { sessions: SessionRow[] }) {
                   {s.location ?? "Location unknown"}
                   {s.ip && <span className="text-text-muted"> · {s.ip}</span>}
                 </span>
-                <span className="mt-0.5 block text-xs text-text-muted">
+                <span suppressHydrationWarning className="mt-0.5 block text-xs text-text-muted">
                   Signed in {when(s.createdAt)} · {ago(s.lastSeenAt)}
                 </span>
               </span>

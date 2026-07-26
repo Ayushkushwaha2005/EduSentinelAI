@@ -106,12 +106,20 @@ export default async function AccessPage() {
       <div>
         <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Access Control</h1>
         <p className="mt-1 max-w-3xl text-[15px] text-text-secondary">
-          You decide who gets access and what they can do. A role sets the
-          default capabilities; grants below adjust them per person. Every change
-          is written to the tamper-evident audit log and signs the account out of
-          all devices immediately.
+          {reviewing
+            ? "The complete picture of who has access and what they can do. A role sets the default capabilities; grants adjust them per person. Every change is written to the tamper-evident audit log and signs that account out of all devices immediately."
+            : "You decide who gets access and what they can do. A role sets the default capabilities; grants below adjust them per person. Every change is written to the tamper-evident audit log and signs the account out of all devices immediately."}
         </p>
       </div>
+
+      {/* Stated once, at the top, where it is read before anything is attempted
+          rather than after. The Founder never sees it. */}
+      {reviewing && (
+        <ReviewNotice
+          surface="Access Control"
+          detail="You can review every role, grant, invitation and session here. Changing a role or a permission is a Founder authorization."
+        />
+      )}
 
       <Panel className="border border-brand-cyan/20 bg-brand-cyan/[0.04]">
         <h2 className="text-[17px] font-semibold tracking-[-0.01em]">
@@ -194,18 +202,6 @@ export default async function AccessPage() {
           />
         </div>
       </Panel>
-
-      {/*
-        * Executive Workspace: the review notice, shown only to someone who may
-        * open this page but not act on it. The Founder never sees it, because
-        * for the Founder nothing here is in review.
-        */}
-      {reviewing && (
-        <ReviewNotice
-          surface="Access Control"
-          detail="You can review every role, grant and session here. Changing a role or a permission is a Founder authorization."
-        />
-      )}
 
       <Panel>
         <PermissionMatrix people={matrixPeople} grants={grantsByUser} />
