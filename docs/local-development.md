@@ -72,16 +72,33 @@ imposed on you if you have already made that choice.
 
 ## Signing in
 
-The founder account is created from `FOUNDER_*` in `apps/web/.env`, defaulting
-to:
+**There are no default credentials.** Both accounts come from `apps/web/.env`,
+and if those variables are absent no account is created at all.
 
-| | |
+| Variable | Purpose |
 |---|---|
-| email | `founder@edusentinel.ai` |
-| password | `local-dev-founder-pw` |
+| `FOUNDER_EMAIL` / `FOUNDER_NAME` / `FOUNDER_PASSWORD` | The real Founder account — full production workspace |
+| `DEMO_FOUNDER_EMAIL` / `DEMO_FOUNDER_NAME` / `DEMO_FOUNDER_PASSWORD` | The sandbox account — `/demo` only |
 
-Change those values and delete `apps/web/.local-db` to bootstrap a different
-account.
+To change either, edit `.env`, then `npm run db:local:reset` and `npm run dev`
+to rebuild from scratch.
+
+### The demo account
+
+`/demo` is **not public**. It is reachable only by the address in
+`DEMO_FOUNDER_EMAIL`, and only where that variable is set — which is local
+development and nowhere else. A signed-out visitor, or the Founder, or anybody
+else gets redirected to `/login`. It is not linked from the site.
+
+The demo address **must not be on an EduSentinel domain**. Both
+`prisma/seed-demo.mjs` and `lib/demo/access.ts` refuse `@edusentinel.ai`,
+`@edusentinel.tech` and `@edusentinel.com` outright — a fake account on a real
+company domain is exactly the confusion this feature must not create. Use
+something like `demo-founder@local.dev`.
+
+The demo account is created with role `USER`, the bottom of the ladder. Sandbox
+access comes from identity, not from a role, so **no role was added and none was
+widened**.
 
 **The Founder is a privileged role, so it requires two-factor authentication.**
 Signing in takes you straight to `/app/security` to enrol an authenticator —

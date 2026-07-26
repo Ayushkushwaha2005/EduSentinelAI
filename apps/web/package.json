@@ -37,7 +37,8 @@
     "check:demo": "node scripts/check-demo-isolation.mjs",
     "build:brand": "node scripts/build-brand-assets.mjs",
     "test:e2e": "tsx --env-file=.env scripts/e2e-phase5.mts",
-    "mfa:enroll": "node --env-file=.env scripts/mfa-enroll.mjs"
+    "mfa:enroll": "node --env-file=.env scripts/mfa-enroll.mjs",
+    "db:seed:demo": "node --env-file=.env prisma/seed-demo.mjs"
   },
   "dependencies": {
     "@edusentinel/ui": "*",
