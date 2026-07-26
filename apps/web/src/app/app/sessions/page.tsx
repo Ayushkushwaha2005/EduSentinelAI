@@ -69,7 +69,10 @@ export default async function SessionCenterPage() {
       )}
 
       <Panel>
-        <OrgSessions groups={groups} canManage={viewer.can("sessions.manage")} />
+        <OrgSessions
+          groups={groups}
+          canManage={viewer.can("sessions.manage")}
+        />
       </Panel>
 
       <Panel>

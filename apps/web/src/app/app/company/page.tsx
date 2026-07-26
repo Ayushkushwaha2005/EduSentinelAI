@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { requireExecutiveView } from "@/lib/executive";
+import { isReviewMode, requireExecutiveView } from "@/lib/executive";
+import { ReviewNotice } from "@/components/dashboard/approval";
 import { getCompany } from "@/lib/company";
 import { Breadcrumb, Panel } from "@/components/dashboard/widgets";
 import { CompanyForm, LogoForm } from "./forms";
@@ -14,12 +15,22 @@ import { CompanyForm, LogoForm } from "./forms";
 export const metadata = { title: "Company" };
 
 export default async function CompanyConsole() {
-  await requireExecutiveView("company.manage");
+  const viewer = await requireExecutiveView("company.manage");
+  /* Presentation only: decides whether the review notice renders, never
+     whether an action runs. Every action here re-checks on the server. */
+  const reviewing = isReviewMode(viewer, "company.manage");
   const company = await getCompany();
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards", href: "/app" }, { label: "Company" }]} />
+
+      {reviewing && (
+        <ReviewNotice
+          surface="Company"
+          detail="You can review the company profile, branding and contact details. Changing what the company publishes about itself is a Founder authorization."
+        />
+      )}
 
       <div>
         <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Company profile</h1>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { requireExecutiveView } from "@/lib/executive";
+import { isReviewMode, requireExecutiveView } from "@/lib/executive";
+import { ReviewNotice } from "@/components/dashboard/approval";
 import { orgDirectory, unlinkedAccounts } from "@/lib/org";
 import { assignTeamDepartment } from "./actions";
 import { AddMember, DepartmentForm, MemberRow } from "./forms";
@@ -20,7 +21,10 @@ import { Breadcrumb, Panel } from "@/components/dashboard/widgets";
 export const metadata = { title: "Organization" };
 
 export default async function OrganizationPage() {
-  await requireExecutiveView("org.manage");
+  const viewer = await requireExecutiveView("org.manage");
+  /* Presentation only: decides whether the review notice renders, never
+     whether an action runs. Every action here re-checks on the server. */
+  const reviewing = isReviewMode(viewer, "org.manage");
 
   const [directory, accounts, teams] = await Promise.all([
     orgDirectory(),
@@ -63,6 +67,13 @@ export default async function OrganizationPage() {
       <Breadcrumb
         trail={[{ label: "Dashboards", href: "/app" }, { label: "Organization" }]}
       />
+
+      {reviewing && (
+        <ReviewNotice
+          surface="Organization"
+          detail="You can review the full org chart, departments and teams. Publishing changes to the public roster is a Founder authorization."
+        />
+      )}
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>

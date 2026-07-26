@@ -471,10 +471,23 @@ export function DepartmentForm({ department }: { department?: Option & { descrip
       <button type="submit" disabled={pending} className={primary}>
         {department ? "Save" : "Add"}
       </button>
+      {/*
+        * `formAction` on a button inside THIS form, not a nested <form>.
+        *
+        * A <form> inside a <form> is invalid HTML; React logged a hydration
+        * failure on every render of the org chart because of it. The outer form
+        * already carries the department id as a hidden input, so submitting it
+        * to a different action needs nothing else — and this is one fewer form
+        * element on the page rather than one more.
+        */}
       {department && (
-        <span className="flex items-center">
-          <RemoveDepartment id={department.id} />
-        </span>
+        <button
+          type="submit"
+          formAction={removeDepartment}
+          className="h-11 rounded-control px-3 text-sm font-medium text-danger transition-opacity hover:opacity-80"
+        >
+          Remove
+        </button>
       )}
       <span className="w-full">
         <Feedback state={state} />
@@ -483,16 +496,4 @@ export function DepartmentForm({ department }: { department?: Option & { descrip
   );
 }
 
-function RemoveDepartment({ id }: { id: string }) {
-  return (
-    <form action={removeDepartment}>
-      <input type="hidden" name="id" value={id} />
-      <button
-        type="submit"
-        className="h-11 rounded-control px-3 text-sm font-medium text-danger hover:opacity-80"
-      >
-        Remove
-      </button>
-    </form>
-  );
-}
+

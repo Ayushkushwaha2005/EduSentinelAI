@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import {
   CAPABILITIES,
@@ -120,8 +121,11 @@ export function PermissionMatrix({
 
           <tbody className="text-sm">
             {groups.map((group) => (
-              <>
-                <tr key={group.label}>
+              /* Fragment with a key, not `<>`: the map returns this element, so
+                 the key belongs here — putting it on the inner <tr> left React
+                 without one for the list item itself. */
+              <Fragment key={group.label}>
+                <tr>
                   <th
                     scope="colgroup"
                     colSpan={people.length + 1}
@@ -177,7 +181,7 @@ export function PermissionMatrix({
                     </tr>
                   );
                 })}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </table>
