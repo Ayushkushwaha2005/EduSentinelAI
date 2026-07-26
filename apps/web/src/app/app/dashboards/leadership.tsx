@@ -82,12 +82,25 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
     ? Math.round((people.filter((p) => p.mfaEnabled).length / people.length) * 100)
     : 0;
 
+  /*
+   * The pill row is NAVIGATION, not a filter.
+   *
+   * The reference shows "All" and "Activity" side by side; reproduced literally
+   * that meant two pills pointing at this same page with no filtering behind
+   * either — a control that changes nothing. So there is exactly one pill per
+   * destination, "Overview" is this page and is correctly the active one, and
+   * every other pill is gated on the capability that its page requires anyway.
+   */
   const tabs = [
-    { id: "overview", label: "All", href: "/app" },
-    { id: "activity", label: "Activity", href: "/app" },
+    { id: "overview", label: "Overview", href: "/app" },
     ...(viewer.can("users.view") ? [{ id: "people", label: "People", href: "/app/people" }] : []),
-    { id: "products", label: "Products", href: "/app/products" },
-    { id: "releases", label: "Releases", href: "/app/admin/releases" },
+    ...(viewer.can("products.view")
+      ? [{ id: "products", label: "Products", href: "/app/products" }]
+      : []),
+    ...(viewer.can("releases.review")
+      ? [{ id: "releases", label: "Releases", href: "/app/admin/releases" }]
+      : []),
+    { id: "calendar", label: "Calendar", href: "/app/calendar" },
   ];
 
   return (
@@ -115,32 +128,40 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
         <div className="mt-7">
           <WsTabs
             tabs={tabs}
-            activeId="activity"
+            activeId="overview"
+            /* Both shortcuts are gated on the capability their destination
+               requires, so neither can lead to a refusal page. */
             action={
-              <span className="flex items-center gap-1.5 rounded-full border border-ws-line bg-white p-1.5">
-                <Link
-                  href="/app/analytics"
-                  prefetch
-                  aria-label="Open analytics"
-                  title="Analytics"
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-ws-dim transition-colors hover:bg-ws-canvas hover:text-ws-ink"
-                >
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" />
-                  </svg>
-                </Link>
-                <Link
-                  href="/app/audit"
-                  prefetch
-                  aria-label="Open the audit log"
-                  title="Audit log"
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-ws-ink text-white transition-transform hover:scale-105"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M4 7h16M4 12h16M4 17h10" />
-                  </svg>
-                </Link>
-              </span>
+              viewer.can("analytics.read") || viewer.can("audit.read") ? (
+                <span className="flex items-center gap-1.5 rounded-full border border-ws-line bg-white p-1.5">
+                  {viewer.can("analytics.read") && (
+                    <Link
+                      href="/app/analytics"
+                      prefetch
+                      aria-label="Open analytics"
+                      title="Analytics"
+                      className="flex h-9 w-9 items-center justify-center rounded-full text-ws-dim transition-colors hover:bg-ws-canvas hover:text-ws-ink"
+                    >
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16" />
+                      </svg>
+                    </Link>
+                  )}
+                  {viewer.can("audit.read") && (
+                    <Link
+                      href="/app/audit"
+                      prefetch
+                      aria-label="Open the audit log"
+                      title="Audit log"
+                      className="flex h-9 w-9 items-center justify-center rounded-full bg-ws-ink text-white transition-transform hover:scale-105"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M4 7h16M4 12h16M4 17h10" />
+                      </svg>
+                    </Link>
+                  )}
+                </span>
+              ) : undefined
             }
           />
         </div>
@@ -151,6 +172,11 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
             title="Account growth"
             caption="Last 30 days"
             series={chart}
+            more={
+              viewer.can("analytics.read")
+                ? { label: "Analytics", href: "/app/analytics" }
+                : undefined
+            }
           >
             <WsInnerCard
               title="Your team"
@@ -345,7 +371,17 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
 
       {/* ─────────────────── right rail ─────────────────── */}
       <aside className="flex min-w-0 flex-col gap-3">
-        {viewer.can("people.invite") && (
+        {/*
+          * Gated on being the Founder, not on `people.invite`.
+          *
+          * The only surface that sends an invitation is /app/access, and that
+          * page is `requireFounder`. Showing this card to a Co-Founder who holds
+          * people.invite would offer them a button whose destination refuses
+          * them — the exact class of thing this audit removes. Where the
+          * capability may be exercised is an authorization question, and
+          * authorization is not changed here.
+          */}
+        {isFounder && (
           <WsAddCard
             title="Add user"
             subtitle="Invite someone to the workspace"
@@ -373,7 +409,13 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
 
         <div className="mt-2 flex items-baseline justify-between px-1">
           <h2 className="text-[14px] font-semibold text-ws-ink">Products</h2>
-          <span className="text-[11px] text-ws-dim">{products.length} listed</span>
+          {/* `products` is the top five by release count, so it cannot be used
+              as the catalogue total — that count comes from leadershipStats(). */}
+          <span className="text-[11px] text-ws-dim">
+            {products.length < stats.products
+              ? `${products.length} of ${stats.products}`
+              : `${stats.products} listed`}
+          </span>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -400,7 +442,7 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
           </Link>
           {viewer.can("products.manage") && (
             <Link
-              href="/app/products"
+              href="/app/products#new"
               prefetch
               className="ws-pill flex h-9 flex-1 items-center justify-center gap-1 text-[12px] font-medium text-ws-ink"
             >
@@ -414,7 +456,7 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
 
         <WsQuotaCard
           used={stats.liveProducts}
-          total={products.length || stats.liveProducts}
+          total={stats.products}
           unit="products live"
           title={isFounder ? "You hold full authority" : "Co-Founder view"}
           body={

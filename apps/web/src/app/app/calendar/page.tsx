@@ -3,6 +3,9 @@ import { requireViewer } from "@/lib/guard";
 import { currentYear, holidays, whoIsOut } from "@/lib/hr";
 import { Avatar } from "@/components/dashboard/avatar";
 import { Breadcrumb, Panel } from "@/components/dashboard/widgets";
+import { MonthGrid } from "@/components/dashboard/month-grid";
+import { itemsByDay, monthRange } from "@/lib/calendar";
+import { EventForm } from "./event-form";
 import {
   EntitlementForm,
   HolidayForm,
@@ -62,17 +65,66 @@ export default async function CalendarPage() {
 
   const upcoming = days.filter((h) => h.date >= new Date(new Date().toDateString()));
 
+  /*
+   * Phase 17 — the aggregated month feed.
+   *
+   * `itemsByDay` unions created events with holidays, approved leave, published
+   * releases and task deadlines, already scoped to this viewer. Leave arrives
+   * carrying no reason and no type; see lib/calendar.ts.
+   */
+  const month = monthRange(now);
+  const [byDay, myTeams] = await Promise.all([
+    itemsByDay(viewer, month),
+    db.teamMember.findMany({
+      where: { userId: viewer.id },
+      select: { team: { select: { id: true, name: true } } },
+    }),
+  ]);
+
   return (
     <div className="flex flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards", href: "/app" }, { label: "Calendar" }]} />
 
-      <div>
-        <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Calendar</h1>
-        <p className="mt-1 text-[15px] text-text-secondary">
-          Company holidays and who is away. Holidays are never charged to anyone&apos;s
-          leave balance.
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-[36px] font-semibold leading-[0.98] tracking-[-0.04em] md:text-[44px]">
+            Calendar
+          </h1>
+          <p className="mt-2 text-[15px] text-text-secondary">
+            Meetings, deadlines, releases, holidays and who is away — everything
+            you are entitled to see, in one place.
+          </p>
+        </div>
+        <p className="text-[15px] font-medium text-text-secondary">
+          {now.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
         </p>
       </div>
+
+      {/* ---- the month ---- */}
+      <Panel>
+        <MonthGrid year={now.getFullYear()} month={now.getMonth()} byDay={byDay} />
+        <p className="mt-4 text-sm text-text-muted">
+          Leave shows as &ldquo;away&rdquo; only. The reason and the type of leave
+          reach the person and their approver chain, and stop there.
+        </p>
+      </Panel>
+
+      {/* ---- add an event ---- */}
+      <Panel id="new">
+        <h2 className="text-[19px] font-semibold tracking-[-0.01em]">Add an event</h2>
+        <p className="mt-1 text-sm text-text-secondary">
+          Personal events are yours alone. Team events need you to be in the team.
+          {canManage
+            ? " Company events appear for everyone on staff."
+            : " Company-wide events need the calendar permission."}
+        </p>
+        <div className="mt-5">
+          <EventForm
+            teams={myTeams.map((m) => m.team)}
+            canCompany={canManage}
+          />
+        </div>
+      </Panel>
 
       {/* ---- who is out ---- */}
       <Panel>

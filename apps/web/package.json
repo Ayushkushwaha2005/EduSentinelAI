@@ -38,7 +38,9 @@
     "build:brand": "node scripts/build-brand-assets.mjs",
     "test:e2e": "tsx --env-file=.env scripts/e2e-phase5.mts",
     "mfa:enroll": "node --env-file=.env scripts/mfa-enroll.mjs",
-    "db:seed:demo": "node --env-file=.env prisma/seed-demo.mjs"
+    "db:seed:demo": "node --env-file=.env prisma/seed-demo.mjs",
+    "db:seed:cofounder": "node --env-file=.env prisma/seed-cofounder.mjs",
+    "check:knowledge": "node scripts/check-knowledge.mjs"
   },
   "dependencies": {
     "@edusentinel/ui": "*",

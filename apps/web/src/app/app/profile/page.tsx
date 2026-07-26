@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireViewer } from "@/lib/guard";
 import { ownProfile } from "@/lib/profile";
 import { Breadcrumb, Panel } from "@/components/dashboard/widgets";
-import { AvatarForm, DetailsForm, NotificationsForm, PasswordForm } from "./forms";
+import { AvatarForm, DetailsForm } from "./forms";
 
 /*
  * One profile page for every role (Phase 6.2).
@@ -90,22 +90,28 @@ export default async function ProfilePage() {
         </p>
       </Panel>
 
+      {/*
+       * Password and notification preferences MOVED to /app/settings.
+       *
+       * A profile is who you are; settings are how your account behaves. Putting
+       * a password field on the page you visit to fix a typo in your job title
+       * conflates the two, and it is the page most likely to be open on a shared
+       * screen.
+       */}
       <Panel>
         <h2 className="text-sm font-semibold uppercase tracking-[0.08em] text-text-muted">
-          Notifications
+          Account settings
         </h2>
-        <div className="mt-5">
-          <NotificationsForm profile={profile} />
-        </div>
-      </Panel>
-
-      <Panel>
-        <h2 className="text-sm font-semibold uppercase tracking-[0.08em] text-text-muted">
-          Password
-        </h2>
-        <div className="mt-5">
-          <PasswordForm />
-        </div>
+        <p className="mt-4 text-sm leading-relaxed text-text-secondary">
+          Password, two-factor authentication, notification preferences,
+          appearance, privacy and sessions have their own page now.
+        </p>
+        <Link
+          href="/app/settings"
+          className="mt-5 inline-flex h-11 items-center rounded-control bg-ink px-5 text-sm font-medium text-surface-raised transition-colors hover:bg-ink-hover"
+        >
+          Open Settings
+        </Link>
       </Panel>
     </div>
   );

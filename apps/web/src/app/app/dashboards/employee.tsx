@@ -53,12 +53,14 @@ export default async function EmployeeDashboard({ viewer }: { viewer: Viewer }) 
           people={teammates}
           href="/app/tasks"
         />
+        {/* /app/teams is gated on team.view; without it that link would only
+            lead to a refusal, so the card stops offering it. */}
         <StatCard
           icon={<UsersIcon size={26} />}
           title="My Teams"
           subtitle={`Teams (${teams.length})`}
           people={teammates}
-          href="/app/teams"
+          href={viewer.can("team.view") ? "/app/teams" : undefined}
         />
         <StatCard
           icon={<BoxIcon size={26} />}

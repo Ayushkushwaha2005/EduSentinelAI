@@ -43,46 +43,50 @@ model User {
   // storage/avatars (outside the web root), never the uploaded filename, and the
   // bytes are magic-byte validated and stripped of metadata before they land
   // (lib/images.ts). Only PNG and JPEG — SVG is script.
-  title          String?
-  bio            String?
-  pronouns       String?
-  timezone       String?
-  location       String?
-  phone          String? // internal contact; never shown to collaborators
-  avatarName     String? // generated storage name
-  avatarMime     String?
-  avatarAt       DateTime? // cache-buster for the avatar route
+  title      String?
+  bio        String?
+  pronouns   String?
+  timezone   String?
+  location   String?
+  phone      String? // internal contact; never shown to collaborators
+  avatarName String? // generated storage name
+  avatarMime String?
+  avatarAt   DateTime? // cache-buster for the avatar route
 
   // Presence. Stamped by the workspace shell, throttled — the "Team Online" rail
   // used to hard-code everyone as online, which was decoration, not data.
-  lastSeenAt     DateTime?
+  lastSeenAt DateTime?
 
   // Notification preferences (Phase 9 consumes these; the profile owns them).
   // Security-critical mail is deliberately NOT optional and has no flag here.
-  notifyDigest   Boolean     @default(true)
-  notifyMentions Boolean     @default(true)
-  notifyProduct  Boolean     @default(false)
+  notifyDigest    Boolean                   @default(true)
+  notifyMentions  Boolean                   @default(true)
+  notifyProduct   Boolean                   @default(false)
   // Phase 5
-  grants         PermissionGrant[] @relation("grantee")
-  memberships    TeamMember[]      @relation("membership")
-  tasks          Task[]            @relation("assignee")
+  grants          PermissionGrant[]         @relation("grantee")
+  memberships     TeamMember[]              @relation("membership")
+  tasks           Task[]                    @relation("assignee")
   // Phase 5.3
-  conversations  ConversationParticipant[] @relation("participant")
-  messages       Message[]                 @relation("author")
+  conversations   ConversationParticipant[] @relation("participant")
+  messages        Message[]                 @relation("author")
   // Phase 6.5 — the org chart and the collaboration relationship, if any.
   // Both are optional: an account is not an org member, and an org member is not
   // necessarily an account.
-  orgMember      OrgMember?
-  collaboration  Collaboration?
+  orgMember       OrgMember?
+  collaboration   Collaboration?
   // Phase 8 — workforce. Sensitive personal data; always read through lib/hr.ts.
-  attendance     Attendance[]   @relation("attendance")
-  leaveBalances  LeaveBalance[] @relation("leaveBalance")
-  leaveRequests  LeaveRequest[] @relation("leaveRequest")
+  attendance      Attendance[]              @relation("attendance")
+  leaveBalances   LeaveBalance[]            @relation("leaveBalance")
+  leaveRequests   LeaveRequest[]            @relation("leaveRequest")
   // Phase 9 — support & notifications.
-  supportRaised   SupportRequest[] @relation("supportRequester")
-  supportAssigned SupportRequest[] @relation("supportAssignee")
-  supportMessages SupportMessage[] @relation("supportAuthor")
-  notifications   Notification[]   @relation("notified")
+  supportRaised   SupportRequest[]          @relation("supportRequester")
+  supportAssigned SupportRequest[]          @relation("supportAssignee")
+  supportMessages SupportMessage[]          @relation("supportAuthor")
+  notifications   Notification[]            @relation("notified")
+
+  // Phase 17: the workspace calendar
+  calendarEvents    CalendarEvent[]    @relation("calendarOwner")
+  calendarAttending CalendarAttendee[] @relation("calendarAttendee")
 }
 
 // Single-use expiring tokens for email verification and password reset.
@@ -244,16 +248,17 @@ model PermissionGrant {
 }
 
 model Team {
-  id           String       @id @default(cuid())
-  name         String       @unique
-  description  String?
-  createdAt    DateTime     @default(now())
-  members      TeamMember[]
-  projects     Project[]
+  id             String          @id @default(cuid())
+  name           String          @unique
+  description    String?
+  createdAt      DateTime        @default(now())
+  members        TeamMember[]
+  projects       Project[]
   // Phase 6.5: teams sit inside departments on the org chart.
-  departmentId String?
-  department   Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  orgMembers   OrgMember[]
+  departmentId   String?
+  department     Department?     @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  orgMembers     OrgMember[]
+  calendarEvents CalendarEvent[]
 }
 
 model TeamMember {
@@ -282,17 +287,17 @@ model Project {
 }
 
 model Task {
-  id          String    @id @default(cuid())
-  title       String
-  detail      String?
-  projectId   String?
-  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  assigneeId  String?
-  assignee    User?     @relation("assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  status      String    @default("OPEN") // OPEN | IN_PROGRESS | DONE
-  priority    String    @default("NORMAL") // LOW | NORMAL | HIGH
-  dueAt       DateTime?
-  createdAt   DateTime  @default(now())
+  id         String    @id @default(cuid())
+  title      String
+  detail     String?
+  projectId  String?
+  project    Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  assigneeId String?
+  assignee   User?     @relation("assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  status     String    @default("OPEN") // OPEN | IN_PROGRESS | DONE
+  priority   String    @default("NORMAL") // LOW | NORMAL | HIGH
+  dueAt      DateTime?
+  createdAt  DateTime  @default(now())
 
   @@index([assigneeId, status])
 }
@@ -305,14 +310,14 @@ model Task {
 // (and therefore must never carry internal-only chatter by construction:
 // participants are explicit, never implied by role).
 model Conversation {
-  id           String                    @id @default(cuid())
-  kind         String                    @default("TEAM") // TEAM | COLLAB
-  subject      String?
-  createdById  String
-  createdAt    DateTime                  @default(now())
-  lastMessageAt DateTime                 @default(now())
-  participants ConversationParticipant[]
-  messages     Message[]
+  id            String                    @id @default(cuid())
+  kind          String                    @default("TEAM") // TEAM | COLLAB
+  subject       String?
+  createdById   String
+  createdAt     DateTime                  @default(now())
+  lastMessageAt DateTime                  @default(now())
+  participants  ConversationParticipant[]
+  messages      Message[]
 
   @@index([kind, lastMessageAt])
 }
@@ -357,22 +362,22 @@ model Message {
 // is public-supplied text arriving in a staff console; treating it as anything
 // else is how a support inbox becomes a stored-XSS delivery mechanism.
 model SupportRequest {
-  id          String   @id @default(cuid())
-  requesterId String
-  requester   User     @relation("supportRequester", fields: [requesterId], references: [id], onDelete: Cascade)
-  subject     String
-  category    String   @default("other") // access | bug | billing | security | other
-  priority    String   @default("NORMAL") // LOW | NORMAL | HIGH | URGENT
-  status      String   @default("OPEN") // OPEN | IN_PROGRESS | RESOLVED | CLOSED
-  assigneeId  String?
-  assignee    User?    @relation("supportAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  id              String    @id @default(cuid())
+  requesterId     String
+  requester       User      @relation("supportRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  subject         String
+  category        String    @default("other") // access | bug | billing | security | other
+  priority        String    @default("NORMAL") // LOW | NORMAL | HIGH | URGENT
+  status          String    @default("OPEN") // OPEN | IN_PROGRESS | RESOLVED | CLOSED
+  assigneeId      String?
+  assignee        User?     @relation("supportAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   // SLA is measured, not promised: firstResponseAt and resolvedAt are stamped when
   // they actually happen, so "we respond within a day" is a number we can check
   // rather than a claim on a page.
   firstResponseAt DateTime?
   resolvedAt      DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   messages    SupportMessage[]
   attachments SupportAttachment[]
@@ -401,15 +406,15 @@ model SupportMessage {
 // outside the web root under a generated name, and an authenticated,
 // participant-scoped route to read them back. No SVG — it is script.
 model SupportAttachment {
-  id          String         @id @default(cuid())
-  requestId   String
-  request     SupportRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  id           String         @id @default(cuid())
+  requestId    String
+  request      SupportRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   uploadedById String
-  fileName    String // original name, display only
-  storageName String         @unique // generated name on disk
-  mime        String
-  size        Int
-  createdAt   DateTime       @default(now())
+  fileName     String // original name, display only
+  storageName  String         @unique // generated name on disk
+  mime         String
+  size         Int
+  createdAt    DateTime       @default(now())
 
   @@index([requestId])
 }
@@ -479,34 +484,34 @@ model Attendance {
 // value, the person who asked and the person who decided are all kept, and the
 // change only lands when someone with `attendance.manage` says so.
 model AttendanceCorrection {
-  id           String     @id @default(cuid())
-  attendanceId String
-  attendance   Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  id            String     @id @default(cuid())
+  attendanceId  String
+  attendance    Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
   requestedById String
-  fromStatus   String
-  toStatus     String
-  reason       String
-  status       String     @default("PENDING") // PENDING | APPROVED | REJECTED
-  decidedById  String?
-  decidedAt    DateTime?
-  decisionNote String?
-  createdAt    DateTime   @default(now())
+  fromStatus    String
+  toStatus      String
+  reason        String
+  status        String     @default("PENDING") // PENDING | APPROVED | REJECTED
+  decidedById   String?
+  decidedAt     DateTime?
+  decisionNote  String?
+  createdAt     DateTime   @default(now())
 
   @@index([status, createdAt])
 }
 
 model LeaveType {
-  id           String         @id @default(cuid())
-  name         String         @unique
-  code         String         @unique // ANNUAL | SICK | UNPAID | …
-  defaultDays  Int            @default(0) // starting entitlement per year
-  paid         Boolean        @default(true)
-  color        String         @default("cyan") // token key, never a raw hex
-  active       Boolean        @default(true)
-  sortOrder    Int            @default(0)
-  createdAt    DateTime       @default(now())
-  balances     LeaveBalance[]
-  requests     LeaveRequest[]
+  id          String         @id @default(cuid())
+  name        String         @unique
+  code        String         @unique // ANNUAL | SICK | UNPAID | …
+  defaultDays Int            @default(0) // starting entitlement per year
+  paid        Boolean        @default(true)
+  color       String         @default("cyan") // token key, never a raw hex
+  active      Boolean        @default(true)
+  sortOrder   Int            @default(0)
+  createdAt   DateTime       @default(now())
+  balances    LeaveBalance[]
+  requests    LeaveRequest[]
 }
 
 model LeaveBalance {
@@ -528,25 +533,25 @@ model LeaveBalance {
 }
 
 model LeaveRequest {
-  id          String    @id @default(cuid())
-  userId      String
-  user        User      @relation("leaveRequest", fields: [userId], references: [id], onDelete: Cascade)
-  leaveTypeId String
-  leaveType   LeaveType @relation(fields: [leaveTypeId], references: [id], onDelete: Cascade)
-  startDate   DateTime
-  endDate     DateTime
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation("leaveRequest", fields: [userId], references: [id], onDelete: Cascade)
+  leaveTypeId  String
+  leaveType    LeaveType @relation(fields: [leaveTypeId], references: [id], onDelete: Cascade)
+  startDate    DateTime
+  endDate      DateTime
   // Working days actually charged: weekends and public holidays inside the range
   // are NOT charged (lib/hr.ts). Booking five days across a bank holiday must not
   // cost five days of someone's entitlement.
-  days        Float
+  days         Float
   // The most sensitive field in the schema. Readable only by the requester and
   // their approver chain — stripped everywhere else by redactLeave().
-  reason      String?
-  status      String    @default("PENDING") // PENDING | APPROVED | REJECTED | CANCELLED
-  decidedById String?
-  decidedAt   DateTime?
+  reason       String?
+  status       String    @default("PENDING") // PENDING | APPROVED | REJECTED | CANCELLED
+  decidedById  String?
+  decidedAt    DateTime?
   decisionNote String?
-  createdAt   DateTime  @default(now())
+  createdAt    DateTime  @default(now())
 
   @@index([status, startDate])
   @@index([userId, startDate])
@@ -580,20 +585,20 @@ model Holiday {
 // cannot mint privilege at or above the inviter, and can never mint a Founder —
 // the Trust Model closes that door before the feature exists rather than after.
 model Invitation {
-  id            String    @id @default(cuid())
-  email         String
-  tokenHash     String    @unique
-  role          String // the role granted on acceptance
-  capabilities  String    @default("[]") // JSON string[] — founder-issued starting grants
-  status        String    @default("PENDING") // PENDING | ACCEPTED | REVOKED
-  message       String?
-  invitedById   String
+  id             String    @id @default(cuid())
+  email          String
+  tokenHash      String    @unique
+  role           String // the role granted on acceptance
+  capabilities   String    @default("[]") // JSON string[] — founder-issued starting grants
+  status         String    @default("PENDING") // PENDING | ACCEPTED | REVOKED
+  message        String?
+  invitedById    String
   invitedByEmail String // snapshot, like the audit log: it outlives the account
-  expiresAt     DateTime
-  acceptedAt    DateTime?
-  acceptedById  String?
-  revokedAt     DateTime?
-  createdAt     DateTime  @default(now())
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  acceptedById   String?
+  revokedAt      DateTime?
+  createdAt      DateTime  @default(now())
 
   @@index([status, createdAt])
   @@index([email])
@@ -623,12 +628,12 @@ model MailLog {
 // revokes — on the record, so "we review access quarterly" is a fact with rows
 // behind it rather than a claim in a policy document.
 model AccessReview {
-  id          String   @id @default(cuid())
-  reviewerId  String
-  reviewedAt  DateTime @default(now())
-  accounts    Int // how many elevated accounts were in scope
-  revoked     Int // how many grants the review removed
-  note        String?
+  id         String   @id @default(cuid())
+  reviewerId String
+  reviewedAt DateTime @default(now())
+  accounts   Int // how many elevated accounts were in scope
+  revoked    Int // how many grants the review removed
+  note       String?
 
   @@index([reviewedAt])
 }
@@ -644,8 +649,8 @@ model AccessReview {
 // The logo is an UPLOAD, so it goes through lib/images.ts like every other file a
 // human hands us: magic-byte validated, size-capped, metadata-stripped, no SVG.
 model CompanyProfile {
-  id          String   @id @default("company")
-  name        String   @default("EduSentinel AI")
+  id          String    @id @default("company")
+  name        String    @default("EduSentinel AI")
   legalName   String?
   tagline     String?
   description String?
@@ -654,11 +659,11 @@ model CompanyProfile {
   address     String?
   website     String?
   founded     String?
-  links       String   @default("[]") // JSON [{label, href}] — href is https-only (safeHref)
+  links       String    @default("[]") // JSON [{label, href}] — href is https-only (safeHref)
   logoName    String? // generated name in storage/brand
   logoMime    String?
   logoAt      DateTime?
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime  @updatedAt
 }
 
 model Department {
@@ -761,4 +766,77 @@ model Artifact {
   scanStatus    String  @default("PENDING") // PENDING | CLEAN | FLAGGED | NO_SCANNER
   scanDetail    String?
   downloadCount Int     @default(0)
+}
+
+// ---------- Phase 17: the workspace calendar ----------
+//
+// ONE EVENT TABLE, NOT ONE PER ROLE.
+//
+// A role's calendar is a CONSEQUENCE of what that person can see, never a
+// separate store — the moment there are per-role tables, "who may see this"
+// stops being one question with one answer and the scoping drifts apart. So
+// every deliberately-created event lives here, and lib/calendar.ts unions it
+// with the things the platform already knows about (holidays, approved leave,
+// releases, task deadlines) at read time.
+//
+// Nothing is duplicated into this table. A release does not get a mirror row —
+// it is projected into the feed from the Release table on read, so it can never
+// go stale or disagree with the pipeline.
+model CalendarEvent {
+  id     String  @id @default(cuid())
+  title  String
+  detail String?
+  // MEETING | COMPANY | DEADLINE | SESSION | REMINDER | BOOKMARK
+  // Deliberately a string, matching the rest of this schema: SQLite has no
+  // enums and the set is validated in lib/calendar-types.ts.
+  kind   String  @default("MEETING")
+
+  startsAt DateTime
+  endsAt   DateTime?
+  allDay   Boolean   @default(false)
+  location String?
+
+  // WHO CAN SEE IT — the whole access model, in one column.
+  //   PERSONAL  only the owner (and anyone explicitly invited)
+  //   TEAM      the owner's team
+  //   COMPANY   every member of staff
+  // A visibility of COMPANY is not "public": externals never read this table.
+  visibility String @default("PERSONAL")
+
+  // The person it belongs to. Kept even for COMPANY events so there is always
+  // someone accountable for a row.
+  ownerId String
+  owner   User   @relation("calendarOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  teamId String?
+  team   Team?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  // Snapshotted like AuditLog does: the creator's identity survives their
+  // account being offboarded, and no FK can rewrite it to null.
+  createdByEmail String?
+
+  cancelledAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  attendees CalendarAttendee[]
+
+  @@index([startsAt])
+  @@index([ownerId, startsAt])
+  @@index([visibility, startsAt])
+}
+
+// Explicit invitation. Presence of a row is what grants a non-owner read access
+// to a PERSONAL event — membership is never implied by role.
+model CalendarAttendee {
+  id       String        @id @default(cuid())
+  eventId  String
+  event    CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User          @relation("calendarAttendee", fields: [userId], references: [id], onDelete: Cascade)
+  // INVITED | ACCEPTED | DECLINED
+  response String        @default("INVITED")
+
+  @@unique([eventId, userId])
+  @@index([userId])
 }
