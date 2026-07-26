@@ -181,15 +181,35 @@ export async function touchSession(sid: string): Promise<void> {
   }
 }
 
-/** Is this token's session still live? Used by the jwt callback. */
+/**
+ * Is this token's session still live? Used by the jwt callback.
+ *
+ * FAILS OPEN, DELIBERATELY.
+ *
+ * This runs inside the jwt callback, on every authenticated request. If it
+ * throws, the callback throws, the session is rejected and EVERY account is
+ * locked out of the product at once — a database hiccup, a connection-pool
+ * exhaustion or a table that has not been migrated yet becomes a total outage.
+ *
+ * The security cost of failing open is precisely bounded: a session the owner
+ * revoked could survive until the token expires (8h at most), and only during a
+ * window in which the database is unreachable. Weighed against locking out
+ * every user including the Founder, that is the right trade — and the two
+ * stronger controls are unaffected, because `sessionVersion` is read from the
+ * same query the callback already makes, and an expired token still expires.
+ */
 export async function isSessionLive(sid: string): Promise<boolean> {
-  const row = await db.userSession.findUnique({
-    where: { sid },
-    select: { revokedAt: true },
-  });
-  // A token whose row is missing predates this feature; it stays valid until it
-  // expires on its own rather than signing everyone out on deploy.
-  return row ? row.revokedAt === null : true;
+  try {
+    const row = await db.userSession.findUnique({
+      where: { sid },
+      select: { revokedAt: true },
+    });
+    // A token whose row is missing predates this feature; it stays valid until
+    // it expires on its own rather than signing everyone out on deploy.
+    return row ? row.revokedAt === null : true;
+  } catch {
+    return true;
+  }
 }
 
 /* ──────────────────────────────────────────────────────── the read path ──── */
