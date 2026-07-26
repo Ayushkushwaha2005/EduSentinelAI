@@ -37,7 +37,7 @@ export default async function EmployeeDashboard({ viewer }: { viewer: Viewer }) 
   const teammates = [...new Set(teams.flatMap((t) => t.members))];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards" }]} />
 
       <PageHeader

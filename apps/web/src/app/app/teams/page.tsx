@@ -1,7 +1,7 @@
 import { requireCapability } from "@/lib/guard";
 import { db } from "@/lib/db";
 import { teamCards, myTeams } from "@/lib/dashboard";
-import { Breadcrumb, TeamCard } from "@/components/dashboard/widgets";
+import { Breadcrumb, EmptyState, TeamCard } from "@/components/dashboard/widgets";
 import { TeamManager } from "./manage";
 
 /*
@@ -24,7 +24,7 @@ export default async function TeamsPage() {
     : [];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb
         trail={[{ label: "Teams", href: "/app/teams" }, { label: "Teams List" }]}
       />
@@ -48,9 +48,17 @@ export default async function TeamsPage() {
       )}
 
       {teams.length === 0 ? (
-        <p className="rounded-card bg-surface-raised p-10 text-center text-text-muted">
-          No teams yet.
-        </p>
+        <div className="flex flex-1 flex-col justify-center">
+          <EmptyState
+            icon={
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            }
+            title="No teams yet"
+            body="Teams group people around projects, and give tasks and the calendar something to belong to. Create the first one to get started."
+          />
+        </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-3">
           {teams.map((t) => (

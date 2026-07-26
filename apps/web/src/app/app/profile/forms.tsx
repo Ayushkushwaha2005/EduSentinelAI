@@ -235,7 +235,7 @@ export function NotificationsForm({ profile }: { profile: OwnProfile }) {
               name={r.name}
               type="checkbox"
               defaultChecked={r.checked}
-              className="mt-1 h-4 w-4 accent-[--color-brand-cyan]"
+              className="mt-1 h-4 w-4 accent-brand-cyan"
             />
             <label htmlFor={r.name} className="min-w-0">
               <span className="block text-[15px] font-medium">{r.title}</span>

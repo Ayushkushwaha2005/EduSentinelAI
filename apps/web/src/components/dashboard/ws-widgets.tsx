@@ -502,3 +502,132 @@ export function WsQuotaCard({
     </div>
   );
 }
+
+/* ----------------------------------------------------------- pipeline ---- */
+
+/**
+ * The release pipeline card.
+ *
+ * Replaces a list that rendered nothing on a platform with no releases yet.
+ * Every figure here is read from the database (lib/dashboard.ts): the stages are
+ * Phase 3's real sequence, and the bars count release events already in the
+ * audit log. When there is genuinely nothing to show, it says which stage is
+ * empty rather than drawing a floor-height bar — the same rule the analytics
+ * page follows, and the reason `test:data` exists.
+ */
+export function WsPipeline({
+  stages,
+  activity,
+  revoked,
+  href,
+}: {
+  stages: { key: string; label: string; hint: string; count: number }[];
+  activity: { measured: boolean; weeks: { label: string; published: number; other: number }[]; total: number };
+  revoked: number;
+  href: string;
+}) {
+  const peak = Math.max(1, ...activity.weeks.map((w) => w.published + w.other));
+  const inFlight = stages.slice(0, 3).reduce((n, s) => n + s.count, 0);
+  const published = stages.find((s) => s.key === "published")?.count ?? 0;
+
+  return (
+    <div className="flex flex-col gap-3">
+      {/* the funnel */}
+      <ul className="flex flex-col gap-1.5">
+        {stages.map((s, i) => {
+          const share = peakOf(stages) === 0 ? 0 : (s.count / peakOf(stages)) * 100;
+          return (
+            <li key={s.key}>
+              <Link
+                href={href}
+                prefetch
+                className="ws-lift group relative block overflow-hidden rounded-[14px] border border-ws-line bg-white px-3.5 py-2.5"
+              >
+                {/* the fill is the stage's share of the busiest stage */}
+                <span
+                  aria-hidden="true"
+                  className={`absolute inset-y-0 left-0 transition-[width] duration-[--duration-reveal] ease-[--ease-brand] ${
+                    i === stages.length - 1 ? "bg-ws-mint" : "bg-ws-lilac/60"
+                  }`}
+                  style={{ width: `${share}%` }}
+                />
+                <span className="relative flex items-center justify-between gap-3">
+                  <span className="min-w-0">
+                    <span className="block truncate text-[13.5px] font-medium text-ws-ink">
+                      {s.label}
+                    </span>
+                    <span className="block truncate text-[10.5px] text-ws-dim">{s.hint}</span>
+                  </span>
+                  <span className="shrink-0 font-display text-[19px] font-semibold tabular-nums leading-none tracking-[-0.02em] text-ws-ink">
+                    {s.count}
+                  </span>
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+
+      {/* weekly release activity */}
+      <div className="rounded-[14px] border border-ws-line bg-white p-3.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-[12px] font-medium text-ws-ink">Release activity</span>
+          <span className="text-[10.5px] text-ws-dim">last 8 weeks</span>
+        </div>
+
+        {activity.measured ? (
+          <>
+            <div className="mt-3 flex h-[54px] items-end gap-[3px]">
+              {activity.weeks.map((w, i) => {
+                const total = w.published + w.other;
+                const h = total === 0 ? 0 : Math.max(9, (total / peak) * 100);
+                return (
+                  <span
+                    key={i}
+                    title={`Week of ${w.label}: ${total} release event${total === 1 ? "" : "s"}`}
+                    className="flex flex-1 flex-col justify-end"
+                    style={{ height: "100%" }}
+                  >
+                    {total === 0 ? (
+                      <span className="ws-hatch block h-[9px] w-full rounded-[4px]" />
+                    ) : (
+                      <span
+                        className={`block w-full rounded-[4px] ${
+                          w.published > 0 ? "bg-ws-ink" : "bg-ws-lilac"
+                        }`}
+                        style={{ height: `${h}%` }}
+                      />
+                    )}
+                  </span>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[10.5px] text-ws-dim">
+              {activity.total} event{activity.total === 1 ? "" : "s"} · hatched weeks had none
+            </p>
+          </>
+        ) : (
+          <p className="mt-2.5 text-[11px] leading-relaxed text-ws-dim">
+            No release events recorded yet. This chart draws from the audit log,
+            so it fills in the moment the first artifact moves through the
+            pipeline — it is left blank rather than seeded with sample bars.
+          </p>
+        )}
+      </div>
+
+      {/* the one line that summarises the state */}
+      <p className="px-1 text-[11px] leading-relaxed text-ws-dim">
+        {inFlight === 0 && published === 0
+          ? "Nothing in the pipeline yet. Upload an artifact against a product to start one."
+          : inFlight === 0
+            ? `Nothing waiting — all ${published} published.`
+            : `${inFlight} in flight · ${published} published`}
+        {revoked > 0 && ` · ${revoked} revoked`}
+      </p>
+    </div>
+  );
+}
+
+function peakOf(stages: { count: number }[]) {
+  return Math.max(0, ...stages.map((s) => s.count));
+}

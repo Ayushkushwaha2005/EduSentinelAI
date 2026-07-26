@@ -33,7 +33,7 @@ export default async function SearchPage({
 
   if (!query) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex grow flex-col gap-4">
         <Breadcrumb trail={[{ label: "Dashboards", href: "/app" }, { label: "Search" }]} />
         <Panel>
           <p className="py-8 text-center text-text-muted">

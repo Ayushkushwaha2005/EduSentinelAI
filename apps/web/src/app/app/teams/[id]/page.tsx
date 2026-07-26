@@ -40,7 +40,7 @@ export default async function TeamPage({
   const openTasks = tasks.filter((t) => t.status !== "DONE");
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb
         trail={[
           { label: "Teams", href: "/app/teams" },

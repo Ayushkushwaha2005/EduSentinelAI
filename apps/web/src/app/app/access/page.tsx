@@ -83,7 +83,7 @@ export default async function AccessPage() {
   const invitableRoles = invitableBy(founder.role);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards", href: "/app" }, { label: "Access Control" }]} />
 
       <div>

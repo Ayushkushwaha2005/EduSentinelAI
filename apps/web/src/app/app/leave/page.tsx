@@ -41,7 +41,7 @@ export default async function LeavePage() {
   }));
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards", href: "/app" }, { label: "Leave" }]} />
 
       <div>

@@ -98,6 +98,9 @@
   --shadow-ws-frame: 0 24px 60px -30px rgb(16 17 20 / 28%);
   --shadow-ws-card: 0 10px 30px -18px rgb(16 17 20 / 18%);
   --shadow-ws-pill: 0 2px 8px -4px rgb(16 17 20 / 16%);
+  /* Sentinel Mini's popover: it floats above the whole workspace, so it needs a
+     deeper lift than a card that sits in the page. */
+  --shadow-ws-pop: 0 24px 64px -24px rgb(16 17 20 / 34%), 0 4px 14px -8px rgb(16 17 20 / 18%);
   --color-brand-cyan-aa: #0e7490; /* ≈ 4.9:1 */
   --color-brand-teal-aa: #0f766e; /* ≈ 5.2:1 */
 

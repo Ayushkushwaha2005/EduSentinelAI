@@ -48,7 +48,7 @@ export default async function MessagesPage({
   const contacts = isNew ? await contactableBy(viewer.id, viewer.role) : [];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb
         trail={[{ label: "Dashboards", href: "/app" }, { label: "Message Center" }]}
       />

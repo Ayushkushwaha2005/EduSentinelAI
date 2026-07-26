@@ -44,7 +44,7 @@ export default async function PeoplePage({
   ];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb
         trail={[{ label: "People", href: "/app/people" }, { label: "Directory" }]}
       />

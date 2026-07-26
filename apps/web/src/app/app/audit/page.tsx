@@ -57,7 +57,7 @@ export default async function AuditPage({
     `/app/audit?${new URLSearchParams({ ...(query ? { q: query } : {}), page: String(p) })}`;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards", href: "/app" }, { label: "Audit" }]} />
 
       <div>

@@ -5,7 +5,13 @@ import { collaborationBoard } from "@/lib/collaborations";
 import { linkAccount } from "./actions";
 import { AddCollaboration, CollaborationRow } from "./forms";
 import { CollaborationControls } from "../admin/collaborations/moderation-forms";
-import { Breadcrumb, Panel, StatusDot } from "@/components/dashboard/widgets";
+import {
+  Breadcrumb,
+  EmptyState,
+  PageColumns,
+  Panel,
+  StatusDot,
+} from "@/components/dashboard/widgets";
 
 /*
  * Collaboration (Phase 6.5) — the page the bug was on.
@@ -45,20 +51,27 @@ export default async function CollaborationsPage() {
     orderBy: { name: "asc" },
     select: { id: true, name: true, email: true },
   });
-  const linkedIds = new Set(board.collaborations.map((c) => c.userId).filter(Boolean));
+  const linkedIds = new Set(
+    board.collaborations.map((c) => c.userId).filter(Boolean),
+  );
   const linkable = accounts.filter((a) => !linkedIds.has(a.id));
 
   const pending = board.requests.filter((r) => r.status === "PENDING");
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb
-        trail={[{ label: "Dashboards", href: "/app" }, { label: "Collaboration" }]}
+        trail={[
+          { label: "Dashboards", href: "/app" },
+          { label: "Collaboration" },
+        ]}
       />
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Collaboration</h1>
+          <h1 className="text-[26px] font-semibold tracking-[-0.02em]">
+            Collaboration
+          </h1>
           <p className="mt-1 max-w-2xl text-[15px] text-text-secondary">
             Who we are actually working with. {board.active} active ·{" "}
             {board.collaborations.length} total · {pending.length} request
@@ -76,11 +89,14 @@ export default async function CollaborationsPage() {
           </h2>
           <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-text-secondary">
             {board.unlinkedAccounts.length}{" "}
-            {board.unlinkedAccounts.length === 1 ? "account has" : "accounts have"} the
-            Collaborator role but no collaboration record. This is the drift that made
-            this page look empty while People listed collaborators. Nothing is created
-            automatically — an account existing is not proof that a working
-            relationship does, and the platform should not invent one.
+            {board.unlinkedAccounts.length === 1
+              ? "account has"
+              : "accounts have"}{" "}
+            the Collaborator role but no collaboration record. This is the drift
+            that made this page look empty while People listed collaborators.
+            Nothing is created automatically — an account existing is not proof
+            that a working relationship does, and the platform should not invent
+            one.
           </p>
 
           <ul className="mt-5 flex flex-col gap-3">
@@ -90,8 +106,12 @@ export default async function CollaborationsPage() {
                 className="flex flex-wrap items-center gap-4 rounded-card border border-border-subtle bg-surface-raised p-4"
               >
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px] font-medium">{u.name}</span>
-                  <span className="block truncate text-sm text-text-muted">{u.email}</span>
+                  <span className="block truncate text-[15px] font-medium">
+                    {u.name}
+                  </span>
+                  <span className="block truncate text-sm text-text-muted">
+                    {u.email}
+                  </span>
                 </span>
                 {canManage && (
                   <form action={linkAccount}>
@@ -110,83 +130,132 @@ export default async function CollaborationsPage() {
         </Panel>
       )}
 
-      {/* ---- collaborations ---- */}
-      <Panel>
-        <h2 className="text-[19px] font-semibold tracking-[-0.01em]">Collaborations</h2>
-        {board.collaborations.length === 0 ? (
-          <p className="mt-5 text-[15px] leading-relaxed text-text-muted">
-            No collaborations recorded yet. Approve a request below, link a
-            collaborator account above, or create one directly — a partnership that
-            started over a call does not have to go through the public form first.
-          </p>
-        ) : (
-          <ul className="mt-4 flex flex-col">
-            {board.collaborations.map((c) => (
-              <CollaborationRow key={c.id} collaboration={c} accounts={linkable} />
-            ))}
-          </ul>
-        )}
-      </Panel>
+      {/*
+       * TWO COLUMNS ON WIDE SCREENS.
+       *
+       * These two panels were stacked, and on a 1920x1080 screen the page ended
+       * 528px above the fold — a large grey void that read as a broken page
+       * rather than a quiet one. They are the natural pair (the relationships we
+       * have, and the requests to form more), so putting them side by side uses
+       * the width that was already there and roughly halves the height. Below xl
+       * it collapses back to the original stack.
+       */}
+      <PageColumns
+        main={
+          <Panel className="flex flex-1 flex-col">
+            <h2 className="text-[19px] font-semibold tracking-[-0.01em]">
+              Collaborations
+            </h2>
+            {board.collaborations.length === 0 ? (
+              <div className="mt-5 flex flex-1 flex-col justify-center">
+                <EmptyState
+                  icon={
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  }
+                  title="No collaborations yet"
+                  body="Approve a request, link a collaborator account, or create one directly — a partnership that started over a call does not have to go through the public form first."
+                />
+              </div>
+            ) : (
+              <ul className="mt-4 flex flex-col">
+                {board.collaborations.map((c) => (
+                  <CollaborationRow
+                    key={c.id}
+                    collaboration={c}
+                    accounts={linkable}
+                  />
+                ))}
+              </ul>
+            )}
+          </Panel>
+        }
+        side={
+          <Panel className="flex flex-1 flex-col">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h2 className="text-[19px] font-semibold tracking-[-0.01em]">
+                Requests from the website
+              </h2>
+              {canModerate && (
+                <Link
+                  href="/app/admin/collaborations"
+                  className="text-sm font-medium text-brand-cyan hover:text-brand-teal"
+                >
+                  Full inbox & abuse reports →
+                </Link>
+              )}
+            </div>
+            <p className="mt-1 text-sm text-text-secondary">
+              Public submissions. Approving one now{" "}
+              <strong>creates the collaboration</strong> — which is precisely
+              what used to be missing. Text is stored sanitized and rendered as
+              plain text.
+            </p>
 
-      {/* ---- requests inbox ---- */}
-      <Panel>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-[19px] font-semibold tracking-[-0.01em]">
-            Requests from the website
-          </h2>
-          {canModerate && (
-            <Link
-              href="/app/admin/collaborations"
-              className="text-sm font-medium text-brand-cyan hover:text-brand-teal"
-            >
-              Full inbox & abuse reports →
-            </Link>
-          )}
-        </div>
-        <p className="mt-1 text-sm text-text-secondary">
-          Public submissions. Approving one now <strong>creates the collaboration</strong>{" "}
-          — which is precisely what used to be missing. Text is stored sanitized and
-          rendered as plain text.
-        </p>
-
-        {board.requests.length === 0 ? (
-          <p className="mt-5 text-[15px] text-text-muted">No requests yet.</p>
-        ) : (
-          <ul className="mt-4 flex flex-col">
-            {board.requests.slice(0, 10).map((r) => (
-              <li
-                key={r.id}
-                className="border-b border-border-subtle py-4 last:border-0"
-              >
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-[15px] font-semibold">{r.name}</span>
-                  <span className="text-sm text-text-secondary">{r.email}</span>
-                  {r.org && <span className="text-sm text-text-muted">· {r.org}</span>}
-                  <span className="rounded-full bg-surface-overlay px-2.5 py-0.5 text-xs font-medium capitalize text-text-secondary">
-                    {r.kind}
-                  </span>
-                  <StatusDot status={r.status} />
-                  <span className="ml-auto text-xs text-text-muted">
-                    {r.createdAt.toLocaleDateString("en-GB", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </span>
-                </div>
-                <p className="mt-2 max-w-3xl whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
-                  {r.message}
-                </p>
-                {r.status === "PENDING" && canModerate && (
-                  <div className="mt-3">
-                    <CollaborationControls id={r.id} />
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Panel>
+            {board.requests.length === 0 ? (
+              <div className="mt-5 flex flex-1 flex-col justify-center">
+                <EmptyState
+                  title="No requests yet"
+                  body="Submissions from the public collaboration form land here for review."
+                />
+              </div>
+            ) : (
+              <ul className="mt-4 flex flex-col">
+                {board.requests.slice(0, 10).map((r) => (
+                  <li
+                    key={r.id}
+                    className="border-b border-border-subtle py-4 last:border-0"
+                  >
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-[15px] font-semibold">
+                        {r.name}
+                      </span>
+                      <span className="text-sm text-text-secondary">
+                        {r.email}
+                      </span>
+                      {r.org && (
+                        <span className="text-sm text-text-muted">
+                          · {r.org}
+                        </span>
+                      )}
+                      <span className="rounded-full bg-surface-overlay px-2.5 py-0.5 text-xs font-medium capitalize text-text-secondary">
+                        {r.kind}
+                      </span>
+                      <StatusDot status={r.status} />
+                      <span className="ml-auto text-xs text-text-muted">
+                        {r.createdAt.toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </div>
+                    <p className="mt-2 max-w-3xl whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
+                      {r.message}
+                    </p>
+                    {r.status === "PENDING" && canModerate && (
+                      <div className="mt-3">
+                        <CollaborationControls id={r.id} />
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+        }
+      />
     </div>
   );
 }

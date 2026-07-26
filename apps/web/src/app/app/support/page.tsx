@@ -28,7 +28,7 @@ export default async function SupportPage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards", href: "/app" }, { label: "Support" }]} />
 
       <div className="flex flex-wrap items-end justify-between gap-4">

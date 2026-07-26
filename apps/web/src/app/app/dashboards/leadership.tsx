@@ -2,7 +2,8 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import type { Viewer } from "@/lib/guard";
 import {
-  greeting, leadershipStats, recentAudit, staffWithWork, teamCards,
+  greeting, leadershipStats, recentAudit, releaseActivity, releasePipeline,
+  staffWithWork, teamCards,
 } from "@/lib/dashboard";
 import { growth } from "@/lib/analytics";
 import { hrSummary } from "@/lib/hr";
@@ -11,7 +12,8 @@ import { Avatar } from "@/components/dashboard/avatar";
 import { ClockIcon, GlobeIcon } from "@/components/dashboard/icons";
 import {
   WsActivityPanel, WsAddCard, WsAvatarCluster, WsHeadline, WsInkStat,
-  WsInnerCard, WsMeters, WsMintStat, WsQuotaCard, WsResourceRow, WsTabs,
+  WsInnerCard, WsMeters, WsMintStat, WsPipeline, WsQuotaCard, WsResourceRow,
+  WsTabs,
 } from "@/components/dashboard/ws-widgets";
 
 /*
@@ -38,7 +40,7 @@ import {
  * ─────────────────────────────────────────────────────────────────────────────
  */
 export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }) {
-  const [stats, teams, series, audit, releases, people, staff, hr] =
+  const [stats, teams, series, audit, releases, people, staff, hr, pipeline, activity] =
     await Promise.all([
       leadershipStats(),
       teamCards(),
@@ -55,6 +57,8 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
       viewer.can("users.view") ? directory("ALL") : [],
       staffWithWork(6),
       hrSummary(viewer),
+      releasePipeline(),
+      releaseActivity(8),
     ]);
 
   const isFounder = viewer.role === "FOUNDER";
@@ -74,8 +78,9 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
   });
   const topReleases = Math.max(1, ...products.map((p) => p._count.releases));
 
-  /* Release health, measured — not invented. */
-  const published = releases.filter((r) => r.status === "PUBLISHED").length;
+  /* Release health, measured — not invented. (The published COUNT now comes
+     from releasePipeline(), which counts the table rather than the six most
+     recent rows fetched for the scan waveform.) */
   const cleanScans = releases.filter((r) => r.artifact?.scanStatus === "CLEAN").length;
   const scanPct = releases.length ? Math.round((cleanScans / releases.length) * 100) : 0;
   const mfaPct = people.length
@@ -284,47 +289,33 @@ export default async function LeadershipDashboard({ viewer }: { viewer: Viewer }
             </div>
           </section>
 
+          {/*
+            * Pipeline.
+            *
+            * This was a list of the four most recent releases, which rendered a
+            * tall empty column on any platform that has not published one yet —
+            * the moment the dashboard most needs to look finished. It is now the
+            * pipeline itself: Phase 3's real stages with their real occupancy,
+            * and release activity counted from the audit log. Both are measured,
+            * neither is sample data, and an empty week is drawn hatched rather
+            * than as a floor-height bar.
+            */}
           <section>
             <h2 className="font-display text-[26px] font-semibold tracking-[-0.03em] text-ws-ink">
               Pipeline
             </h2>
             <p className="mt-0.5 text-[12px] text-ws-dim">
-              {published} published · {releases.length - published} in review
+              {pipeline.total === 0
+                ? "Upload → quarantine → scan → sign → publish"
+                : `${pipeline.total} artifact${pipeline.total === 1 ? "" : "s"} tracked`}
             </p>
-            <div className="mt-6 flex flex-col gap-2.5">
-              {releases.slice(0, 4).map((r) => (
-                <Link
-                  key={r.id}
-                  href="/app/admin/releases"
-                  prefetch
-                  className="ws-pill ws-lift flex items-center justify-between gap-3 px-4 py-3"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-[14px] font-medium text-ws-ink">
-                      {r.product.name}
-                    </span>
-                    <span className="block font-mono text-[11px] text-ws-dim">
-                      v{r.version}
-                    </span>
-                  </span>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                      r.status === "PUBLISHED"
-                        ? "bg-ws-mint text-ws-ink"
-                        : r.status === "REVOKED"
-                          ? "bg-ws-ink text-white"
-                          : "bg-ws-lilac text-ws-ink"
-                    }`}
-                  >
-                    {r.status}
-                  </span>
-                </Link>
-              ))}
-              {releases.length === 0 && (
-                <p className="py-10 text-center text-[13px] text-ws-dim">
-                  No releases yet.
-                </p>
-              )}
+            <div className="mt-6">
+              <WsPipeline
+                stages={pipeline.stages}
+                activity={activity}
+                revoked={pipeline.revoked}
+                href="/app/admin/releases"
+              />
             </div>
           </section>
         </div>

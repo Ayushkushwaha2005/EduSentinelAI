@@ -26,7 +26,7 @@ export default async function CollaboratorDashboard({ viewer }: { viewer: Viewer
   const openThreads = threads.filter((t) => t.status === "PENDING").length;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex grow flex-col gap-4">
       <Breadcrumb trail={[{ label: "Dashboards" }]} />
 
       <PageHeader
