@@ -14,9 +14,9 @@ const columns = [
   ],
   [
     { href: "/docs", label: "Documentation" },
-    // Demo Founder Mode (Task 16). A read-only sandbox of the Founder
-    // workspace, on its own route, with invented data — see src/app/demo.
-    { href: "/demo", label: "Founder demo" },
+    // NOTE: /demo is deliberately NOT linked here. The sandbox is reachable only
+    // by the dedicated demo account and only in local development — it must not
+    // be discoverable from the public site.
     { href: "/blog", label: "Blog" },
     { href: "/collaborate", label: "Collaborate" },
     { href: "/legal/community", label: "Community Guidelines" },

@@ -125,11 +125,29 @@ console.log("  schema: up to date");
  * Only on an empty database. Re-seeding an existing one would be a surprise, and
  * the seed script itself is idempotent but noisy.
  */
+/*
+ * NO DEFAULT CREDENTIALS.
+ *
+ * This used to fall back to a hard-coded account on the company's own domain,
+ * which meant a throwaway address appeared in every developer's database whether
+ * they wanted it or not. It is gone. If .env does not name a founder, none is
+ * created and the script says so.
+ */
 const FOUNDER = {
-  FOUNDER_EMAIL: process.env.FOUNDER_EMAIL ?? envFileValue("FOUNDER_EMAIL") ?? "founder@edusentinel.ai",
+  FOUNDER_EMAIL: process.env.FOUNDER_EMAIL ?? envFileValue("FOUNDER_EMAIL"),
   FOUNDER_NAME: process.env.FOUNDER_NAME ?? envFileValue("FOUNDER_NAME") ?? "Founder",
-  FOUNDER_PASSWORD: process.env.FOUNDER_PASSWORD ?? envFileValue("FOUNDER_PASSWORD") ?? "local-dev-founder-pw",
+  FOUNDER_PASSWORD: process.env.FOUNDER_PASSWORD ?? envFileValue("FOUNDER_PASSWORD"),
 };
+
+const DEMO = {
+  DEMO_FOUNDER_EMAIL: process.env.DEMO_FOUNDER_EMAIL ?? envFileValue("DEMO_FOUNDER_EMAIL"),
+  DEMO_FOUNDER_NAME: process.env.DEMO_FOUNDER_NAME ?? envFileValue("DEMO_FOUNDER_NAME") ?? "Demo Founder",
+  DEMO_FOUNDER_PASSWORD: process.env.DEMO_FOUNDER_PASSWORD ?? envFileValue("DEMO_FOUNDER_PASSWORD"),
+};
+
+// The demo account gate also lives in the running app (lib/demo/access.ts), so
+// the dev server needs these in its environment, not just the seed step.
+ENV.DEMO_FOUNDER_EMAIL = DEMO.DEMO_FOUNDER_EMAIL ?? "";
 
 const count = run(
   "npx",
@@ -140,20 +158,42 @@ const count = run(
 const userCount = Number((count.stdout ?? "").trim().split("\n").pop());
 
 if (Number.isFinite(userCount) && userCount === 0) {
-  console.log("  seed: empty database — creating the founder account…");
-  const seed = run("node", ["prisma/seed.mjs"], { ...ENV, ...FOUNDER }, { capture: true });
-  if (seed.status === 0) {
-    run("node", ["prisma/seed-catalog.mjs"], ENV, { capture: true });
-    run("node", ["prisma/seed-org.mjs"], ENV, { capture: true });
+  if (!FOUNDER.FOUNDER_EMAIL || !FOUNDER.FOUNDER_PASSWORD) {
     console.log(
-      `\n  ┌─ Sign in with ───────────────────────────────────────────\n` +
-        `  │  email:    ${FOUNDER.FOUNDER_EMAIL}\n` +
-        `  │  password: ${FOUNDER.FOUNDER_PASSWORD}\n` +
-        `  │  (local only — change FOUNDER_* in apps/web/.env)\n` +
-        `  └──────────────────────────────────────────────────────────\n`,
+      "  seed: no FOUNDER_EMAIL / FOUNDER_PASSWORD in apps/web/.env — no account created.",
     );
   } else {
-    console.log("  seed: skipped — " + ((seed.stdout ?? "") + (seed.stderr ?? "")).trim().split("\n")[0]);
+    console.log("  seed: empty database — creating accounts…");
+    const seed = run("node", ["prisma/seed.mjs"], { ...ENV, ...FOUNDER }, { capture: true });
+    if (seed.status === 0) {
+      run("node", ["prisma/seed-catalog.mjs"], ENV, { capture: true });
+      run("node", ["prisma/seed-org.mjs"], ENV, { capture: true });
+
+      const lines = [
+        "",
+        "  ┌─ Founder (real workspace) ───────────────────────────────",
+        `  │  email:    ${FOUNDER.FOUNDER_EMAIL}`,
+        "  │  password: (as set in apps/web/.env)",
+      ];
+
+      if (DEMO.DEMO_FOUNDER_EMAIL && DEMO.DEMO_FOUNDER_PASSWORD) {
+        const demo = run("node", ["prisma/seed-demo.mjs"], { ...ENV, ...DEMO }, { capture: true });
+        if (demo.status === 0) {
+          lines.push(
+            "  ├─ Demo Founder (sandbox only, /demo) ─────────────────────",
+            `  │  email:    ${DEMO.DEMO_FOUNDER_EMAIL}`,
+            "  │  password: (as set in apps/web/.env)",
+          );
+        } else {
+          lines.push("  ├─ demo account NOT created:", "  │  " + ((demo.stdout ?? "") + (demo.stderr ?? "")).trim().split("\n")[0]);
+        }
+      }
+
+      lines.push("  └──────────────────────────────────────────────────────────", "");
+      console.log(lines.join("\n"));
+    } else {
+      console.log("  seed: skipped — " + ((seed.stdout ?? "") + (seed.stderr ?? "")).trim().split("\n")[0]);
+    }
   }
 } else {
   console.log(`  seed: ${userCount} account(s) already present — not reseeding`);

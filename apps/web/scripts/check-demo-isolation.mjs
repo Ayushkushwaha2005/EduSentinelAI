@@ -39,6 +39,22 @@ const DEMO_DIRS = [
  * Modules the demo may never reach. These are the data-access layer: every one
  * of them imports `db` or reads a session.
  */
+/*
+ * One file is allowed to read the session, and only the session.
+ *
+ * lib/demo/access.ts answers "is this visitor the demo account?" by comparing
+ * the JWT's email to an env var. Sessions carry no database adapter, so that
+ * costs zero queries and reads zero production rows — it learns WHO you are
+ * without reading anything you own. Everything the sandbox renders still comes
+ * from lib/demo/data.ts.
+ *
+ * The exemption is deliberately one file and one module: `@/lib/auth` only, in
+ * `access.ts` only. The database and every data-access module stay forbidden
+ * across the entire demo tree, including in this file.
+ */
+const SESSION_READER = path.join("lib", "demo", "access.ts");
+const SESSION_ONLY_IMPORT = "@/lib/auth";
+
 const FORBIDDEN = [
   "@/lib/db",
   "@prisma/client",
@@ -91,8 +107,13 @@ for (const file of demoFiles) {
   const src = readFileSync(file, "utf8");
   const rel = path.relative(process.cwd(), file);
 
+  const isSessionReader = file.endsWith(SESSION_READER);
+
   // 1 + 2: forbidden imports
   for (const mod of FORBIDDEN) {
+    // The single, narrow exemption — see SESSION_READER above.
+    if (isSessionReader && mod === SESSION_ONLY_IMPORT) continue;
+
     // Match the module specifier exactly, so "@/lib/demo/data" is not caught by
     // a "@/lib/d..." prefix and "@/lib/org-types" is not caught by "@/lib/org".
     const re = new RegExp(`from\\s+["']${mod.replace(/[/@]/g, "\\$&")}["']`);
@@ -101,12 +122,29 @@ for (const file of demoFiles) {
     }
   }
 
-  // 2: no server actions, no session reads
+  // 2: no server actions anywhere in the demo tree
   if (/^\s*["']use server["']/m.test(src)) {
     problems.push(`${rel} declares "use server" — Demo Mode must not run server actions`);
   }
-  if (/\bauth\s*\(\s*\)/.test(src)) {
-    problems.push(`${rel} calls auth() — Demo Mode is deliberately unauthenticated`);
+
+  // Only the session reader may call auth(), and it may do nothing else with it.
+  if (!isSessionReader && /\bauth\s*\(\s*\)/.test(src)) {
+    problems.push(
+      `${rel} calls auth() — only lib/demo/access.ts may read the session`,
+    );
+  }
+}
+
+/* The session reader must stay a session reader: identity in, boolean out. */
+{
+  const readerPath = path.join(SRC, SESSION_READER);
+  if (!existsSync(readerPath)) {
+    problems.push(`${SESSION_READER} is missing — the /demo gate depends on it`);
+  } else {
+    const src = readFileSync(readerPath, "utf8");
+    if (/\bdb\b\s*\.|prisma/i.test(src)) {
+      problems.push(`${SESSION_READER} touches the database — it may only read the session`);
+    }
   }
 }
 
