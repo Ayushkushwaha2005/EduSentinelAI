@@ -1,13 +1,26 @@
 import Link from "next/link";
 import { SplitHeading } from "./section";
 import { Stagger, Item, HoverCard } from "./motion";
+import { DomainHeader, DomainIndex, EcosystemPanel } from "./product-ecosystem";
 import { ProductIcon } from "@/lib/product-icons";
 import { publicProducts, type CatalogProduct } from "@/lib/catalog";
+import { domainAnchor, groupByDomain } from "@/lib/product-domains";
 
 /*
- * Products grid — now driven by the catalogue the Founder manages from the
- * dashboard (lib/catalog.ts). Only PUBLISHED products appear here; adding a new
- * EduSentinel product is a row, not a deploy.
+ * Products — the ecosystem, not a list.
+ *
+ * Still driven entirely by the catalogue the Founder manages from the dashboard
+ * (lib/catalog.ts): only PUBLISHED products appear, and adding an EduSentinel
+ * product is a row, not a deploy. What changed is the SHAPE of the page. A flat
+ * grid is honest at five products and useless at fifty, so the catalogue is now
+ * grouped into ecosystem domains (lib/product-domains.ts) — one shelf per
+ * problem space, each with its own anchor, header and count.
+ *
+ * Grouping, not filtering: every published product is still rendered on this
+ * page, in the HTML the server sends. The domain index and the radial launcher
+ * navigate to shelves, they do not hide products — so nothing about this page
+ * depends on JavaScript to be complete, and a crawler sees the whole catalogue
+ * exactly as it did before.
  *
  * Everything rendered below is plain text sanitized on write, and the icon is a
  * key into a fixed set — a product record cannot inject markup into this page.
@@ -22,19 +35,44 @@ export async function ProductsSection() {
   const products = await publicProducts();
   if (products.length === 0) return null;
 
+  const groups = groupByDomain(products);
+  // Counted from the rows we already hold — never a hard-coded figure.
+  const preview = products.filter((p) => p.pricing === "soon").length;
+
   return (
     <section id="products" className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32">
       <SplitHeading
         title="Products built for digital trust."
         aside="Real tools from the EduSentinel ecosystem — every one privacy-first, every one on a single account."
       />
-      <Stagger className="mt-16 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-        {products.map((p) => (
-          <Item key={p.id} className="h-full">
-            <ProductCard product={p} />
-          </Item>
+
+      <EcosystemPanel
+        total={products.length}
+        domains={groups.length}
+        preview={preview}
+      />
+
+      <DomainIndex groups={groups} />
+
+      <div className="mt-20 space-y-20 md:mt-28 md:space-y-28">
+        {groups.map(({ domain, products: shelf }, i) => (
+          <section
+            key={domain.id}
+            id={domainAnchor(domain.id)}
+            /* Clears the fixed header when the index or the launcher jumps here. */
+            className="scroll-mt-28"
+          >
+            <DomainHeader domain={domain} count={shelf.length} index={i} />
+            <Stagger className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {shelf.map((p) => (
+                <Item key={p.id} className="h-full">
+                  <ProductCard product={p} />
+                </Item>
+              ))}
+            </Stagger>
+          </section>
         ))}
-      </Stagger>
+      </div>
     </section>
   );
 }
