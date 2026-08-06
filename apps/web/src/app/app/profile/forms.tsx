@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/dashboard/avatar";
+import { AvatarCropper } from "./crop";
 import {
   changePassword,
   removeAvatar,
@@ -39,59 +40,96 @@ function Feedback({ state }: { state: ProfileState }) {
   return null;
 }
 
-/** Photo: upload, replace, remove. The bytes are validated and stripped server-side. */
+/**
+ * Photo: choose, crop, upload, remove.
+ *
+ * Choosing a file no longer submits it. It opens the cropper (./crop.tsx), and
+ * what is uploaded is the square the person composed — under the same field
+ * name, to the same server action, through the same `checkAvatar` validation.
+ * The client step decides framing; it decides nothing about trust.
+ */
 export function AvatarForm({ profile }: { profile: OwnProfile }) {
   const router = useRouter();
   const [state, action, pending] = useActionState<ProfileState, FormData>(uploadAvatar, {});
+  /** The file the person picked, awaiting a crop. Null when nothing is pending. */
+  const [picked, setPicked] = useState<File | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  /* Selecting the same file twice must reopen the cropper, so the input is
+     cleared after every pick — otherwise `change` never fires the second time. */
+  function reset() {
+    setPicked(null);
+    if (fileRef.current) fileRef.current.value = "";
+  }
 
   return (
-    <div className="flex flex-wrap items-center gap-6">
-      {profile.avatarUrl ? (
-        // Served from our own authenticated route; no remote host is involved.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={profile.avatarUrl}
-          alt=""
-          width={80}
-          height={80}
-          className="h-20 w-20 rounded-full object-cover ring-2 ring-surface-raised"
-        />
-      ) : (
-        <Avatar name={profile.name} size={80} />
-      )}
-
-      <div className="min-w-0 flex-1">
-        <form action={action} className="flex flex-wrap items-center gap-3">
-          <input
-            type="file"
-            name="avatar"
-            accept="image/png,image/jpeg"
-            required
-            className="max-w-full text-sm text-text-secondary file:mr-3 file:h-10 file:cursor-pointer file:rounded-control file:border file:border-border-subtle file:bg-surface-raised file:px-4 file:text-sm file:font-medium file:text-text-primary"
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center gap-6">
+        {profile.avatarUrl ? (
+          // Served from our own authenticated route; no remote host is involved.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={profile.avatarUrl}
+            alt=""
+            width={80}
+            height={80}
+            className="h-20 w-20 rounded-full object-cover ring-2 ring-surface-raised"
           />
-          <button type="submit" disabled={pending} className={primary}>
-            {pending ? "Uploading…" : "Upload"}
-          </button>
-          {profile.avatarUrl && (
-            <button
-              type="button"
-              className={ghost}
-              onClick={async () => {
-                await removeAvatar();
-                router.refresh();
-              }}
-            >
-              Remove
-            </button>
-          )}
-        </form>
-        <p className="mt-3 text-sm text-text-muted">
-          PNG or JPEG, up to 2 MB. Location and camera metadata are stripped from
-          the file before it is stored — a photo from a phone carries the place it
-          was taken, and we do not keep that.
-        </p>
-        <Feedback state={state} />
+        ) : (
+          <Avatar name={profile.name} size={80} />
+        )}
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <input
+              ref={fileRef}
+              type="file"
+              name="avatar"
+              accept="image/png,image/jpeg"
+              disabled={pending}
+              onChange={(e) => setPicked(e.target.files?.[0] ?? null)}
+              className="max-w-full text-sm text-text-secondary file:mr-3 file:h-10 file:cursor-pointer file:rounded-control file:border file:border-border-subtle file:bg-surface-raised file:px-4 file:text-sm file:font-medium file:text-text-primary"
+            />
+            {profile.avatarUrl && !picked && (
+              <button
+                type="button"
+                className={ghost}
+                onClick={async () => {
+                  await removeAvatar();
+                  router.refresh();
+                }}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+          <p className="mt-3 text-sm text-text-muted">
+            PNG or JPEG, up to 2 MB. Choose a photo and you will be able to
+            position and zoom it before it is saved. Location and camera metadata
+            are stripped from the file before it is stored — a photo from a phone
+            carries the place it was taken, and we do not keep that.
+          </p>
+          <Feedback state={state} />
+        </div>
       </div>
+
+      {picked && (
+        <AvatarCropper
+          file={picked}
+          busy={pending}
+          onCancel={reset}
+          onCropped={({ file }) => {
+            /* The cropped square goes into the SAME field the plain input used,
+               so the server action is untouched and sees an ordinary upload. */
+            const data = new FormData();
+            data.set("avatar", file);
+            // uploadAvatar revalidates /app/profile and the workspace layout
+            // itself, so there is nothing to refresh from here.
+            action(data);
+            reset();
+          }}
+        />
+      )}
     </div>
   );
 }

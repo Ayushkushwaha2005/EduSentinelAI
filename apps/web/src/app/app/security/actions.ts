@@ -141,12 +141,16 @@ export async function resendVerification(): Promise<{ notice: string }> {
   const notice = "Verification link sent — check your inbox.";
   if (!user || user.emailVerified) return { notice };
   const { createAuthToken } = await import("@/lib/tokens");
-  const { sendMail, appUrl } = await import("@/lib/mailer");
+  const { appUrl } = await import("@/lib/mailer");
+  // lib/mail.ts, not lib/mailer.ts — recorded in MailLog, loud in production,
+  // rate-limited per recipient. See the note in src/app/(auth)/actions.ts.
+  const { send } = await import("@/lib/mail");
   const token = await createAuthToken(user.id, "verify-email");
-  await sendMail(
+  await send(
     user.email,
     "Verify your EduSentinel AI email",
     `Verify your email address:\n${appUrl(`/verify-email?token=${token}`)}\n\nThis link expires in 24 hours.`,
+    "verify-email",
   );
   const ctx = await requestContext();
   await audit("user.verification_resent", { actorId: user.id, ...ctx });

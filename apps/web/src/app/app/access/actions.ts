@@ -6,6 +6,8 @@ import { audit, requestContext } from "@/lib/audit";
 import { assertCapability } from "@/lib/guard";
 import { grantError, isCapability } from "@/lib/permissions";
 import { roleChangeError } from "@/lib/authz";
+import { revokeAllFor } from "@/lib/sessions";
+import { notify } from "@/lib/notifications";
 
 export type ActionState = { error?: string; ok?: string };
 
@@ -361,14 +363,34 @@ export async function clearPermissionAction(
   return { ok: `Reset ${capability} to the role default.` };
 }
 
-/** Sign every device of one account out immediately. */
+/**
+ * Sign every device of one account out immediately.
+ *
+ * THIS USED TO ONLY HALF-WORK, and the half that was missing was the visible
+ * half. It incremented `sessionVersion` and stopped there. That does invalidate
+ * the account's JWTs on the next refresh (auth.ts compares `token.sv`), but
+ * since Phase 14 the thing a human LOOKS AT to answer "is that device still
+ * signed in?" is the `UserSession` table — /app/security and the Organization
+ * Session Center both read it. Those rows were never marked revoked, so after
+ * clicking this button every device of that account was still listed as active,
+ * for ever. The Founder pressed the control, the page told them it had worked,
+ * and the only surface that reports session state disagreed.
+ *
+ * It now goes through `revokeAllFor()` — the same primitive /app/security uses
+ * for "sign out everywhere" — which marks the rows revoked (recording WHO ended
+ * them) *and* bumps `sessionVersion`. One code path, one meaning.
+ *
+ * The capability also moves to `sessions.manage`, which exists for exactly this
+ * act and is founder-reserved. `users.manage_roles` happened to be reserved too,
+ * so this is the same authority, named correctly.
+ */
 export async function revokeSessionsAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
   let actor;
   try {
-    actor = await assertCapability("users.manage_roles");
+    actor = await assertCapability("sessions.manage");
   } catch (e) {
     return { error: (e as Error).message };
   }
@@ -381,18 +403,33 @@ export async function revokeSessionsAction(
   if (!target) return { error: "Account not found." };
   if (target.role === "FOUNDER") return { error: "The Founder account cannot be modified." };
 
-  await db.user.update({
-    where: { id: target.id },
-    data: { sessionVersion: { increment: 1 } },
+  const count = await revokeAllFor(target.id, actor.id);
+
+  /* The person whose devices were just signed out finds out on their own
+     account. Title + one sentence + an internal link — no record body. */
+  await notify({
+    userId: target.id,
+    kind: "security.session_revoked",
+    title: "You were signed out of all devices",
+    body: "An administrator ended every signed-in session on your account.",
+    href: "/app/security",
   });
 
   const ctx = await requestContext();
   await audit("admin.session_revoke", {
     actorId: actor.id,
-    detail: target.email,
+    detail: `${target.email}: ${count} session${count === 1 ? "" : "s"} ended`,
     ...ctx,
   });
 
   revalidatePath("/app/access");
-  return { ok: `All sessions revoked for ${target.email}.` };
+  /* The Session Center is the surface that displays the result of this action.
+     Not revalidating it was the other half of "the button does nothing". */
+  revalidatePath("/app/sessions");
+  return {
+    ok:
+      count > 0
+        ? `Signed out ${count} device${count === 1 ? "" : "s"} for ${target.email}.`
+        : `${target.email} had no signed-in devices. Any older token is now invalid.`,
+  };
 }

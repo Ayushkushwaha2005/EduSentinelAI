@@ -174,13 +174,28 @@ export function OrgSessions({
         </ul>
       )}
 
-      <ApprovalDialog
-        open={dialog}
-        title={state.error ?? "Founder approval required."}
-        body="This operation requires Founder authorization before production changes can be applied."
-        simulated="The session you selected was identified and validated. Ending it is awaiting Founder authorization."
-        onClose={() => setDismissed(state)}
-      />
+      {/*
+        Not rendered at all for someone who holds `sessions.manage`.
+
+        It was previously mounted unconditionally and simply never opened, which
+        is harmless to look at but leaves "Founder approval required." sitting in
+        the Founder's own page — in the DOM, in the accessibility tree and in any
+        text extraction of it. The Founder is never waiting on approval from
+        anyone, so the affordance should not exist on their copy of the page.
+
+        This is presentation, exactly like the dialog it guards: `canManage` is
+        the same `viewer.can("sessions.manage")` the page already computed, and
+        the refusal continues to happen in the server action either way.
+      */}
+      {!canManage && (
+        <ApprovalDialog
+          open={dialog}
+          title={state.error ?? "Founder approval required."}
+          body="This operation requires Founder authorization before production changes can be applied."
+          simulated="The session you selected was identified and validated. Ending it is awaiting Founder authorization."
+          onClose={() => setDismissed(state)}
+        />
+      )}
     </div>
   );
 }

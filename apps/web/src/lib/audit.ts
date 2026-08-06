@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { db } from "./db";
 import { sha256 } from "./crypto";
-import { sendMail } from "./mailer";
+import { send } from "./mail";
 
 export type AuditContext = { ip?: string; userAgent?: string };
 
@@ -26,6 +26,11 @@ const ALERT_ACTIONS = new Set([
   "release.revoked",
   "release.rejected",
   "user.sessions_revoked",
+  /* One administrator ending another account's sessions is the same class of
+     event as an account ending its own, and a more serious one — it is how a
+     person is removed from the running system. It was in ALERT_ACTIONS only
+     under the name the self-service path uses. */
+  "admin.session_revoke",
 ]);
 
 /**
@@ -94,12 +99,28 @@ export async function audit(
   if (ALERT_ACTIONS.has(action)) {
     const to = process.env.ALERT_EMAIL;
     if (to) {
-      // Fire-and-forget; alerts must never block or fail the action.
-      void sendMail(
+      /*
+       * R7b founder alerts go through lib/mail.ts like every other message the
+       * platform sends. The legacy lib/mailer.ts path console.logged in dev and
+       * console.errored on a provider rejection — so an alert about a role change
+       * or a release revocation could fail to leave the building with no record
+       * anywhere that it had. send() writes a MailLog row for every attempt, so a
+       * failed alert is a FAILED row the Founder can see in Access Control rather
+       * than a line in a log nobody reads.
+       *
+       * Still fire-and-forget: an alert must never block or fail the action that
+       * triggered it. The template and the recipient are unchanged.
+       */
+      void send(
         to,
         `[EduSentinel alert] ${action}`,
         `Privileged event: ${action}\nActor: ${opts.actorId ?? "-"}\nDetail: ${opts.detail ?? "-"}\nIP: ${opts.ip ?? "-"}\nTime: ${new Date().toISOString()}`,
-      ).catch(() => {});
+        "alert",
+      )
+        .then((r) => {
+          if (!r.ok) console.error(`[audit] alert for "${action}" not delivered: ${r.error}`);
+        })
+        .catch((err) => console.error(`[audit] alert for "${action}" threw:`, err));
     }
   }
 }

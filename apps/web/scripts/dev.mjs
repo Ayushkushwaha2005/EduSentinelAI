@@ -150,7 +150,10 @@ console.log("  schema: up to date");
  */
 const FOUNDER = {
   FOUNDER_EMAIL: process.env.FOUNDER_EMAIL ?? envFileValue("FOUNDER_EMAIL"),
-  FOUNDER_NAME: process.env.FOUNDER_NAME ?? envFileValue("FOUNDER_NAME") ?? "Founder",
+  // No "Founder" fallback: a role is not a name, and the placeholder used to
+  // reach the greeting, the topbar and the profile header. seed.mjs refuses
+  // without this, which is the correct outcome — see the note there.
+  FOUNDER_NAME: process.env.FOUNDER_NAME ?? envFileValue("FOUNDER_NAME") ?? "",
   FOUNDER_PASSWORD: process.env.FOUNDER_PASSWORD ?? envFileValue("FOUNDER_PASSWORD"),
 };
 
@@ -207,9 +210,9 @@ if (userCount === null) {
   console.log("  seed: could not read the account count — not seeding.");
   if (countError) console.log(`        ${countError.split("\n")[0]}`);
 } else if (userCount === 0) {
-  if (!FOUNDER.FOUNDER_EMAIL || !FOUNDER.FOUNDER_PASSWORD) {
+  if (!FOUNDER.FOUNDER_EMAIL || !FOUNDER.FOUNDER_PASSWORD || !FOUNDER.FOUNDER_NAME) {
     console.log(
-      "  seed: no FOUNDER_EMAIL / FOUNDER_PASSWORD in apps/web/.env — no account created.",
+      "  seed: no FOUNDER_EMAIL / FOUNDER_NAME / FOUNDER_PASSWORD in apps/web/.env — no account created.",
     );
   } else {
     console.log("  seed: empty database — creating accounts…");

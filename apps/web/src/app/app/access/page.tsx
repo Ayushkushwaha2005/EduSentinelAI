@@ -96,7 +96,28 @@ export default async function AccessPage() {
   // Reserved capabilities are never offered in the UI — and the server rejects
   // them too, so hiding them here is convenience, not the control.
   const grantable: Capability[] = CAPABILITIES.filter((c) => !isFounderReserved(c));
+  /*
+   * The role options offered on a person's row.
+   *
+   * `grantableRoles` returns [] for anyone but the FOUNDER, and this page is
+   * reachable by exactly one other role — a CO_FOUNDER in review mode. That
+   * produced a <select> with NO options: a blank box beside a live Apply
+   * button, which is neither the Founder's control nor an honest refusal.
+   *
+   * The Executive Workspace rule is that a blocked operation keeps its
+   * interface and stops at the approval dialog, rather than disappearing or
+   * degrading. So an executive who cannot grant roles is shown the same list
+   * the Founder is shown, and the attempt is refused server-side exactly as it
+   * already was.
+   *
+   * THIS CHANGES NO AUTHORIZATION. `users.manage_roles` is founder-reserved and
+   * stripped in `effectiveCapabilities`; `roleChangeError` independently refuses
+   * any actor whose role has no entry in GRANTABLE, before any write. Verified:
+   * a Co-Founder submitting this form leaves the target's role unchanged and
+   * receives the approval dialog.
+   */
   const roles = grantableRoles(founder.role);
+  const roleOptions = roles.length ? roles : grantableRoles("FOUNDER");
   const invitableRoles = invitableBy(founder.role);
 
   return (
@@ -263,11 +284,12 @@ export default async function AccessPage() {
                 user={{ id: u.id, email: u.email, role: u.role }}
                 isSelf={u.id === founder.id}
                 isFounderAccount={u.role === "FOUNDER"}
-                roles={roles}
+                roles={roleOptions}
                 grantable={grantable}
                 defaults={defaultCapabilities(u.role)}
                 overrides={grantsByUser.get(u.id) ?? []}
                 canOffboard={founder.can("people.offboard")}
+                canRevokeSessions={founder.can("sessions.manage")}
               />
             </div>
           ))}

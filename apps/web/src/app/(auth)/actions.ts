@@ -11,7 +11,25 @@ import { signIn } from "@/lib/auth";
 import { isAdminRole } from "@/lib/roles";
 import { rateLimit } from "@/lib/rate-limit";
 import { createAuthToken, consumeAuthToken } from "@/lib/tokens";
-import { sendMail, appUrl } from "@/lib/mailer";
+/*
+ * Mail goes through lib/mail.ts — NOT lib/mailer.ts (CLAUDE.md, Phase 7/10).
+ *
+ * These two flows — email verification and password reset — were still calling
+ * the Phase 2.1 sender, which on a missing RESEND_API_KEY writes one line to the
+ * server console and returns as if it had succeeded, and on a non-2xx response
+ * from the provider writes another and returns the same. It records nothing.
+ *
+ * So in a production environment without the key, every password reset link
+ * silently ceased to exist: the visitor is told "if an account exists, a reset
+ * link has been sent", no row appears in MailLog, and the failed-mail panel in
+ * Access Control has nothing to show the Founder. The two messages most likely
+ * to be the only way back into an account were the two that failed invisibly.
+ *
+ * `send()` records every attempt, fails LOUDLY in production, and rate-limits
+ * per recipient so this endpoint cannot be used to mail-bomb an address.
+ */
+import { send } from "@/lib/mail";
+import { appUrl } from "@/lib/mailer";
 import { checkHuman } from "@/lib/bot-defense";
 
 // OWASP-recommended argon2id parameters
@@ -86,10 +104,11 @@ export async function signupAction(
 
   // R9: email verification (single-use, 24h expiry).
   const token = await createAuthToken(user.id, "verify-email");
-  await sendMail(
+  await send(
     email,
     "Verify your EduSentinel AI email",
     `Welcome to EduSentinel AI, ${name}.\n\nVerify your email address:\n${appUrl(`/verify-email?token=${token}`)}\n\nThis link expires in 24 hours.`,
+    "verify-email",
   );
 
   try {
@@ -184,10 +203,11 @@ export async function forgotPasswordAction(
     const ctx = await requestContext();
     await audit("user.password_reset_requested", { actorId: user.id, ...ctx });
     const token = await createAuthToken(user.id, "reset-password");
-    await sendMail(
+    await send(
       email.data,
       "Reset your EduSentinel AI password",
       `Reset your password:\n${appUrl(`/reset-password?token=${token}`)}\n\nThis link expires in 1 hour. If you didn't request this, you can ignore it.`,
+      "reset-password",
     );
   }
   return { notice };

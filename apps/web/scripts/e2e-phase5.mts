@@ -216,10 +216,22 @@ try {
   // ---------- Co-Founder: operational, never founder-reserved ----------
   await canOpen(cofounder, "/app/products", "The EduSentinel catalogue");
   await canOpen(cofounder, "/app/admin/releases", "Release review");
-  await cannotOpen(cofounder, "/app/access", "Reserved to the Founder");
+  /*
+   * Access Control is a leadership surface as of Phase 15: a Co-Founder may OPEN
+   * it and read the state of access, and still holds none of the authority on
+   * it. This assertion used to be `cannotOpen`, which stopped describing the
+   * product the moment view and execute were separated. It is replaced by the
+   * pair that actually matters — and the second half is the security one.
+   */
+  await canOpen(cofounder, "/app/access", "Reserved to the Founder");
+  await sees(cofounder, "/app/access", "Executive review", true); // review mode, not authority
+  assert.ok(
+    !(await effectiveCapabilities(cofounder.id)).has("permissions.grant"),
+    "Co-Founder MUST NOT hold permissions.grant — Access Control is view-only for them",
+  );
   // Sees the queue, but not the founder-reserved actions on it.
   await sees(cofounder, "/app/admin/releases", "publish/reject/revoke are founder-only", true);
-  console.log("  ✓ Co-Founder is operational but refused Access Control + signing");
+  console.log("  ✓ Co-Founder reviews Access Control but holds no authority on it");
 
   // ---------- Employee: own work only ----------
   await canOpen(employee, "/app", "Good");
@@ -319,7 +331,10 @@ try {
 
   // ---------- dashboard widgets carry real data ----------
   const { html: dash } = await get(founder, "/app");
-  assert.ok(dash.includes("Account Growth"), "the growth chart renders");
+  // Sentence case, as the dashboard has rendered it since the reference rebuild
+  // (8f257f5). The assertion kept the old title-case string and so stopped
+  // testing anything. Pre-existing drift, unrelated to the Executive Workspace.
+  assert.ok(dash.includes("Account growth"), "the growth chart renders");
   assert.ok(
     !dash.includes("No accounts yet"),
     "the People table must not be empty — it is the Founder's directory",
@@ -382,9 +397,21 @@ try {
   // runs the company operationally and still cannot say who its leadership is.
   await canOpen(founder, "/app/organization", "Who EduSentinel is");
   await canOpen(founder, "/app/company", "Company profile");
-  await cannotOpen(cofounder, "/app/organization", "Who EduSentinel is");
-  await cannotOpen(cofounder, "/app/company", "Company profile");
+  /*
+   * Phase 15 separated OPEN from EXECUTE on both surfaces, so the Co-Founder
+   * reads them in review mode. `org.manage` and `company.manage` remain
+   * founder-reserved — which is the assertion that actually protects the org
+   * chart and the security contact address, and it is checked directly against
+   * the effective set rather than inferred from a page not rendering.
+   */
+  await canOpen(cofounder, "/app/organization", "Who EduSentinel is");
+  await canOpen(cofounder, "/app/company", "Company profile");
+  const coCaps = await effectiveCapabilities(cofounder.id);
+  assert.ok(!coCaps.has("org.manage"), "Co-Founder MUST NOT hold org.manage");
+  assert.ok(!coCaps.has("company.manage"), "Co-Founder MUST NOT hold company.manage");
+  // The widening is exactly one role: nothing below CO_FOUNDER gains anything.
   await cannotOpen(employee, "/app/organization", "Who EduSentinel is");
+  await cannotOpen(employee, "/app/company", "Company profile");
 
   // The collaboration console is STAFF-ONLY. `collab.view` is the collaborator's
   // own permission for their own thread — if this page ever gated on it, every

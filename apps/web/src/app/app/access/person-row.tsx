@@ -28,6 +28,7 @@ export function PersonRow({
   defaults,
   overrides,
   canOffboard,
+  canRevokeSessions,
 }: {
   user: { id: string; email: string; role: string };
   isSelf: boolean;
@@ -37,12 +38,13 @@ export function PersonRow({
   defaults: string[];
   overrides: { capability: string; allow: boolean; expiresAt: Date | null; reason: string | null }[];
   canOffboard: boolean;
+  canRevokeSessions: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [roleState, roleAction, rolePending] = useActionState(setRoleAction, EMPTY);
   const [permState, permAction, permPending] = useActionState(setPermissionAction, EMPTY);
   const [clearState, clearAction] = useActionState(clearPermissionAction, EMPTY);
-  const [sessState, sessAction] = useActionState(revokeSessionsAction, EMPTY);
+  const [sessState, sessAction, sessPending] = useActionState(revokeSessionsAction, EMPTY);
   const [offState, offAction, offPending] = useActionState(offboard, EMPTY);
   const [offOpen, setOffOpen] = useState(false);
 
@@ -139,15 +141,35 @@ export function PersonRow({
               <ChevronDown size={15} className={open ? "rotate-180" : ""} />
             </button>
 
-            <form action={sessAction}>
-              <input type="hidden" name="userId" value={user.id} />
+            {/*
+              Ending someone else's sessions is `sessions.manage` — founder-reserved.
+              A viewer who does not hold it is shown the control DISABLED with the
+              reason attached, rather than a button that looks live and is refused
+              on the server after the click. A visible control that appears usable
+              and does nothing is the bug this row used to have.
+            */}
+            {canRevokeSessions ? (
+              <form action={sessAction}>
+                <input type="hidden" name="userId" value={user.id} />
+                <button
+                  type="submit"
+                  disabled={sessPending}
+                  title={`Sign ${user.email} out of every device immediately`}
+                  className="h-9 rounded-control border border-border-subtle px-3 text-sm font-medium text-danger transition-colors duration-[--duration-fast] hover:bg-danger/5 disabled:opacity-60"
+                >
+                  {sessPending ? "Revoking…" : "Revoke sessions"}
+                </button>
+              </form>
+            ) : (
               <button
-                type="submit"
-                className="h-9 rounded-control border border-border-subtle px-3 text-sm font-medium text-danger transition-colors duration-[--duration-fast] hover:bg-danger/5"
+                type="button"
+                disabled
+                title="Ending another account's sessions is reserved to the Founder."
+                className="h-9 cursor-not-allowed rounded-control border border-border-subtle px-3 text-sm font-medium text-text-muted opacity-60"
               >
-                Revoke sessions
+                Revoke sessions · Founder only
               </button>
-            </form>
+            )}
 
             {canOffboard && (
               <button
