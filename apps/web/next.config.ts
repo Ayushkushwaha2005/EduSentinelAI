@@ -20,9 +20,9 @@ const nextConfig: NextConfig = {
 
   /*
    * Next.js will not serve a `public/` path whose segment starts with a dot, so
-   * `public/.well-known/security.txt` deployed but 404'd — while the footer and
-   * /legal/security both linked to it. The route handler generates it from
-   * lib/org-email.ts instead; this makes it reachable at the RFC 9116 location.
+   * a committed `public/.well-known/security.txt` deploys but 404s. The route
+   * handler generates it from lib/org-email.ts instead; this rewrite makes it
+   * reachable at the RFC 9116 location researchers actually look in.
    */
   async rewrites() {
     return [

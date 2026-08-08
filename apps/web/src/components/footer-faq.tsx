@@ -16,7 +16,11 @@ import { EASE } from "./motion";
 const FAQ: { q: string; a: string }[] = [
   {
     q: "What is EduSentinel AI?",
-    a: "A privacy-first technology ecosystem that brings AI, cybersecurity, and cloud together under one roof. Instead of scattering your work across tools that quietly harvest data, we build products that protect you by design — and publish the receipts.",
+    a: "A cybersecurity platform with AI at its centre. It began by answering one question — is this link, this sender, this download safe? — and the engine built to answer it now powers everything else we ship. Security is not a feature of the platform; it is the platform.",
+  },
+  {
+    q: "Why does a security company build other products?",
+    a: "Because the engine was already there. Once you can tell a real message from a crafted one, the same judgement helps with a wedding vendor's quote or a study plan. Every product is a new surface on the same core, not a new company — which is why one account and one privacy promise cover all of them.",
   },
   {
     q: "How is it different from other AI platforms?",
@@ -24,7 +28,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "What's inside the ecosystem?",
-    a: "A growing suite spanning intelligent security, AI tooling, and cloud services — designed to feel like one product rather than a bundle. Every piece shares a single identity and design language, so adding the next one always feels inevitable.",
+    a: "A growing catalogue organised by problem space rather than form factor — cybersecurity first, then AI productivity, education, developer tooling and more. Each category states what belongs in it, so the next product has a shelf waiting before it is built.",
   },
   {
     q: "Is it really privacy-first?",

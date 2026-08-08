@@ -15,8 +15,6 @@
  *   - content/**.mdx — repo-authored prose, PR-reviewed, and MDX cannot import a
  *     TypeScript constant. Those documents name `security@` in running text,
  *     which is a confirmed address.
- *   - public/.well-known/security.txt — a static file consumed by scanners, not
- *     by our code, and required by RFC 9116 to contain a literal address.
  *   - .env.example — documentation of a variable's shape.
  *
  * Run: node scripts/check-emails.mjs

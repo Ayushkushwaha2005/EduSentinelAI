@@ -150,7 +150,19 @@ export default function SentinelPipeline() {
   };
 
   return (
-    <div className="bg-[#090909] border border-white/[0.08] rounded-[14px] overflow-hidden font-sans w-[620px] mx-auto">
+    /*
+     * SIZE ONLY (Phase 12). Nothing about the schematic changed — every path,
+     * radius, duration, delay and string below is still the original. What
+     * changed is how much of the page it gets: 620px fixed → up to 920px, about
+     * 48% wider, which makes it a hero visual instead of a diagram sitting in
+     * the middle of a wide panel.
+     *
+     * `w-full` with a max, rather than a second fixed width: the SVG is a
+     * viewBox, so it scales with the box, and a fluid width means the console
+     * fits its column at 1024px instead of overflowing it. The gate in
+     * ecosystem-pipeline-panel.tsx still decides WHETHER it mounts.
+     */
+    <div className="bg-[#090909] border border-white/[0.08] rounded-[14px] overflow-hidden font-sans w-full max-w-[920px] mx-auto">
       {/* Header */}
       <div className="px-[18px] py-[11px] border-b border-white/[0.06] flex items-center justify-between">
         <div className="flex items-center gap-[7px]">

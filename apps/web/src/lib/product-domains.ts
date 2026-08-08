@@ -23,10 +23,24 @@
  * you from fraud") survives the surface it happens to be delivered on, which is
  * what makes the shelf still correct in five years and at a hundred products.
  *
- * The registry is ordered, and a domain with no products is not rendered — so
- * the empty shelves below are not placeholders, they are the taxonomy waiting
- * for the products that will fill them. Adding a domain is a small PR to this
- * file; adding a PRODUCT to an existing domain is, as ever, a row.
+ * Each domain carries a `scope` — one sentence saying what belongs there,
+ * written so that a product nobody has built yet can be placed without a
+ * meeting. That sentence is the taxonomy's promise that it scales: the
+ * catalogue can go from five products to five hundred and the shelves still
+ * answer "where do I find it", because they were never a list of what we happen
+ * to ship today.
+ *
+ * The registry is ordered. A domain with no products gets no SHELF — the page
+ * never renders an empty grid or a count of zero — but it is still published in
+ * the architecture map on /products, marked open. That is the honest version of
+ * "we can grow": the room exists and is named, and nothing is pretending to be
+ * a product. Adding a domain is a small PR to this file; adding a PRODUCT to an
+ * existing domain is, as ever, a row.
+ *
+ * NOT A DOMAIN: status. "Coming soon" is a stage a product passes through, not
+ * a place it lives — shelving by it would move a product the day it launched
+ * and break every link to it. Status is a facet on the card (lib/product-
+ * facets.ts) and a filter across the whole catalogue.
  *
  * Nothing here touches the database, so this module is safe to import from
  * anywhere, including a client component.
@@ -36,9 +50,10 @@ export const DOMAIN_IDS = [
   "security",
   "intelligence",
   "learning",
+  "platform",
   "life",
   "sustainability",
-  "platform",
+  "research",
 ] as const;
 
 export type DomainId = (typeof DOMAIN_IDS)[number];
@@ -51,6 +66,13 @@ export type ProductDomain = {
   label: string;
   /** One line, in EduSentinel's voice, describing what the shelf is for. */
   blurb: string;
+  /**
+   * What belongs on this shelf, stated plainly enough that a product nobody has
+   * built yet can be placed without a meeting. This is the contract the
+   * taxonomy makes with its future: if a new product matches the sentence, it
+   * has a home already.
+   */
+  scope: string;
   /** A key into the fixed set in lib/product-icons.tsx — never raw SVG. */
   icon: string;
   /**
@@ -64,10 +86,12 @@ export type ProductDomain = {
 export const PRODUCT_DOMAINS: readonly ProductDomain[] = [
   {
     id: "security",
-    name: "Security & Trust",
+    name: "Cybersecurity",
     label: "Security",
     blurb:
       "Scam, phishing and device protection for the people being targeted every day.",
+    scope:
+      "Anything whose job is to stop harm reaching a person — detection, verification, blocking, hardening, disclosure. This is the founding shelf: every other domain is built on the engine that lives here.",
     icon: "shield",
     signals: [
       "cybersec",
@@ -92,10 +116,12 @@ export const PRODUCT_DOMAINS: readonly ProductDomain[] = [
   },
   {
     id: "intelligence",
-    name: "AI & Agents",
+    name: "AI & Productivity",
     label: "AI",
     blurb:
       "Assistants and agents that run close to you and leave your work where you left it.",
+    scope:
+      "Products where the AI is the product: assistants, agents, automation and on-device reasoning. If it thinks on your behalf and the thinking stays with you, it belongs here.",
     icon: "spark",
     signals: [
       "assistant",
@@ -116,9 +142,11 @@ export const PRODUCT_DOMAINS: readonly ProductDomain[] = [
   },
   {
     id: "learning",
-    name: "Learning & Awareness",
-    label: "Learning",
+    name: "Education & Awareness",
+    label: "Education",
     blurb: "Tools that teach the habit, not just block the link.",
+    scope:
+      "Products aimed at students, teachers and institutions, and anything whose measure of success is that someone knew better next time rather than that a click was intercepted.",
     icon: "brain",
     signals: [
       "educat",
@@ -138,10 +166,33 @@ export const PRODUCT_DOMAINS: readonly ProductDomain[] = [
     ],
   },
   {
+    id: "platform",
+    name: "Developer Platform",
+    label: "Platform",
+    blurb: "The shared services and integrations everything else is built on.",
+    scope:
+      "The surfaces other builders touch: APIs, SDKs, integrations, self-hosting and the infrastructure our own products run on. If its user writes code, it belongs here.",
+    icon: "cloud",
+    signals: [
+      "api",
+      "sdk",
+      "developer",
+      "integration",
+      "infrastructure",
+      "webhook",
+      "deploy",
+      "self-host",
+      "toolkit",
+      "open-source",
+    ],
+  },
+  {
     id: "life",
-    name: "Life & Events",
+    name: "Events & Lifestyle",
     label: "Life",
     blurb: "Planning the things that happen once and matter for years.",
+    scope:
+      "Occasions and personal logistics — weddings, events, guests, budgets, travel. High-stakes, deeply personal data, which is exactly why it is ours to protect rather than someone else's to sell.",
     icon: "heart",
     signals: [
       "wedding",
@@ -166,6 +217,8 @@ export const PRODUCT_DOMAINS: readonly ProductDomain[] = [
     name: "Climate & Impact",
     label: "Climate",
     blurb: "Measuring the footprint of a digital life, and shrinking it.",
+    scope:
+      "Anything that measures impact and turns it into a habit — emissions, energy, waste, the quiet cost of running software at scale.",
     icon: "leaf",
     signals: [
       "sustainab",
@@ -183,22 +236,28 @@ export const PRODUCT_DOMAINS: readonly ProductDomain[] = [
     ],
   },
   {
-    id: "platform",
-    name: "Platform & Developer",
-    label: "Platform",
-    blurb: "The shared services and integrations everything else is built on.",
-    icon: "cloud",
+    id: "research",
+    name: "Research",
+    label: "Research",
+    blurb: "The work we publish before it is a product.",
+    scope:
+      "Findings, datasets, benchmarks and prototypes released so they can be checked. Nothing here asks for trust — it hands you the method and invites you to disagree.",
+    icon: "chart",
     signals: [
-      "api",
-      "sdk",
-      "developer",
-      "integration",
-      "infrastructure",
-      "webhook",
-      "deploy",
-      "self-host",
-      "toolkit",
-      "open-source",
+      "research",
+      "whitepaper",
+      "paper",
+      "publication",
+      "benchmark",
+      "dataset",
+      "experiment",
+      // NOT "stud": it would prefix-match "student" and pull the whole
+      // Education shelf across. Prefixes here are deliberately narrow.
+      "study",
+      "studies",
+      "peer-review",
+      "findings",
+      "methodolog",
     ],
   },
 ];

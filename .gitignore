@@ -33,3 +33,7 @@ apps/web/storage/
 
 # Local development PostgreSQL cluster (apps/web/scripts/local-db.mjs)
 .local-db/
+
+# Local editor/assistant tooling state — a developer's machine setup, not part
+# of the product.
+.claude/

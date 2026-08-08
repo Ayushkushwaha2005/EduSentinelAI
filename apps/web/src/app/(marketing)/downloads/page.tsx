@@ -25,6 +25,19 @@ export default async function DownloadsPage() {
           title="Download Center"
           aside="Every artifact is signed and published with its SHA-256 checksum. Verify before you install — that's the whole point."
         />
+        {/* Downloads is a primary navigation destination now, so the page says
+            what the pipeline actually guarantees rather than assuming the
+            visitor arrived already knowing. */}
+        <Reveal>
+          <p className="mt-8 max-w-2xl text-[15px] leading-relaxed text-text-secondary">
+            A security company that asks you to run its binaries owes you a way
+            to check them. Uploads land in quarantine and are scanned; only the
+            Founder can sign and publish, using an ed25519 key over the file’s
+            SHA-256; and anything we revoke disappears from this page and
+            reappears as a public incident notice. Nothing here is a build
+            somebody dropped on a server.
+          </p>
+        </Reveal>
       </div>
 
       <Stagger className="mt-16 grid gap-5 md:grid-cols-2">

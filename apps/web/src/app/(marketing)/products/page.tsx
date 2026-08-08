@@ -4,7 +4,7 @@ import { ProductsSection } from "@/components/products";
 export const metadata: Metadata = {
   title: "Products",
   description:
-    "EduSentinel AI products — browser protection, mobile security, AI planning tools, sustainability analytics, and the upcoming SentinelAI Agent.",
+    "The EduSentinel AI ecosystem, organised by problem space — cybersecurity first, then AI productivity, education, developer platform, events and climate. Browser protection, mobile security, AI planning tools, sustainability analytics and the upcoming SentinelAI Agent, all on one account.",
 };
 
 export default function ProductsPage() {

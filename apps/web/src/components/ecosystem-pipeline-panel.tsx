@@ -84,8 +84,11 @@ export function EcosystemPipelinePanel() {
     if (!el) return;
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    // 1024px: the console's frame is a fixed 620px wide. Below this the column
-    // is narrower than the frame, so the stage list is the better answer anyway.
+    // 1024px. The console is now fluid (w-full, max 920px) rather than a fixed
+    // 620px frame, so it can no longer overflow its column — but the schematic's
+    // 9.5px node labels are set in a 580-unit viewBox, and below this width they
+    // scale down past legibility. A diagram you cannot read is worse than the
+    // stage list, so the gate stays exactly where it was.
     const roomy = window.matchMedia("(min-width: 1024px)").matches;
 
     if (reduce || !roomy) return; // the stage list stands
@@ -113,8 +116,14 @@ export function EcosystemPipelinePanel() {
        * reservation is `motion-safe` and `lg` — exactly the two conditions under
        * which the console can mount — so a reduced-motion or phone visitor gets
        * the stage list at its natural height and no empty space beneath it.
+       *
+       * 420px, up from 340: the console is 48% wider now, and its SVG is a
+       * viewBox, so its height grew with it (920 × 172/580 ≈ 273px of diagram,
+       * plus the header, message line and stats footer). `min-h` rather than a
+       * fixed `h` — if a future edit makes the console a few pixels taller it
+       * grows instead of clipping the stats row.
        */
-      className="flex items-center justify-center motion-safe:lg:h-[340px]"
+      className="flex items-center justify-center motion-safe:lg:min-h-[420px]"
       /*
        * The console is decorative once the stages are described in text, and its
        * message line rewrites itself every 2.7s — which a screen reader would

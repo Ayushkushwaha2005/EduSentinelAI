@@ -14,14 +14,21 @@ import { LogoWordmark } from "./logo";
 import { ThemeToggle } from "./theme";
 import { EASE } from "./motion";
 
+/*
+ * Five links, in the order a visitor actually needs them: what we make, how to
+ * get it, what it costs, who we are, how to reach us.
+ *
+ * Solutions, Documentation and Blog moved to the footer's Resources column.
+ * They are not gone — nothing was deleted, and every route still exists and is
+ * still crawlable from the footer of every page. They are reference material a
+ * visitor goes looking for, and putting them beside the five decisions above
+ * cost the whole bar its hierarchy: eight peers read as no priority at all.
+ */
 const links = [
-  { href: "/solutions", label: "Solutions" },
-  { href: "/company", label: "Company" },
   { href: "/products", label: "Products" },
   { href: "/downloads", label: "Downloads" },
-  { href: "/docs", label: "Docs" },
-  { href: "/blog", label: "Blog" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/company", label: "Company" },
   { href: "/contact", label: "Contact" },
 ];
 
@@ -56,21 +63,24 @@ export function Nav() {
         {/*
          * Center links.
          *
-         * BREAKPOINT: xl (1280px), not md (768px).
+         * BREAKPOINT: lg (1024px) — no longer xl (1280px), still not md (768px).
          *
-         * Eight links plus the wordmark plus a three-item right cluster do not
-         * fit in 768px, and they do not fit in 1024px either. Below 1280 the row
-         * overflowed its container: "Solutions" ran into the wordmark, "Contact"
-         * was clipped by the viewport edge, and the theme toggle, Sign in and
-         * Get started were pushed entirely off-screen — present in the DOM,
-         * unreachable by any pointer. Measured at 768 and 1024 with a real
-         * browser.
+         * It was xl because EIGHT links plus the wordmark plus a three-item
+         * right cluster overflowed the container below 1280: "Solutions" ran
+         * into the wordmark, "Contact" was clipped by the viewport edge, and the
+         * theme toggle, Sign in and Get started were pushed entirely off-screen
+         * — present in the DOM, unreachable by any pointer.
          *
-         * Nothing is lost by handing those widths to the mobile menu: it already
+         * Five links is roughly 440px of row; with the wordmark and the right
+         * cluster that is ~930px, which fits inside 1024 and still does not fit
+         * 768. So the desktop bar starts one breakpoint earlier and the
+         * 1024–1280 range gets real navigation instead of a hamburger. gap-8,
+         * up from gap-7 — the crowding that forced them together is gone.
+         *
+         * Nothing is lost at the widths still handed to the mobile menu: it
          * carries every link plus Sign in, the theme toggle and Get started.
-         * gap-7 rather than gap-10 so the full row actually fits at 1280.
          */}
-        <div className="mx-auto hidden items-center gap-7 xl:flex">
+        <div className="mx-auto hidden items-center gap-8 lg:flex">
           {links.map((l) => (
             <Link
               key={l.href}
@@ -86,7 +96,7 @@ export function Nav() {
           ))}
         </div>
 
-        <div className="hidden shrink-0 items-center gap-5 xl:flex">
+        <div className="hidden shrink-0 items-center gap-5 lg:flex">
           <ThemeToggle />
           <Link
             href="/login"
@@ -104,7 +114,7 @@ export function Nav() {
 
         <button
           type="button"
-          className="ml-auto p-2 xl:hidden"
+          className="ml-auto p-2 lg:hidden"
           aria-expanded={open}
           aria-label="Toggle menu"
           onClick={() => setOpen(!open)}
@@ -122,7 +132,7 @@ export function Nav() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="overflow-hidden border-t border-border-subtle bg-surface-base xl:hidden"
+            className="overflow-hidden border-t border-border-subtle bg-surface-base lg:hidden"
             initial={{ height: 0 }}
             animate={{ height: "auto" }}
             exit={{ height: 0 }}

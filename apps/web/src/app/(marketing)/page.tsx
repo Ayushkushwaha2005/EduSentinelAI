@@ -1,47 +1,60 @@
 import { Hero } from "@/components/hero";
-import { SplitHeading } from "@/components/section";
 import { Stagger, Item, Reveal } from "@/components/motion";
 import { CardRail } from "@/components/card-rail";
 import { publicRoster } from "@/lib/org";
 import { Button } from "@/components/button";
 import { LogoMark } from "@/components/logo";
 import { SentinelAgent } from "@/components/sentinel-agent";
+import {
+  SharedEcosystem,
+  WhatIsEduSentinel,
+  WhyWeExist,
+} from "@/components/platform-story";
 
-const featureQuad = [
+/*
+ * The homepage, ordered as a story rather than a feature list (Phase 12).
+ *
+ * The sections below answer nine questions in the order a first-time visitor
+ * actually asks them, and the order is the design — moving a section moves the
+ * argument:
+ *
+ *   1. What is this?            Hero, then WhatIsEduSentinel
+ *   2. Why does it exist?       WhatIsEduSentinel, then WhyWeExist
+ *   3. Why should I trust it?   The commitments quad — claims that can be checked
+ *   4. What problems does it solve?   WhyWeExist
+ *   5. What products exist?     The catalogue band
+ *   6. Why are there several?   SharedEcosystem
+ *   7. Why are they connected?  SharedEcosystem
+ *   8. Why make an account?     SharedEcosystem, then the closing CTA
+ *   9. Why stay?                The brand band and the closing CTA
+ *
+ * WHAT WAS REMOVED, and why: a "Built for serious privacy" band of two cards
+ * with abstract mock-UI bar charts. Both cards restated commitments the quad
+ * below already makes — signed releases, and AI that documents what it does —
+ * and did it with invented interface art. Saying the same thing twice is how a
+ * page stops being believed the first time. Nothing else lost a section.
+ */
+
+const commitments = [
   {
     title: "Privacy by default",
-    body: "No third-party trackers, no data resale. We collect the minimum required to operate.",
+    body: "No third-party trackers, no data resale. We collect the minimum required to operate, and a build check fails the release if a tracker ever appears.",
     icon: <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z" />,
   },
   {
     title: "Signed releases",
-    body: "Every download ships signed, with SHA-256 checksums published alongside it.",
+    body: "Every download ships signed, with SHA-256 checksums published alongside it. Verify a build before you run it — the key is public.",
     icon: <path d="M9 12l2 2 4-5m-3-6l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z" />,
   },
   {
     title: "Transparent AI",
-    body: "What a model sees, stores, and never trains on is documented for every product.",
+    body: "What a model sees, stores, and never trains on is documented for every product. If we cannot explain it in a paragraph, we do not ship it.",
     icon: <path d="M12 3v3m0 12v3M3 12h3m12 0h3M6.5 6.5l2 2m7 7l2 2m0-11l-2 2m-7 7l-2 2M12 9a3 3 0 110 6 3 3 0 010-6z" />,
   },
   {
     title: "Responsible disclosure",
-    body: "A public process for security research, with a 90-day coordinated window.",
+    body: "A public process for security research, with a 90-day coordinated window and credit where it is due. Found something? Tell us first, not last.",
     icon: <path d="M12 9v4m0 3h.01M10.3 4.3L2.9 17a2 2 0 001.7 3h14.8a2 2 0 001.7-3L13.7 4.3a2 2 0 00-3.4 0z" />,
-  },
-];
-
-const showcases = [
-  {
-    title: "Security tooling with receipts",
-    body: "Defensive tools and research publications, distributed through a download center where every artifact is signed and verifiable.",
-    icon: <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3z" />,
-    rows: [88, 64, 76, 52],
-  },
-  {
-    title: "AI that shows its work",
-    body: "Products and agents that document their data practices up front, so trust is verifiable instead of promised.",
-    icon: <path d="M12 3v3m0 12v3M3 12h3m12 0h3M6.5 6.5l2 2m7 7l2 2m0-11l-2 2m-7 7l-2 2M12 9a3 3 0 110 6 3 3 0 010-6z" />,
-    rows: [70, 92, 58, 80],
   },
 ];
 
@@ -55,44 +68,43 @@ export default async function Home() {
     <main>
       <Hero />
 
-      {/* four-across feature row */}
-      <section className="mx-auto max-w-[1360px] px-6 py-24 md:px-10 md:py-32">
-        <Stagger className="grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
-          {featureQuad.map((f) => (
-            <Item key={f.title}>
-              <div className="flex items-center gap-2.5">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-text-primary">
-                  {f.icon}
-                </svg>
-                <h3 className="text-[17px] font-semibold tracking-tight">{f.title}</h3>
-              </div>
-              <p className="mt-3 leading-relaxed text-text-secondary">{f.body}</p>
-            </Item>
-          ))}
-        </Stagger>
-      </section>
+      {/* 1 & 2 — what it is, and why it exists at all. */}
+      <WhatIsEduSentinel />
 
-      {/* products preview — full showcase lives at /products */}
-      {/* Violet: the same colour the catalogue carries everywhere else. */}
-      {/* ambient-glow (Task 6): a centred headline, one paragraph and a button in
-          a very tall band — one of the emptiest stretches on the site. */}
-      <section
-        className="ambient-glow mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32"
-        data-accent="violet"
-      >
-        <Reveal className="flex flex-col items-center text-center">
-          <h2 className="max-w-2xl text-balance text-4xl font-medium tracking-[-0.03em] md:text-6xl">
-            Products built for digital trust.
-          </h2>
-          <p className="mt-5 max-w-xl text-balance text-[17px] leading-relaxed text-text-secondary">
-            Browser protection, mobile security, AI planning tools, and the
-            upcoming SentinelAI Agent — every one privacy-first, every one on
-            a single account.
-          </p>
-          <Button href="/products" size="lg" className="mt-9">
-            View Products
-          </Button>
-        </Reveal>
+      {/* 4 — the problems, each with what we did about it. */}
+      <WhyWeExist />
+
+      {/* 3 — why trust it. Four commitments, every one of them checkable, which
+          is the only kind worth printing. */}
+      <section className="border-y border-border-subtle bg-surface-raised/40">
+        <div className="mx-auto max-w-[1360px] px-6 py-20 md:px-10 md:py-24">
+          <Reveal>
+            <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+              <h2 className="max-w-2xl text-balance text-3xl font-medium leading-[1.1] tracking-[-0.03em] md:text-4xl">
+                Four commitments you can verify without taking our word for it.
+              </h2>
+              <p className="max-w-md text-[15px] leading-relaxed text-text-secondary md:text-right">
+                Trust that cannot be checked is marketing. Each of these is
+                enforced somewhere you can look.
+              </p>
+            </div>
+          </Reveal>
+          <Stagger className="mt-14 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+            {commitments.map((f) => (
+              <Item key={f.title}>
+                <div className="flex items-center gap-2.5">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="text-brand-teal">
+                    {f.icon}
+                  </svg>
+                  <h3 className="text-[17px] font-semibold tracking-tight">{f.title}</h3>
+                </div>
+                <p className="mt-3 text-[15px] leading-relaxed text-text-secondary">
+                  {f.body}
+                </p>
+              </Item>
+            ))}
+          </Stagger>
+        </div>
       </section>
 
       {/*
@@ -107,10 +119,9 @@ export default async function Home() {
        *     on the site's most important page and undone Task 8 in one move.
        *     Here it is fetched on approach and never blocks first paint.
        *
-       *   - It has NARRATIVE JUSTIFICATION. The section immediately above already
-       *     promises "the upcoming SentinelAI Agent". The character arrives as the
-       *     payoff to a sentence the page was already making, instead of as a
-       *     robot bolted onto a security site.
+       *   - It has NARRATIVE JUSTIFICATION. It follows the commitments — the
+       *     character arrives as the thing those promises are made of, instead
+       *     of as a robot bolted onto a security site.
        *
        *   - It EARNS ITS SPACE. This was one of the emptiest stretches of the
        *     page — a straight run of centred text blocks — so the agent does
@@ -119,7 +130,7 @@ export default async function Home() {
        * Azure: the agent is live, active workflow, not catalogue.
        */}
       <section
-        className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32"
+        className="mx-auto max-w-[1360px] px-6 pb-24 pt-24 md:px-10 md:pb-28 md:pt-28"
         data-accent="azure"
       >
         <div className="grid items-center gap-10 rounded-card border border-border-subtle bg-surface-raised px-6 py-12 md:px-12 lg:grid-cols-[1fr_1.05fr] lg:gap-6 lg:py-6 lg:pr-6">
@@ -131,10 +142,11 @@ export default async function Home() {
               Sentinel Agent
             </h2>
             <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-text-secondary">
-              The official EduSentinel AI assistant. It reads a page the way an
-              analyst would — checking who really sent something, what a link
-              actually points at, and whether a download is signed by someone you
-              have reason to trust — and it does that work on your device.
+              The engine at the centre of the platform, given a face. It reads a
+              page the way an analyst would — checking who really sent something,
+              what a link actually points at, and whether a download is signed by
+              someone you have reason to trust — and it does that work on your
+              device.
             </p>
 
             <ul className="mt-8 flex flex-col gap-3.5">
@@ -174,81 +186,40 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* big split heading + hairline-divided showcase */}
-      <section className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32">
-        <SplitHeading
-          title="Built for serious privacy."
-          aside="EduSentinel is designed for people who read the fine print. Our commitments are engineering requirements, not marketing."
-        />
-        <div className="mt-16 grid border-t border-border-subtle md:grid-cols-2 md:divide-x md:divide-border-subtle">
-          {showcases.map((s, i) => (
-            <Reveal key={s.title} delay={i * 0.1} className={`pt-12 ${i === 0 ? "md:pr-14" : "md:pl-14"}`}>
-              <div className="flex items-center gap-2.5">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  {s.icon}
-                </svg>
-                <h3 className="text-xl font-semibold tracking-tight">{s.title}</h3>
-              </div>
-              <p className="mt-4 max-w-md leading-relaxed text-text-secondary">{s.body}</p>
-              {/* abstract light visual */}
-              <div className="mt-10 rounded-card bg-gradient-to-b from-surface-overlay/70 to-surface-base p-8 md:p-10">
-                <div className="rounded-lg border border-border-subtle bg-surface-raised p-6 shadow-[0_16px_40px_-20px_rgba(18,19,23,0.15)]">
-                  <div className="h-3 w-2/5 rounded-full bg-surface-overlay" />
-                  <div className="mt-5 space-y-3">
-                    {s.rows.map((w, j) => (
-                      <div key={j} className="flex items-center gap-3">
-                        <div className="h-2.5 rounded-full bg-surface-overlay" style={{ width: `${w}%` }} />
-                        <div className="h-2.5 w-8 rounded-full bg-gradient-to-r from-brand-cyan/60 to-brand-teal/60" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </section>
+      {/* 6, 7 & 8 — why there are several products, why they are one thing, and
+          what an account actually gets you. */}
+      <SharedEcosystem />
 
       {/* voices rail (reference testimonial layout, honest content) */}
-      <section className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32">
-        {team.length > 0 && (
+      {team.length > 0 && (
+        <section className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-28">
           <CardRail title="Hear it from the team" members={team} />
-        )}
-      </section>
+        </section>
+      )}
 
-      {/* brand statement band — ambient-grid (Task 6): the widest empty area on
-          the page, and the one place a measured plane suits the copy. */}
-      <section className="ambient-grid border-y border-border-subtle bg-surface-raised/40">
-        <div className="mx-auto max-w-[1360px] px-6 py-24 md:px-10 md:py-28">
-          <Reveal className="flex flex-col items-center text-center">
-            <h2 className="max-w-3xl text-balance text-3xl font-medium leading-[1.15] tracking-[-0.03em] md:text-5xl">
-              Trust Every Click.
-              <br />
-              Protect Every Digital Asset.
-            </h2>
-            <p className="mt-7 max-w-2xl text-balance text-[17px] leading-relaxed text-text-secondary">
-              EduSentinel AI is a privacy-first cybersecurity ecosystem focused
-              on digital trust, source verification, scam prevention, phishing
-              defense, browser protection, educational security and local
-              AI-powered intelligence.
-            </p>
-            <p className="mt-8 text-[17px] font-semibold tracking-tight text-brand-teal">
-              Build Until Success Finds You.
-            </p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* centered CTA — ambient-horizon (Task 6): a headline and a button alone
-          above the footer, the last and emptiest band on the page. */}
-      <section className="ambient-horizon mx-auto max-w-[1360px] px-6 pb-32 pt-8 md:px-10">
+      {/* 9 — the close. The brand statement and the close were two separate
+          centred bands saying the same thing to the same reader; they are now
+          one. ambient-horizon (Task 6) stays with it: the last and emptiest
+          band on the page. */}
+      <section className="ambient-horizon mx-auto max-w-[1360px] px-6 pb-32 pt-12 md:px-10 md:pt-16">
         <Reveal className="flex flex-col items-center text-center">
-          <h2 className="max-w-2xl text-balance text-4xl font-medium tracking-[-0.03em] md:text-6xl">
-            Build something you’re proud of
+          <h2 className="max-w-3xl text-balance text-4xl font-medium leading-[1.08] tracking-[-0.03em] md:text-6xl">
+            Trust Every Click.
+            <br />
+            Protect Every Digital Asset.
           </h2>
+          <p className="mt-7 max-w-2xl text-balance text-[17px] leading-relaxed text-text-secondary">
+            EduSentinel AI is a cybersecurity-first platform: source
+            verification, scam prevention, phishing defence and browser
+            protection, powered by shared on-device intelligence — and a growing
+            family of products built on exactly the same core.
+          </p>
+          <p className="mt-8 text-[17px] font-semibold tracking-tight text-brand-teal">
+            Build Until Success Finds You.
+          </p>
           <Button href="/products" size="lg" className="mt-10">
             <span className="flex items-center gap-1">
-              Try <LogoMark size={26} /> EduSentinel
+              Get started with <LogoMark size={26} /> EduSentinel
             </span>
           </Button>
         </Reveal>

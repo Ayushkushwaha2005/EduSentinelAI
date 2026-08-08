@@ -168,30 +168,48 @@ export function Hero() {
         <div className="grid items-center gap-14 pt-16 md:grid-cols-[0.95fr_1.05fr] md:pt-24">
           {/* left column */}
           <div>
+            {/* Cybersecurity is the first word on the site, deliberately. It is
+                the identity everything below inherits — see the identity ladder
+                in components/platform-story.tsx. */}
+            <motion.p
+              {...enter(0.02)}
+              className="mb-6 text-[12px] font-semibold uppercase tracking-[0.18em] text-brand-teal"
+            >
+              Cybersecurity-first AI platform
+            </motion.p>
             <motion.h1
               {...enter(0.05)}
               className="text-balance text-5xl font-medium leading-[1.04] tracking-[-0.035em] md:text-[4.5rem]"
             >
-              Private by design,
+              Security you can
               <br />
-              at the speed of AI
+              actually verify
             </motion.h1>
             <motion.p
               {...enter(0.18)}
               className="mt-7 max-w-md text-[17px] leading-relaxed text-text-secondary"
             >
-              EduSentinel AI turns security, AI, cloud, and education into one
-              privacy-first product ecosystem — where your data belongs to you.
+              EduSentinel AI protects you from scams, phishing and unsafe
+              downloads — then puts the same engine behind every other product we
+              build. One account, one privacy promise, no trackers anywhere.
             </motion.p>
             <motion.div {...enter(0.3)} className="mt-9 flex items-center gap-7">
-              <Button href="/contact" size="lg">
-                Get started
+              {/*
+               * NOT "Get started", and not /contact. The navigation bar sits a
+               * few pixels above this button and already says "Get started" —
+               * two identical CTAs in one viewport is one CTA the visitor has
+               * to choose between for no reason. The page's own "Get started"
+               * lives in the closing band, where the argument has been made.
+               * Here, the first thing someone wants is to see what exists.
+               */}
+              <Button href="/products" size="lg">
+                See the products
               </Button>
               <Link
-                href="/solutions"
+                href="/#what-is-edusentinel"
                 className="inline-flex items-center gap-2 text-[15px] font-medium text-text-primary transition-colors hover:text-text-secondary"
               >
-                Explore solutions <ArrowIcon />
+                What is EduSentinel? <ArrowIcon />
               </Link>
             </motion.div>
           </div>
