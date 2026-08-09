@@ -21,13 +21,13 @@ const showcases = [
     description:
       "EduSentinel continuously helps users identify suspicious websites, spoofed domains and digital threats before they become real risks. Intelligent protection is delivered without compromising personal privacy.",
     points: [
+      "Website verification",
+      "Scam detection",
+      "Fake internship alerts",
+      "Phishing protection",
       "Explainable threat detection",
-      "Trusted website verification",
-      "Smart redirect protection",
-      "Privacy-aware browsing",
-      "Real-time risk insights",
     ],
-    note: null,
+    note: "The browser extension and the mobile app are in development — the catalogue on /products says where each one stands.",
   },
   {
     tab: "AI Products",
@@ -47,47 +47,29 @@ const showcases = [
   {
     tab: "Cloud Utilities",
     image: "/showcase/cloud-utilities.png",
-    heading: "Modern cloud utilities with security at the core.",
+    heading: "Cloud utilities — planned, not built.",
     description:
-      "Manage files, deployments, collaboration and digital infrastructure through secure cloud experiences designed for students, professionals and organizations that value trust and reliability.",
-    points: [
-      "Secure workspace",
-      "Cloud deployment",
-      "Smart collaboration",
-      "Protected storage",
-      "Infrastructure management",
-    ],
-    note: null,
+      "A category we have named and not yet filled: privacy-respecting cloud and infrastructure tooling for small teams. There is no product here today, and nothing on this tab is something you can use yet.",
+    points: ["Planned category"],
+    note: "Planned. /solutions lists every area at its real stage, and /products only ever shows what exists.",
   },
   {
     tab: "Learning Hub",
     image: "/showcase/learning-hub.png",
-    heading: "Learn emerging technology through practical experience.",
+    heading: "A learning hub — planned, not built.",
     description:
-      "A dedicated learning ecosystem that helps students and professionals master Cyber Security, Artificial Intelligence, Cloud Computing and modern development through structured learning paths and hands-on projects.",
-    points: [
-      "Cyber Security",
-      "Artificial Intelligence",
-      "Cloud Computing",
-      "Hands-on learning",
-      "Career preparation",
-    ],
-    note: null,
+      "Security and AI literacy for students is why this company exists, so it has a shelf waiting. What it does not have yet is a product: no courses, no learning paths, nothing to enrol in.",
+    points: ["Planned category"],
+    note: "Planned. The scam protection we have actually built is on the Security Tooling tab.",
   },
   {
     tab: "Research",
     image: "/showcase/research.png",
-    heading: "Research that turns ideas into real-world innovation.",
+    heading: "Research we have not published yet.",
     description:
-      "EduSentinel Research explores intelligent privacy technologies, explainable AI, secure digital systems and next-generation solutions that help build a safer digital future for everyone.",
-    points: [
-      "Privacy Engineering",
-      "AI Research",
-      "Security Innovation",
-      "Human-centered technology",
-      "Future-ready solutions",
-    ],
-    note: null,
+      "When we publish findings, datasets or benchmarks, they go here so they can be checked. Nothing has been published so far — this tab is the shelf, not a claim that it is full.",
+    points: ["Nothing published yet"],
+    note: "The Research category on /products is marked open for the same reason.",
   },
 ];
 

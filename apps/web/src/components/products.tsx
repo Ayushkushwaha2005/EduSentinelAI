@@ -52,8 +52,10 @@ export async function ProductsSection() {
   if (products.length === 0) return null;
 
   const groups = groupByDomain(products);
-  // Counted from the rows we already hold — never a hard-coded figure.
-  const preview = products.filter((p) => p.pricing === "soon").length;
+  // Counted from the rows we already hold — never a hard-coded figure. Counted
+  // through stageOf, so this number and the badge on every card answer
+  // "has it shipped?" the same way.
+  const preview = products.filter((p) => stageOf(p).tone === "preview").length;
 
   return (
     <section id="products" className="mx-auto max-w-[1360px] px-6 pb-24 md:px-10 md:pb-32">
@@ -64,7 +66,7 @@ export async function ProductsSection() {
       </Reveal>
       <SplitHeading
         title="One platform. A growing family of products."
-        aside="EduSentinel started as cybersecurity and never stopped being it. Everything below runs on that same engine, that same privacy promise, and the one account you already have."
+        aside="EduSentinel started as cybersecurity and never stopped being it. Each card below says which shelf it sits on, who it is for, where it runs, and whether it has shipped."
       />
 
       <EcosystemPanel

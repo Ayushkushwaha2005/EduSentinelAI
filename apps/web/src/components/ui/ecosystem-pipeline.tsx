@@ -19,17 +19,22 @@ import { motion, AnimatePresence } from "framer-motion";
  * and narrow viewports never load this chunk at all.
  */
 
+/*
+ * The narration describes the STEPS of the flow, in order. It carries no
+ * counts, confidences or timings: this schematic has never measured anything,
+ * and a number here would be an invented measurement dressed as a log line.
+ */
 const messages = [
-  'Received: "Verify link shared in the student group chat..."',
-  "Parsing signal → 3 URLs, 1 attachment, 812 tokens",
-  "Threat intel match: 4 patterns, avg confidence 0.94",
-  "Injecting context into the Sentinel prompt (1,204 tokens)",
-  "Sentinel inference: 3 product actions dispatched in parallel",
-  "Extension: phishing page blocked, warning card shown",
-  "App: SMS sender flagged, on-device model updated",
-  "Insights: monthly safety digest queued for 17:00",
-  "Verdict complete. 3 actions dispatched in 342ms.",
-  "Idle. Listening for the next signal...",
+  'A signal arrives: "is this link safe?"',
+  "The signal is parsed — links, sender, attachments",
+  "Known threat patterns are checked first",
+  "Context is assembled for the Sentinel engine",
+  "On-device models weigh the signal in context",
+  "Extension: a phishing page is blocked, with the reason shown",
+  "App: an SMS sender is flagged on the device",
+  "Insights: the finding is added to your safety digest",
+  "The answer lands in the product you were already using",
+  "Waiting for the next signal…",
 ];
 
 function AnimatedDot({
@@ -124,21 +129,13 @@ function StatusIndicator({
 
 export default function SentinelPipeline() {
   const [messageIndex, setMessageIndex] = useState(0);
-  const [workflows, setWorkflows] = useState(1247);
 
   useEffect(() => {
     const messageInterval = setInterval(() => {
       setMessageIndex((prev) => (prev + 1) % messages.length);
     }, 2700);
 
-    const workflowInterval = setInterval(() => {
-      setWorkflows((prev) => prev + 1);
-    }, 7200);
-
-    return () => {
-      clearInterval(messageInterval);
-      clearInterval(workflowInterval);
-    };
+    return () => clearInterval(messageInterval);
   }, []);
 
   const paths = {
@@ -172,11 +169,11 @@ export default function SentinelPipeline() {
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
           />
           <span className="text-[10px] text-white/30 tracking-[0.1em] font-mono">
-            SENTINEL ENGINE · LIVE
+            SENTINEL ENGINE · SCHEMATIC
           </span>
         </div>
         <span className="text-[10px] text-white/[0.18] font-mono">
-          3 services · 0 errors
+          illustration, not telemetry
         </span>
       </div>
 
@@ -484,26 +481,28 @@ export default function SentinelPipeline() {
         </div>
       </div>
 
-      {/* Stats Footer */}
+      {/*
+       * Footer.
+       *
+       * WHAT WAS HERE: SIGNALS 1,247 (incrementing every 7.2s), TOKENS 4.2M and
+       * AVG LATENCY 342ms. Every one of those figures was invented, and the
+       * ticking counter made them read as live measurement. This project's own
+       * rule is that a thing we cannot measure is never printed as a number, so
+       * they are gone rather than restyled — what is left describes the stages
+       * of the flow, which is what the diagram above actually shows.
+       */}
       <div className="border-t border-white/[0.06] px-[18px] py-[10px] flex gap-[22px] items-center">
         <div>
-          <div className="text-[9px] text-white/20 tracking-[0.09em] mb-[3px]">SIGNALS</div>
-          <motion.div
-            key={workflows}
-            initial={{ scale: 1.05 }}
-            animate={{ scale: 1 }}
-            className="text-[16px] text-white/[0.72] font-mono"
-          >
-            {workflows.toLocaleString()}
-          </motion.div>
+          <div className="text-[9px] text-white/20 tracking-[0.09em] mb-[3px]">IN</div>
+          <div className="text-[13px] text-white/[0.72] font-mono">A signal</div>
         </div>
         <div>
-          <div className="text-[9px] text-white/20 tracking-[0.09em] mb-[3px]">TOKENS</div>
-          <div className="text-[16px] text-white/[0.72] font-mono">4.2M</div>
+          <div className="text-[9px] text-white/20 tracking-[0.09em] mb-[3px]">WEIGHED BY</div>
+          <div className="text-[13px] text-white/[0.72] font-mono">One engine</div>
         </div>
         <div>
-          <div className="text-[9px] text-white/20 tracking-[0.09em] mb-[3px]">AVG LATENCY</div>
-          <div className="text-[16px] text-white/[0.72] font-mono">342ms</div>
+          <div className="text-[9px] text-white/20 tracking-[0.09em] mb-[3px]">OUT</div>
+          <div className="text-[13px] text-white/[0.72] font-mono">An answer, in place</div>
         </div>
         <div className="ml-auto text-right">
           <div className="text-[9px] text-white/[0.18] tracking-[0.09em] mb-[3px]">RUNS ON</div>

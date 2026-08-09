@@ -63,9 +63,7 @@ export function EcosystemPanel({
               security core: a signal arrives, threat intelligence and on-device
               models weigh it, and the answer lands in the product you were
               already using. A planning tool and a phishing filter are not two
-              companies here — they are two windows onto one engine, which is why
-              the catalogue can grow without the account, the privacy promise or
-              the login ever multiplying.
+              companies here — they are two windows onto one engine.
             </p>
           </div>
           {/* Wraps rather than being forced into three columns: at 320px the
@@ -73,7 +71,7 @@ export function EcosystemPanel({
           <dl className="flex shrink-0 flex-wrap gap-x-8 gap-y-4 lg:gap-x-10">
             <Stat label="Products" value={total} />
             <Stat label="Domains" value={domains} />
-            <Stat label="In preview" value={preview} />
+            <Stat label="In development" value={preview} />
           </dl>
         </div>
 
@@ -161,7 +159,20 @@ export function CategoryArchitecture<T>({ groups }: { groups: DomainGroup<T>[] }
                 </span>
               </div>
               <p className="mt-4 text-[16px] font-medium tracking-tight">{domain.name}</p>
-              <p className="mt-2 text-[13px] leading-relaxed text-text-secondary">
+              {/* An empty shelf says so IN THE SENTENCE, not only in the badge.
+                  The scope reads as a description of what we offer when it is
+                  printed in the same declarative voice as a populated
+                  category — so an open one is prefixed with the fact. */}
+              {!populated && (
+                <p className="mt-2 text-[13px] font-medium text-text-muted">
+                  Nothing built here yet. This shelf is for:
+                </p>
+              )}
+              <p
+                className={`text-[13px] leading-relaxed text-text-secondary ${
+                  populated ? "mt-2" : "mt-1"
+                }`}
+              >
                 {domain.scope}
               </p>
             </>

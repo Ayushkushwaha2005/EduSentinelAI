@@ -40,15 +40,15 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Can students, developers and teams all use one account?",
-    a: "One identity runs the entire ecosystem, whether you are learning, building, or securing an organization. Sign in once and move between products without creating a new account or leaving a trail behind you.",
+    a: "Yes — the same sign-in works whether you are learning, building or securing an organization, and moving between products never asks you to register again or leaves a trail behind you.",
   },
   {
     q: "Which platforms are supported?",
-    a: "EduSentinel is built to meet you where you work — across desktop and the web, with more surfaces arriving as the ecosystem grows. Every download is signed and checksummed, every time.",
+    a: "Two surfaces are being built: a Chrome browser extension, and an Android app using on-device TensorFlow Lite models. Neither has been released yet — when they are, each download will be signed and published with its checksum. Anything else you read about here is a category, not a client you can install.",
   },
   {
     q: "What's coming next?",
-    a: "The ecosystem expands deliberately. A new product joins only when it clears the same bar — privacy-first, signed, and genuinely useful — so what arrives next is worth the wait, not just another logo.",
+    a: "The browser extension and the mobile app, then SentinelAI Agent — the local-first assistant listed in the catalogue as in development. We have not published dates, because we have not earned the right to promise them yet.",
   },
 ];
 

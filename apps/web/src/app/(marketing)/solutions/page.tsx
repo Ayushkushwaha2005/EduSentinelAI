@@ -13,7 +13,7 @@ const areas = [
   {
     title: "Cybersecurity",
     status: "In development",
-    body: "Defensive security tooling, threat education, and research publications. Every release ships signed, with published checksums.",
+    body: "The browser extension and the mobile app: scam detection, fake internship alerts, phishing and SMS protection. Every release will ship signed, with published checksums.",
   },
   {
     title: "Artificial Intelligence & ML",
@@ -22,23 +22,23 @@ const areas = [
   },
   {
     title: "Cloud Computing",
-    status: "Planned",
-    body: "Privacy-respecting cloud utilities and infrastructure tooling for small teams that refuse to trade data for convenience.",
+    status: "Planned — nothing built yet",
+    body: "Named so a cloud utility has somewhere to go when we build one. No product, no date.",
   },
   {
     title: "Developer Tools & Extensions",
-    status: "Planned",
-    body: "Browser extensions, desktop utilities, and CLI tools distributed through our signed download center.",
+    status: "Planned — nothing built yet",
+    body: "The browser extension is the first thing that will land here. It is in development; the Download Center is empty until it ships.",
   },
   {
     title: "Educational Technology",
-    status: "Planned",
-    body: "Learning platforms that make security and AI literacy accessible — built for students, not ad networks.",
+    status: "Planned — nothing built yet",
+    body: "Security and AI literacy for students is why the company exists, so the shelf is reserved. Nothing to enrol in yet.",
   },
   {
     title: "Research & Innovation",
-    status: "Ongoing",
-    body: "Open research projects and future startup innovations incubated on the EduSentinel platform.",
+    status: "Nothing published yet",
+    body: "When we have findings worth checking, we publish them here with the method attached. So far we have published none.",
   },
 ];
 

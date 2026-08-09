@@ -31,6 +31,12 @@ export type FacetedProduct = {
   tags: string[];
   features: string[];
   pricing: PricingTone;
+  /**
+   * The label on the product's own button. Read ONLY by `stageOf` — see the
+   * comment there for why a waitlist CTA is the honest signal that a product
+   * has not shipped.
+   */
+  ctaLabel?: string;
 };
 
 /* ------------------------------------------------------------------ *
@@ -243,21 +249,48 @@ export type ProductStage = {
   tone: "live" | "preview";
 };
 
+/*
+ * Waitlist wording. A product whose own button says "Get notified" is a product
+ * you cannot install, whatever its price says.
+ */
+const WAITLIST_CTA = [
+  "notified",
+  "notify",
+  "waitlist",
+  "wait-list",
+  "early access",
+  "coming soon",
+  "join",
+  "register interest",
+];
+
 /**
  * Stage and price are two different questions, and the old badge answered them
  * with one word. "Coming soon" is not a price, and "Free" says nothing about
  * whether you can install it today. They are split so a card can answer both.
+ *
+ * WHY THE CTA IS READ HERE. `pricing` alone cannot answer "can I install this?"
+ * — it has three values and two of them are prices. Reading only `pricing`
+ * marked every free product "Available · Shipping now" while its own button
+ * offered a waitlist and the Download Center held nothing: the page claimed
+ * installability the catalogue had never claimed. The Founder already writes
+ * the honest answer into the CTA label, so that is what is read. A product is
+ * reported as shipping only when nothing about its record says otherwise.
  */
 export function stageOf(p: FacetedProduct): ProductStage {
-  return p.pricing === "soon"
+  const waitlisted =
+    p.pricing === "soon" ||
+    WAITLIST_CTA.some((s) => (p.ctaLabel ?? "").toLowerCase().includes(s));
+
+  return waitlisted
     ? {
-        label: "In preview",
-        detail: "In development — join the waitlist to be told when it ships.",
+        label: "In development",
+        detail: "Not released yet — ask to be told when it ships.",
         tone: "preview",
       }
     : {
         label: "Available",
-        detail: "Shipping now, on the account you already have.",
+        detail: "Released, on the account you already have.",
         tone: "live",
       };
 }

@@ -28,7 +28,10 @@ const commitments = [
   "No third-party trackers on any EduSentinel property.",
   "Signed releases and published checksums for every download.",
   "A public responsible-disclosure process for security research.",
-  "Plain-language policies you can actually read.",
+  // Was "Plain-language policies you can actually read" — a compliment we paid
+  // ourselves, next to a privacy policy still marked Draft v0.1. The version
+  // and the draft status are facts; the readability was an opinion.
+  "Policies published in full, versioned and dated — including the drafts.",
 ];
 
 export default async function CompanyPage() {
@@ -61,7 +64,7 @@ export default async function CompanyPage() {
       {team.length === 0 ? (
         <Reveal className="mt-8">
           <p className="text-[15px] text-text-muted">
-            Team profiles are being updated.
+            No public team profiles yet.
           </p>
         </Reveal>
       ) : (
