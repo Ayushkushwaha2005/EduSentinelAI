@@ -1,13 +1,11 @@
 "use server";
 
-import { mkdir, unlink, writeFile } from "fs/promises";
-import path from "path";
-import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { audit, requestContext } from "@/lib/audit";
 import { requireFounder } from "@/lib/guard";
 import { checkAvatar } from "@/lib/images";
+import { deletePhoto, storePhoto } from "@/lib/photo-storage";
 import { cleanMemberInput, isVisibility, serializeLinks } from "@/lib/org";
 import { sanitizeLine, sanitizeUserText } from "@/lib/sanitize";
 
@@ -25,8 +23,6 @@ import { sanitizeLine, sanitizeUserText } from "@/lib/sanitize";
  * Every write revalidates the PUBLIC pages as well as the dashboard, because the
  * whole point of this milestone is that one edit lands everywhere at once.
  */
-
-const BRAND_DIR = path.join(process.cwd(), "storage", "brand");
 
 export type OrgState = { error?: string; notice?: string };
 
@@ -126,7 +122,7 @@ export async function removeMember(formData: FormData): Promise<void> {
   // different facts about a person and conflating them here would mean an
   // org-chart tidy-up silently revoked someone's access.
   if (member.photoName) {
-    await unlink(path.join(BRAND_DIR, member.photoName)).catch(() => null);
+    await deletePhoto(member.photoName);
   }
 
   const ctx = await requestContext();
@@ -170,16 +166,21 @@ export async function uploadMemberPhoto(
   const check = checkAvatar(new Uint8Array(await file.arrayBuffer()));
   if (!check.ok) return { error: check.error };
 
-  const storageName = `${randomBytes(16).toString("hex")}.${check.ext}`;
-  await mkdir(BRAND_DIR, { recursive: true });
-  await writeFile(path.join(BRAND_DIR, storageName), check.bytes);
+  // Persist the bytes the stripper RETURNED, never the bytes we were handed.
+  // Where they land is lib/photo-storage.ts's business: Vercel Blob in
+  // production, the local disk on a laptop. The pointer it returns is what the
+  // database holds, and /api/photo still asks the visibility question before
+  // serving it.
+  const storageName = await storePhoto(check.bytes, check.mime, check.ext);
 
   await db.orgMember.update({
     where: { id },
     data: { photoName: storageName, photoMime: check.mime, photoAt: new Date() },
   });
+  // Only after the new photo is committed: a failed delete must not cost
+  // someone the picture they just uploaded.
   if (member.photoName) {
-    await unlink(path.join(BRAND_DIR, member.photoName)).catch(() => null);
+    await deletePhoto(member.photoName);
   }
 
   const ctx = await requestContext();

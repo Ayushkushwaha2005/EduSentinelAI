@@ -1,9 +1,6 @@
-import { readFile } from "fs/promises";
-import path from "path";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-
-const BRAND_DIR = path.join(process.cwd(), "storage", "brand");
+import { readPhoto } from "@/lib/photo-storage";
 
 /*
  * Serves organization photos and the company logo (Phase 6.5).
@@ -14,10 +11,16 @@ const BRAND_DIR = path.join(process.cwd(), "storage", "brand");
  * only when the member is PUBLIC. An INTERNAL or HIDDEN member's photo is a 404
  * to the world, even with the exact id.
  *
- * The stored filename comes from the database, never from the URL, so `id` is a
+ * The stored pointer comes from the database, never from the URL, so `id` is a
  * lookup key and not a path segment — traversal has nowhere to land. The bytes
  * were magic-byte validated and metadata-stripped on upload (lib/images.ts), and
  * only PNG/JPEG can be stored.
+ *
+ * The pointer resolves through lib/photo-storage.ts, which reads from Vercel
+ * Blob in production and from the local disk on a laptop. This route PROXIES
+ * those bytes rather than redirecting to them: a redirect would hand the caller
+ * the storage URL, and with it every future request, which is exactly the
+ * visibility gate below. Same-origin either way, so the CSP does not move.
  */
 export async function GET(
   _req: Request,
@@ -55,12 +58,10 @@ export async function GET(
 
   if (!file) return new Response("Not found.", { status: 404 });
 
-  let data: Buffer;
-  try {
-    data = await readFile(path.join(BRAND_DIR, file.name));
-  } catch {
-    return new Response("Not found.", { status: 404 });
-  }
+  const data = await readPhoto(file.name);
+  // A pointer with no bytes behind it is indistinguishable, to the caller, from
+  // a member who has no photo. It says nothing about which of the two it is.
+  if (!data) return new Response("Not found.", { status: 404 });
 
   return new Response(new Uint8Array(data), {
     headers: {
