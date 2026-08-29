@@ -16,6 +16,29 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 31536000,
+
+    /*
+     * Uploaded photos are served by our own API routes under a CACHE-BUSTING
+     * query string (`?v=<uploadedAt>` — see lib/org.ts, lib/company.ts and
+     * lib/profile.ts), so that replacing a photo never serves the old one from
+     * a stale cache.
+     *
+     * Next's default local pattern is `{ pathname: "/**", search: "" }`, which
+     * allows NO query string at all. Every one of those URLs was therefore
+     * rejected by the optimizer with "is using a query string which is not
+     * configured in images.localPatterns" — a 500 on the company page and the
+     * home rail the moment a member photo actually existed. The default is kept
+     * verbatim for everything under public/, and the three upload-backed routes
+     * are allowed to carry their version marker.
+     *
+     * These are internal paths only. No remotePatterns are added, so the
+     * optimizer still refuses to fetch from any other origin.
+     */
+    localPatterns: [
+      { pathname: "/**", search: "" },
+      { pathname: "/api/avatar/**" },
+      { pathname: "/api/photo/**" },
+    ],
   },
 
   /*

@@ -4,7 +4,19 @@ import { requireViewer } from "@/lib/guard";
 import { retrieve, suggestionsFor } from "@/lib/assistant";
 
 /*
- * Sentinel Mini's only server entry point.
+ * Sentinel Mini's original server entry point, and the home of `AssistantReply`.
+ *
+ * THE TRANSPORT MOVED. Asking now goes through `app/api/assistant/route.ts`: a
+ * server action re-renders the WHOLE current route and streams it back with the
+ * result, so every question was paying for a full re-render of whatever
+ * dashboard the asker was standing on in order to deliver a 0.2 ms lookup. The
+ * route handler returns the answer and nothing else.
+ *
+ * Nothing about the ANSWER changed — the route calls the same guard and the same
+ * `retrieve`/`suggestionsFor`, and returns this same `AssistantReply` shape. The
+ * action below is kept because it is still a correct, identically-guarded entry
+ * point and `AssistantReply` is declared here; everything the comment below says
+ * about trust and database access is as true of the route as it was of this.
  *
  * It re-derives the viewer and their capabilities on the server for every
  * question — the browser never tells it who is asking. That is the whole reason

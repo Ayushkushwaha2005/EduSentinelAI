@@ -38,6 +38,28 @@ function startsWith(buf: Uint8Array, magic: number[]): boolean {
   return magic.every((b, i) => buf[i] === b);
 }
 
+/**
+ * Join the kept slices into one buffer.
+ *
+ * The strippers used to accumulate into a `number[]`, spreading each kept slice
+ * into the array one ARGUMENT per byte. A JPEG's scan data is a single slice of
+ * the whole remaining file, so any image much above 64 KB blew the call stack
+ * with `RangeError: Maximum call stack size exceeded` before it ever reached the
+ * size or dimension checks. Collecting views and copying them once is both
+ * correct at any size and markedly cheaper.
+ */
+function concatBytes(parts: Uint8Array[]): Uint8Array {
+  let total = 0;
+  for (const p of parts) total += p.length;
+  const out = new Uint8Array(total);
+  let at = 0;
+  for (const p of parts) {
+    out.set(p, at);
+    at += p.length;
+  }
+  return out;
+}
+
 /** Magic-byte sniff. The claimed MIME and the filename are not consulted. */
 export function detectImage(buf: Uint8Array): ImageKind | null {
   if (startsWith(buf, PNG_MAGIC)) return "image/png";
@@ -64,7 +86,7 @@ const PNG_KEEP = new Set([
 ]);
 
 function stripPng(buf: Uint8Array): { bytes: Uint8Array; width: number; height: number } | null {
-  const out: number[] = [...PNG_MAGIC];
+  const parts: Uint8Array[] = [Uint8Array.from(PNG_MAGIC)];
   let offset = 8;
   let width = 0;
   let height = 0;
@@ -81,14 +103,14 @@ function stripPng(buf: Uint8Array): { bytes: Uint8Array; width: number; height: 
       height = view.getUint32(offset + 12);
     }
     if (PNG_KEEP.has(type)) {
-      out.push(...buf.slice(offset, offset + total));
+      parts.push(buf.subarray(offset, offset + total));
     }
     offset += total;
     if (type === "IEND") break;
   }
 
   if (!width || !height) return null;
-  return { bytes: Uint8Array.from(out), width, height };
+  return { bytes: concatBytes(parts), width, height };
 }
 
 /**
@@ -96,7 +118,7 @@ function stripPng(buf: Uint8Array): { bytes: Uint8Array; width: number; height: 
  * segment (APP1 is where EXIF lives, APP13 where IPTC does) and every comment.
  */
 function stripJpeg(buf: Uint8Array): { bytes: Uint8Array; width: number; height: number } | null {
-  const out: number[] = [0xff, 0xd8]; // SOI
+  const parts: Uint8Array[] = [Uint8Array.from([0xff, 0xd8])]; // SOI
   let offset = 2;
   let width = 0;
   let height = 0;
@@ -108,7 +130,7 @@ function stripJpeg(buf: Uint8Array): { bytes: Uint8Array; width: number; height:
 
     // Start of Scan: the rest of the file is compressed image data. Copy it as-is.
     if (marker === 0xda) {
-      out.push(...buf.slice(offset));
+      parts.push(buf.subarray(offset));
       break;
     }
 
@@ -122,13 +144,13 @@ function stripJpeg(buf: Uint8Array): { bytes: Uint8Array; width: number; height:
     }
 
     const isMetadata = (marker >= 0xe0 && marker <= 0xef) || marker === 0xfe; // APPn, COM
-    if (!isMetadata) out.push(...buf.slice(offset, offset + 2 + length));
+    if (!isMetadata) parts.push(buf.subarray(offset, offset + 2 + length));
 
     offset += 2 + length;
   }
 
   if (!width || !height) return null;
-  return { bytes: Uint8Array.from(out), width, height };
+  return { bytes: concatBytes(parts), width, height };
 }
 
 /**

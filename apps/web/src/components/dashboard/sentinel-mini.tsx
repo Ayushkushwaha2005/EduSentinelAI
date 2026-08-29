@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { askAssistant, type AssistantReply } from "@/app/app/sentinel-action";
+import type { AssistantReply } from "@/app/app/sentinel-action";
 
 /*
  * Sentinel Mini — the portal assistant, in the top bar.
@@ -20,6 +20,13 @@ import { askAssistant, type AssistantReply } from "@/app/app/sentinel-action";
  * It still sends the CURRENT PATH, so "how does this work" asked while standing
  * on the leave page finds the leave article. The path is a ranking hint only and
  * is never trusted for access.
+ *
+ * ON THE TRANSPORT. Asking used to go through a server action, which re-renders
+ * the WHOLE current route and streams it back alongside the answer — so every
+ * question paid for a full re-render of whatever dashboard you were standing on,
+ * to deliver a lookup measured at 0.2 ms. It now posts to /api/assistant, which
+ * returns the answer and nothing else. Same guard, same retrieval, same reply
+ * shape, same markup below; only the page re-render is gone.
  * ─────────────────────────────────────────────────────────────────────────────
  *
  * Dark mode comes for free: every surface below is a `ws-` or semantic token,
@@ -42,10 +49,35 @@ export function SentinelMini() {
   const open = openPath === pathname;
   const close = () => setOpenPath(null);
 
-  const [reply, action, pending] = useActionState<AssistantReply | null, FormData>(
-    askAssistant,
-    null,
-  );
+  const [reply, setReply] = useState<AssistantReply | null>(null);
+  const [pending, setPending] = useState(false);
+
+  /* Answers are applied in ASK ORDER, not arrival order: type a second question
+     while the first is in flight and a slow first response must not overwrite the
+     answer to the question actually on screen. */
+  const askSeq = useRef(0);
+
+  const ask = useCallback(async (form: FormData) => {
+    const seq = ++askSeq.current;
+    setPending(true);
+    try {
+      const res = await fetch("/api/assistant", {
+        method: "POST",
+        body: form,
+        // The guard reads the session cookie; nothing else is sent.
+        credentials: "same-origin",
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const next = (await res.json()) as AssistantReply;
+      if (seq === askSeq.current) setReply(next);
+    } catch {
+      /* A failed lookup must not blank an answer already on screen. The guide
+         link in the footer is always there as the way through. `finally` below
+         clears the spinner on this path too. */
+    } finally {
+      if (seq === askSeq.current) setPending(false);
+    }
+  }, []);
 
   const panelId = useId();
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -207,7 +239,13 @@ export function SentinelMini() {
           </div>
 
           {/* ask */}
-          <form action={action} className="border-t border-ws-line p-3">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void ask(new FormData(e.currentTarget));
+            }}
+            className="border-t border-ws-line p-3"
+          >
             <input type="hidden" name="pathname" value={pathname} />
             <div className="flex items-center gap-2">
               <label className="sr-only" htmlFor={`${panelId}-q`}>
